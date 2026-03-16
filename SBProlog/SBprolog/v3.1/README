@@ -1,0 +1,8 @@
+This directory contains version 3.1 of SB-Prolog.  It has
+essentially the functionality of version 2.5, but has been
+rewritten so that it runs on alignment-restricted processors
+like Sun-4, Pyramid-98x, and SGI Iris.  
+
+User manual: a Latex version is available in latex_doc.tar.Z,
+a troff version (with -me macros) in sbprolog_doc.me.
+

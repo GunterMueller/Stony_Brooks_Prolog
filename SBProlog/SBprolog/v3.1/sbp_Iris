@@ -1,0 +1,573 @@
+From scotth@SGI.COM Thu Jan  5 21:08:09 1989
+Received: from megaron.arizona.edu by granjon.arizona.edu; Thu, 5 Jan 89 21:08:04 MST
+Received: from noao.arizona.edu by megaron.arizona.edu (5.59-1.7/15) via SMTP
+	id AA06151; Thu, 5 Jan 89 21:09:26 MST
+Received: from HANDIES.UCAR.EDU by noao.edu (5.59/SAG.G11)
+	id AA05032; Thu, 5 Jan 89 21:07:56 MST; for arizona.edu!debray@arizona.edu
+Received: from SGI.COM by ncar.UCAR.EDU (5.58/1.00.UUCP-MOD.8-11-85)
+	id AA10727; Thu, 5 Jan 89 19:28:40 MST
+Received: from harlie.sgi.com by sgi.sgi.com (5.52/880418.SGI)
+	(for ncar.ucar.edu!noao!arizona!arizona.edu!debray) id AA26178; Thu, 5 Jan 89 14:10:26 PST
+Received: from localhost.SGI.COM by harlie.sgi.com (5.52/880418.SGI)
+	(for debray@arizona.edu) id AA18498; Thu, 5 Jan 89 14:10:21 PST
+Message-Id: <8901052210.AA18498@harlie.sgi.com>
+To: debray@arizona.edu
+Subject: SBProlog v3.0 diffs for IRIS system
+Date: Thu, 05 Jan 89 14:10:19 PST
+From: scotth@SGI.COM
+Status: RO
+
+Here are the diffs for the sbp_v3.0.tar.Z I picked up several weeks ago.
+I have included the diffs for the source code (and the Makefile), along
+with the output of the benchmarks run on my system. I did not fully
+implement an AT&T SysV version of the time.c functions, only the one I 
+currently have any need of.
+
+Some notes about the port:
+
+1) Because SGI uses a SysV r3.1 based kernel with most of BSD 4.3 as
+   enhancements, when I was sure that the replacement function was vanilla
+   SysV, I used "#ifdef ATT", else I used "#ifdef IRIS_4D", and I used an
+   "#ifdef BSD4" around the areas I needed to comment out.
+
+2) Although the current rev of the OS supports MIMD tightly coupled multi-
+   processing, I neither compiled for that option, nor tested in that
+   environment.
+
+3) The environment I compiled, linked, and run on is:
+
+   IRIS 4D/70G (a MIPS R2000 RISC processor running at 12.5 MHz) w/16MB memory,
+   IRIX 3.1 release operating system (see above),
+   -O4 optimization level for the benchmark results (make sim).
+
+Recompiling with -O4 optimization (make sim) improved the benchmark results
+by various amounts: from 1% improvement (for walk_term_rec) to over 40%
+(for access_unit); most results were 20-25% improvement over compiling with
+the default optimization (make sbprolog).
+
+I ran the nrev (Naive Reverse) benchmark for 10000 iterations, the Pereira
+benchmarks were run unchanged.
+
+Mostly for my own information, I decided to time the compile of the 
+optimized version (time make sim). This is on a mostly otherwise idle
+system (mostly just me doing "ps -l" to see what was going on..
+
+223.4u 27.6s 5:56 70%
+
+and at its peak, the ucode (global) optimizer used 8.8MB of virtual memory
+(must have paged out everything else).
+
+Thanks for all your help.
+Here is the diffs in a shar file.
+---------------------------------------------
+#!/bin/sh
+# to extract, remove the header and type "sh filename"
+if `test ! -d ./diffs`
+then
+  mkdir ./diffs
+  echo "mkdir ./diffs"
+fi
+if `test ! -s ./diffs/Makefile.diff`
+then
+echo "writing ./diffs/Makefile.diff"
+cat > ./diffs/Makefile.diff << '\Rogue\Monster\'
+*** Makefile.orig	Thu Jan  5 13:10:36 1989
+--- Makefile	Thu Jan  5 11:36:07 1989
+***************
+*** 1,40 ****
+! CFLAGS = -c -g 
+  #CC = /usr/local/gcc
+  CC = cc
+  OBJ1 = main.o dispatch.o init.o float.o io.o sub_inst.o loader.o dis.o
+  OBJ2 = parse_oprnd.o print_inst.o unify.o load_work.o aux.o evalexp.o
+! OBJS = $(OBJ1) $(OBJ2)
+  
+! sbprolog  : $(OBJS) builtin/builtin
+! 	$(CC) -o sbprolog $(OBJS) builtin/builtin
+! 	strip sbprolog
+! 	rm $(OBJS)
+  
+  main.o : main.c simdef.h inst.h aux.h sim.h
+  	$(CC) $(CFLAGS) main.c
+  dispatch.o: dispatch.c inst.h
+  	$(CC) $(CFLAGS) dispatch.c 
+  dis.o: dis.c sim.h inst.h
+  	$(CC) $(CFLAGS) dis.c 
+  init.o : init.c sim.h inst.h aux.h
+  	$(CC) $(CFLAGS) init.c
+  float.o : float.c aux.h sim.h
+  	$(CC) $(CFLAGS) float.c
+  io.o : io.c aux.h sim.h 
+  	$(CC) $(CFLAGS) io.c 
+  sub_inst.o : sub_inst.c sim.h aux.h
+  	$(CC) $(CFLAGS) sub_inst.c 
+  loader.o : loader.c sim.h inst.h 
+  	$(CC) $(CFLAGS) loader.c 
+  parse_oprnd.o : parse_oprnd.c inst.h sim.h
+  	$(CC) $(CFLAGS) parse_oprnd.c 
+  print_inst.o : print_inst.c inst.h sim.h
+  	$(CC) $(CFLAGS) print_inst.c 
+  unify.o : unify.c sim.h aux.h
+  	$(CC) $(CFLAGS) unify.c 
+  load_work.o : load_work.c sim.h aux.h
+  	$(CC) $(CFLAGS) load_work.c 
+  aux.o : aux.c
+  	$(CC) $(CFLAGS) aux.c 
+  evalexp.o : evalexp.c
+  	$(CC) $(CFLAGS) evalexp.c 
+--- 1,129 ----
+! # makefile for SBProlog on the Silicon Graphics IRIS-4D
+! #   (modified so that edge can find all source files)
+! #   mods by S. Henry, Wed Dec 14 16:17:23 PST 1988
+! 
+! COPTS = -I. -Ibuiltin -I/usr/include/bsd -DIRIS_4D -DATT
+! CFLAGS = -c -g $(COPTS)
+! #CFLAGS = -c -g -I. -Ibuiltin -I/usr/include/bsd -DIRIS_4D -DDEBUG
+  #CC = /usr/local/gcc
+  CC = cc
++ LD = cc
+  OBJ1 = main.o dispatch.o init.o float.o io.o sub_inst.o loader.o dis.o
+  OBJ2 = parse_oprnd.o print_inst.o unify.o load_work.o aux.o evalexp.o
+! OBJA = builtin.o meta.o file.o init_branch.o tio.o structure.o token.o thread.o
+! OBJB = name.o buffer.o other.o time.o compare.o substuff.o arith.o saverest.o
+! OBJS = $(OBJ1) $(OBJ2) $(OBJA) $(OBJB)
+  
+! SRC1 = main.c dispatch.c init.c float.c io.c sub_inst.c loader.c dis.c
+! SRC2 = parse_oprnd.c print_inst.c unify.c load_work.c aux.c evalexp.c
+! SRCA = builtin/builtin.c builtin/meta.c builtin/file.c builtin/init_branch.c
+! SRCB = builtin/tio.c builtin/structure.c builtin/token.c builtin/thread.c
+! SRCC = builtin/name.c builtin/buffer.c builtin/other.c builtin/time.c
+! SRCD = builtin/compare.c builtin/substuff.c builtin/arith.c builtin/saverest.c
+! SRCS = $(SRC1) $(SRC2) $(SRCA) $(SRCB) $(SRCC) $(SRCD)
+  
++ HS   = builtin/builtin.h sim.h aux.h
++ 
++ sbprolog  : $(OBJS)
++ 	$(LD) -o sbprolog $(OBJS)  -lsun -lbsd -lm -lc_s
++ #	strip sbprolog
++ #	rm $(OBJS)
++ 
++ # optimize the #@!$ out of the program (-O4 is the maximum optimization
++ #    level under IRIX release 3.x (MIPS cc r1.1))
++ 
++ sim : $(SRCS)
++ 	$(LD) -O4 -Olimit 1500 $(COPTS) $(SRCS) -o sim -lsun -lbsd -lm -lc_s
++ 
+  main.o : main.c simdef.h inst.h aux.h sim.h
+  	$(CC) $(CFLAGS) main.c
++ 
+  dispatch.o: dispatch.c inst.h
+  	$(CC) $(CFLAGS) dispatch.c 
++ 
+  dis.o: dis.c sim.h inst.h
+  	$(CC) $(CFLAGS) dis.c 
++ 
+  init.o : init.c sim.h inst.h aux.h
+  	$(CC) $(CFLAGS) init.c
++ 
+  float.o : float.c aux.h sim.h
+  	$(CC) $(CFLAGS) float.c
++ 
+  io.o : io.c aux.h sim.h 
+  	$(CC) $(CFLAGS) io.c 
++ 
+  sub_inst.o : sub_inst.c sim.h aux.h
+  	$(CC) $(CFLAGS) sub_inst.c 
++ 
+  loader.o : loader.c sim.h inst.h 
+  	$(CC) $(CFLAGS) loader.c 
++ 
+  parse_oprnd.o : parse_oprnd.c inst.h sim.h
+  	$(CC) $(CFLAGS) parse_oprnd.c 
++ 
+  print_inst.o : print_inst.c inst.h sim.h
+  	$(CC) $(CFLAGS) print_inst.c 
++ 
+  unify.o : unify.c sim.h aux.h
+  	$(CC) $(CFLAGS) unify.c 
++ 
+  load_work.o : load_work.c sim.h aux.h
+  	$(CC) $(CFLAGS) load_work.c 
++ 
+  aux.o : aux.c
+  	$(CC) $(CFLAGS) aux.c 
++ 
+  evalexp.o : evalexp.c
+  	$(CC) $(CFLAGS) evalexp.c 
++ 
++ 
++ #file in the "builtin/" subdirectory
++ 
++ builtin.o: $(HS) builtin/builtin.c
++ 	cc $(CFLAGS) builtin/builtin.c
++ 
++ token.o: $(HS) builtin/token.c
++ 	cc $(CFLAGS) builtin/token.c
++ 
++ file.o: $(HS) builtin/file.c
++ 	cc $(CFLAGS) builtin/file.c
++ 
++ substuff.o: $(HS) builtin/substuff.c
++ 	cc $(CFLAGS) builtin/substuff.c
++ 
++ buffer.o: $(HS) builtin/buffer.c
++ 	cc $(CFLAGS) builtin/buffer.c
++ 
++ other.o: $(HS) builtin/other.c
++ 	cc $(CFLAGS) builtin/other.c
++ 
++ init_branch.o: builtin/builtin.h builtin/init_branch.c
++ 	cc $(CFLAGS) builtin/init_branch.c
++ 
++ meta.o: $(HS) builtin/meta.c
++ 	cc $(CFLAGS) builtin/meta.c
++ 
++ name.o: $(HS) builtin/name.c
++ 	cc $(CFLAGS) builtin/name.c
++ 
++ structure.o: $(HS)  builtin/structure.c
++ 	cc $(CFLAGS) builtin/structure.c
++ 
++ tio.o: $(HS) builtin/tio.c
++ 	cc $(CFLAGS) builtin/tio.c
++ 
++ time.o: $(HS) builtin/time.c
++ 	cc $(CFLAGS) builtin/time.c
++ 
++ compare.o: $(HS) builtin/compare.c
++ 	cc $(CFLAGS) builtin/compare.c
++ 
++ arith.o: builtin/arith.c $(HS)
++ 	cc $(CFLAGS) builtin/arith.c
++ 
++ saverest.o: builtin/saverest.c $(HS)
++ 	cc $(CFLAGS) builtin/saverest.c
++ 
++ thread.o:  $(HS) builtin/thread.c
++ 	cc $(CFLAGS) builtin/thread.c
+\Rogue\Monster\
+else
+  echo "will not over write ./diffs/Makefile.diff"
+fi
+if `test ! -s ./diffs/other.c.diff`
+then
+echo "writing ./diffs/other.c.diff"
+cat > ./diffs/other.c.diff << '\Rogue\Monster\'
+*** builtin/other.c.orig	Thu Jan  5 13:09:59 1989
+--- builtin/other.c	Thu Dec 15 14:22:22 1988
+***************
+*** 79,84 ****
+--- 79,89 ----
+      return(i);
+  }
+  
++ #ifdef IRIS_4D
++ #include <sys.s>
++ #else
++ #define SYSVoffset 0
++ #endif
+  
+  b_SYSCALL()  /* r1: call # ; R2: a list of parameters; R3: returned value */
+  {
+***************
+*** 89,109 ****
+      op1 = GREGC(1);  DEREF(op1);
+      n   = INTVAL(op1);              /* syscall number */
+      switch ( getgenargs(2) ) {
+!       case  1: r = syscall(n);
+                 break;
+!       case  2: r = syscall(n, call_arg[1]);
+                 break;
+!       case  3: r = syscall(n, call_arg[1], call_arg[2]);
+                 break;
+!       case  4: r = syscall(n, call_arg[1], call_arg[2], call_arg[3]);
+                 break;
+!       case  5: r = syscall(n, call_arg[1], call_arg[2], call_arg[3],
+                                call_arg[4]);
+                 break;
+!       case  6: r = syscall(n, call_arg[1], call_arg[2], call_arg[3],
+                                call_arg[4], call_arg[5]);
+                 break;
+!       case  7: r = syscall(n, call_arg[1], call_arg[2], call_arg[3],
+                                call_arg[4], call_arg[5], call_arg[6]);
+                 break;
+        default: quit( "Too many arguments for syscall\n" );
+--- 94,114 ----
+      op1 = GREGC(1);  DEREF(op1);
+      n   = INTVAL(op1);              /* syscall number */
+      switch ( getgenargs(2) ) {
+!       case  1: r = syscall(n + SYSVoffset);
+                 break;
+!       case  2: r = syscall(n + SYSVoffset, call_arg[1]);
+                 break;
+!       case  3: r = syscall(n + SYSVoffset, call_arg[1], call_arg[2]);
+                 break;
+!       case  4: r = syscall(n + SYSVoffset, call_arg[1], call_arg[2], call_arg[3]);
+                 break;
+!       case  5: r = syscall(n + SYSVoffset, call_arg[1], call_arg[2], call_arg[3],
+                                call_arg[4]);
+                 break;
+!       case  6: r = syscall(n + SYSVoffset, call_arg[1], call_arg[2], call_arg[3],
+                                call_arg[4], call_arg[5]);
+                 break;
+!       case  7: r = syscall(n + SYSVoffset, call_arg[1], call_arg[2], call_arg[3],
+                                call_arg[4], call_arg[5], call_arg[6]);
+                 break;
+        default: quit( "Too many arguments for syscall\n" );
+\Rogue\Monster\
+else
+  echo "will not over write ./diffs/other.c.diff"
+fi
+if `test ! -s ./diffs/sub_inst.c.diff`
+then
+echo "writing ./diffs/sub_inst.c.diff"
+cat > ./diffs/sub_inst.c.diff << '\Rogue\Monster\'
+*** sub_inst.c.orig	Thu Jan  5 13:09:11 1989
+--- sub_inst.c	Wed Dec 14 13:34:50 1988
+***************
+*** 5,11 ****
+--- 5,13 ----
+  #include "aux.h"
+  
+  
++ #ifdef BSD4
+  struct sigvec vec;
++ #endif
+  
+  /* set interrupt code in reg 2 and return ep of interrupt handler */
+  LONG_PTR  set_intercode(intcode)
+***************
+*** 33,38 ****
+--- 35,41 ----
+  
+  arm_intercept()
+  {
++ #ifdef BSD4
+      /* set up interrupt routine */
+      vec.sv_handler = intercept_proc;
+      vec.sv_mask = 0;
+***************
+*** 38,43 ****
+--- 41,50 ----
+      vec.sv_mask = 0;
+      vec.sv_onstack = 0;
+      sigvec(2, &vec, 0);
++ #endif
++ #ifdef IRIS_4D
++     signal( SIGINT, &intercept_proc);
++ #endif
+  }
+  /****************************************************************************/
+  callv_sub()   /* arg from register 1 */
+\Rogue\Monster\
+else
+  echo "will not over write ./diffs/sub_inst.c.diff"
+fi
+if `test ! -s ./diffs/time.c.diff`
+then
+echo "writing ./diffs/time.c.diff"
+cat > ./diffs/time.c.diff << '\Rogue\Monster\'
+*** builtin/time.c.orig	Thu Jan  5 13:10:11 1989
+--- builtin/time.c	Thu Jan  5 10:38:10 1989
+***************
+*** 1,17 ****
+  
+  /* time.c */
+  
+  #include <sys/time.h>
+  #include <sys/resource.h>
+  #include "builtin.h"
+  
+  b_CPUTIME()   /* R1: miliseconds */
+  {
+-     struct rusage   usage;
+      int             msec;
+  
+      getrusage(0, &usage);
+      msec =  usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000;
+      if (!unify(GREGC(1), MAKEINT(msec)))
+         {FAIL0;} 
+  }
+--- 1,46 ----
+  
+  /* time.c */
+  
++ #ifdef BSD4
+  #include <sys/time.h>
+  #include <sys/resource.h>
++ #endif
++ #ifdef ATT
++ #include <sys/types.h>
++ #include <sys/times.h>
++ #include <sys/param.h>
++ #endif
+  #include "builtin.h"
+  
+  b_CPUTIME()   /* R1: miliseconds */
+  {
+      int             msec;
++ #ifdef BSD4
++     struct rusage   usage;
+  
+      getrusage(0, &usage);
+      msec =  usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000;
++ #else
++ #ifdef ATT
++     /*
++      * return the SysV.3 usage stuff
++      */
++ 
++     struct tms buffer;
++     long       rc;
++ 
++     if ((rc = times(&buffer)) == -1)
++       {
++         msec = 0;
++       }
++     else
++       {
++         msec = buffer.tms_utime * 1000 / HZ;
++       }
++ #else
++     msec = 0;
++ #endif !IRIS_4D
++ #endif !BSD4
+      if (!unify(GREGC(1), MAKEINT(msec)))
+         {FAIL0;} 
+  }
+***************
+*** 18,26 ****
+  
+  b_STATS()   /* r1: code to indicate desired stat; r2: returned stat */
+  {
+     register LONG       op1;
+     register LONG_PTR   top;
+-    int                 stat;
+     struct rusage       usage;
+  
+     op1 = GREGC(1); DEREF(op1);
+--- 47,56 ----
+  
+  b_STATS()   /* r1: code to indicate desired stat; r2: returned stat */
+  {
++    int                 stat;
++ #ifdef BSD4
+     register LONG       op1;
+     register LONG_PTR   top;
+     struct rusage       usage;
+  
+     op1 = GREGC(1); DEREF(op1);
+***************
+*** 52,57 ****
+--- 82,90 ----
+                break;
+       default: stat = 0;
+     }
++ #else
++    stat = 0;
++ #endif
+     if (!unify(GREGC(2), MAKEINT(stat))) 
+        {FAIL0;}
+  }
+\Rogue\Monster\
+else
+  echo "will not over write ./diffs/time.c.diff"
+fi
+if `test ! -s ./diffs/unify.c.diff`
+then
+echo "writing ./diffs/unify.c.diff"
+cat > ./diffs/unify.c.diff << '\Rogue\Monster\'
+*** unify.c.orig	Thu Jan  5 13:09:00 1989
+--- unify.c	Tue Dec 13 16:14:41 1988
+***************
+*** 1,7 ****
+  /* unify.c */
+  
+! #include "/usr5/elegy/sb/sim/src/sim.h"
+! #include "/usr5/elegy/sb/sim/src/aux.h"
+  
+  extern double 	floatval();
+  extern 		prettymuch_equal();
+--- 1,7 ----
+  /* unify.c */
+  
+! #include "sim.h"
+! #include "aux.h"
+  
+  extern double 	floatval();
+  extern 		prettymuch_equal();
+\Rogue\Monster\
+else
+  echo "will not over write ./diffs/unify.c.diff"
+fi
+if `test ! -d ./bench`
+then
+  mkdir ./bench
+  echo "mkdir ./bench"
+fi
+if `test ! -s ./bench/sim.bench`
+then
+echo "writing ./bench/sim.bench"
+cat > ./bench/sim.bench << '\Rogue\Monster\'
+tail_call_atom_atom took (1550 - 290.000000) / 2000 = 0.630000 milli-seconds/iteration
+binary_call_atom_atom took (3030 - 290.000000) / 2000 = 1.370000 milli-seconds/iteration
+cons_list took (3100 - 280.000000) / 2000 = 1.410000 milli-seconds/iteration
+walk_list took (3080 - 280.000000) / 2000 = 1.400000 milli-seconds/iteration
+walk_list_rec took (1640 - 280.000000) / 2000 = 0.680000 milli-seconds/iteration
+args(1) took (1650 - 290.000000) / 2000 = 0.680000 milli-seconds/iteration
+args(2) took (2600 - 300.000000) / 2000 = 1.150000 milli-seconds/iteration
+args(4) took (4450 - 290.000000) / 2000 = 2.080000 milli-seconds/iteration
+args(8) took (8210 - 300.000000) / 2000 = 3.955000 milli-seconds/iteration
+args(16) took (15640 - 290.000000) / 2000 = 7.674999 milli-seconds/iteration
+cons_term took (3370 - 280.000000) / 2000 = 1.545000 milli-seconds/iteration
+walk_term took (3400 - 280.000000) / 2000 = 1.560000 milli-seconds/iteration
+walk_term_rec took (2970 - 280.000000) / 2000 = 1.345000 milli-seconds/iteration
+shallow_backtracking took (2150 - 290.000000) / 2000 = 0.930000 milli-seconds/iteration
+deep_backtracking took (4210 - 290.000000) / 2000 = 1.960000 milli-seconds/iteration
+choice_point took (4580 - 290.000000) / 2000 = 2.145000 milli-seconds/iteration
+trail_variables took (5300 - 290.000000) / 2000 = 2.505000 milli-seconds/iteration
+medium_unify took (2260 - 280.000000) / 2000 = 0.990000 milli-seconds/iteration
+deep_unify took (6390 - 20.000000) / 100 = 63.699997 milli-seconds/iteration
+integer_add took (1880 - 140.000000) / 1000 = 1.740000 milli-seconds/iteration
+floating_add took (12260 - 150.000000) / 1000 = 12.110001 milli-seconds/iteration
+arg(1) took (4060 - 290.000000) / 2000 = 1.885000 milli-seconds/iteration
+arg(2) took (4070 - 290.000000) / 2000 = 1.890000 milli-seconds/iteration
+arg(4) took (4080 - 290.000000) / 2000 = 1.895000 milli-seconds/iteration
+arg(8) took (4070 - 290.000000) / 2000 = 1.890000 milli-seconds/iteration
+arg(16) took (4040 - 280.000000) / 2000 = 1.880000 milli-seconds/iteration
+index took (5150 - 290.000000) / 2000 = 2.430000 milli-seconds/iteration
+assert_unit took (4320 - 0.000000) / 1 = 4320 milli-seconds/iteration
+access_unit took (10440 - 20.000000) / 100 = 104.200012 milli-seconds/iteration
+slow_access_unit took (1620 - 10.000000) / 10 = 161 milli-seconds/iteration
+setof took (2460 - 0.000000) / 10 = 246 milli-seconds/iteration
+pair_setof took (3080 - 0.000000) / 10 = 308 milli-seconds/iteration
+double_setof took (7140 - 0.000000) / 10 = 714 milli-seconds/iteration
+bagof took (900 - 0.000000) / 10 = 90 milli-seconds/iteration
+\Rogue\Monster\
+else
+  echo "will not over write ./bench/sim.bench"
+fi
+if `test ! -s ./bench/sim.nrev`
+then
+echo "writing ./bench/sim.nrev"
+cat > ./bench/sim.nrev << '\Rogue\Monster\'
+161850
+162360
+254270
+510
+91910
+91400
+Lips = 7276.068359
+\Rogue\Monster\
+else
+  echo "will not over write ./bench/sim.nrev"
+fi
+echo "Finished archive 1 of 1"
+exit 0
+--------
+Scott Henry <scotth@harlie.sgi.com>
+Silicon Graphics, Inc.
+Mountain View, CA
+
+
+

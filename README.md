@@ -1,0 +1,1 @@
+Prolog System from State University of New York at Stony Brook.

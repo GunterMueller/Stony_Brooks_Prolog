@@ -1,0 +1,34 @@
+This directory contains some small benchmarks, viz.
+
+    - the naive reverse benchmark
+    - Fernando Pereira's benchmark suite.
+
+(1) Naive Reverse:
+	Files: nrev.P  - Prolog source 
+	       nrev.P.asl - WAM instructions produced by
+	       		    SB-Prolog compiler
+	       nrev       - byte code "object" file
+
+	To execute: start up SB-Prolog and enter
+
+		?- load('nrev').
+		?- bench(500).  /* or any other reasonable number */
+
+    WARNING: Naive reverse is the classical benchmark for
+             computing "LIPS" (Logical Inferences Per Second),
+	     but it's such a small benchmark that LIPS numbers
+	     so obtained may not necessarily reflect overall system
+	     performance, and should be taken with a large pinch of salt.
+
+(2) Fernando Pereira's benchmark suite: this suite gives statistics about
+    a number of different aspects of a Prolog system.
+	Files: bench.P - Prolog source
+	       bench - SB-Prolog byte code file
+
+	To execute: start up SB-Prolog and enter
+	
+		?- load(bench).
+		?- tell(foo), benches, told.  /* output of benchmarks are
+						 in file foo. */
+
+----------------------------------------------------------------------
