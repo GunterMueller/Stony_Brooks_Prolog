@@ -22,14 +22,14 @@
 # file named COPYING.  Among other things, the copyright notice
 # and this notice must be preserved on all copies. 
 # ------------------------------------------------------------------ */
-CFLAGS = -c -g
+CFLAGS = -m32 -c -g -fcommon
 OBJ1   = arith.o buffer.o builtin.o compare.o file.o init_branch.o meta.o
 OBJ2   = name.o other.o saverest.o structure.o substuff.o time.o tio.o token.o stlookup.o
 OBJS   = $(OBJ1) $(OBJ2)
 HS     = builtin.h ../aux.h ../sim.h
 
 builtin : $(OBJS) 
-	ld -o builtin -r $(OBJS) -lm
+	ld -m elf_i386 -o builtin -r $(OBJS)
 clean:
 	rm $(OBJS)
 

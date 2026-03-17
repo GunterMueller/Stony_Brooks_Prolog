@@ -1,0 +1,554 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=latex 2025.12.29)  16 MAR 2026 22:26
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**sbprolog_doc.tex
+(./sbprolog_doc.tex
+LaTeX2e <2023-11-01> patch level 1
+L3 programming layer <2024-01-22>
+(/usr/share/texlive/texmf-dist/tex/latex/base/latex209.def
+File: latex209.def 2020/11/26 v0.55 Standard LaTeX file
+
+
+          Entering LaTeX 2.09 COMPATIBILITY MODE
+ *************************************************************
+    !!WARNING!!    !!WARNING!!    !!WARNING!!    !!WARNING!!   
+ 
+ This mode attempts to provide an emulation of the LaTeX 2.09
+ author environment so that OLD documents can be successfully
+ processed. It should NOT be used for NEW documents!
+ 
+ New documents should use Standard LaTeX conventions and start
+ with the \documentclass command.
+ 
+ Compatibility mode is UNLIKELY TO WORK with LaTeX 2.09 style
+ files that change any internal macros, especially not with
+ those that change the FONT SELECTION or OUTPUT ROUTINES.
+ 
+ Therefore such style files MUST BE UPDATED to use
+          Current Standard LaTeX: LaTeX2e.
+ If you suspect that you may be using such a style file, which
+ is probably very, very old by now, then you should attempt to
+ get it updated by sending a copy of this error message to the
+ author of that file.
+ *************************************************************
+
+\footheight=\dimen140
+\@maxsep=\dimen141
+\@dblmaxsep=\dimen142
+\@cla=\count187
+\@clb=\count188
+\mscount=\count189
+(/usr/share/texlive/texmf-dist/tex/latex/base/tracefnt.sty
+Package: tracefnt 2020/12/22 v3.0n Standard LaTeX package (font tracing)
+\tracingfonts=\count190
+LaTeX Info: Redefining \selectfont on input line 107.
+Applying: [2021/06/01] Add hook to \selectfont  on input line 142.
+Already applied: [0000/00/00] Add hook to \selectfont  on input line 145.
+)
+\symbold=\mathgroup4
+\symsans=\mathgroup5
+\symtypewriter=\mathgroup6
+\symitalic=\mathgroup7
+\symsmallcaps=\mathgroup8
+\symslanted=\mathgroup9
+LaTeX Font Info:    Redeclaring math alphabet \mathbf on input line 275.
+LaTeX Font Info:    Redeclaring math alphabet \mathsf on input line 276.
+LaTeX Font Info:    Redeclaring math alphabet \mathtt on input line 277.
+LaTeX Font Info:    Redeclaring math alphabet \mathit on input line 283.
+LaTeX Info: Redefining \em on input line 293.
+
+(/usr/share/texlive/texmf-dist/tex/latex/base/latexsym.sty
+Package: latexsym 1998/08/17 v2.2e Standard LaTeX package (lasy symbols)
+\symlasy=\mathgroup10
+LaTeX Font Info:    Overwriting symbol font `lasy' in version `bold'
+(Font)                  U/lasy/m/n --> U/lasy/b/n on input line 52.
+)
+LaTeX Font Info:    Redeclaring math delimiter \lgroup on input line 339.
+LaTeX Font Info:    Redeclaring math delimiter \rgroup on input line 341.
+LaTeX Font Info:    Redeclaring math delimiter \bracevert on input line 343.
+)
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
+(/usr/share/texlive/texmf-dist/tex/latex/base/size11.clo
+File: size11.clo 2023/05/17 v1.4n Standard LaTeX file (size option)
+)
+\c@part=\count191
+\c@section=\count192
+\c@subsection=\count193
+\c@subsubsection=\count194
+\c@paragraph=\count195
+\c@subparagraph=\count196
+\c@figure=\count197
+\c@table=\count198
+\abovecaptionskip=\skip48
+\belowcaptionskip=\skip49
+Compatibility mode: definition of \rm ignored.
+Compatibility mode: definition of \sf ignored.
+Compatibility mode: definition of \tt ignored.
+Compatibility mode: definition of \bf ignored.
+Compatibility mode: definition of \it ignored.
+Compatibility mode: definition of \sl ignored.
+Compatibility mode: definition of \sc ignored.
+LaTeX Info: Redefining \cal on input line 497.
+LaTeX Info: Redefining \mit on input line 498.
+\bibindent=\dimen143
+) (./predindex.sty)
+\@predindexfile=\write3
+\openout3 = `sbprolog_doc.pdx'.
+
+
+Writing predicate index file sbprolog_doc.pdx 
+\@indexfile=\write4
+\openout4 = `sbprolog_doc.idx'.
+
+Writing index file sbprolog_doc.idx
+(/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-dvips.def
+File: l3backend-dvips.def 2024-01-04 L3 backend support: dvips
+\l__pdf_internal_box=\box51
+\g__pdf_backend_object_int=\count199
+\l__pdf_backend_content_box=\box52
+\l__pdf_backend_model_box=\box53
+\g__pdf_backend_annotation_int=\count266
+\g__pdf_backend_link_int=\count267
+\g__pdf_backend_link_sf_int=\count268
+)
+No file sbprolog_doc.aux.
+\openout1 = `sbprolog_doc.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 10.
+LaTeX Font Info:    ... okay on input line 10.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 10.
+LaTeX Font Info:    ... okay on input line 10.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 10.
+LaTeX Font Info:    ... okay on input line 10.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 10.
+LaTeX Font Info:    ... okay on input line 10.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 10.
+LaTeX Font Info:    ... okay on input line 10.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 10.
+LaTeX Font Info:    ... okay on input line 10.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 10.
+LaTeX Font Info:    ... okay on input line 10.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 25.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 25.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 25.
+LaTeX Font Info:    Trying to load font information for U+lasy on input line 25
+.
+(/usr/share/texlive/texmf-dist/tex/latex/base/ulasy.fd
+File: ulasy.fd 1998/08/17 v2.2e LaTeX symbol font definitions
+) [1
+
+] (./sbprolog_doc.toc
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <10.95> on input line 3.
+[2] [3])
+\tf@toc=\write5
+\openout5 = `sbprolog_doc.toc'.
+
+ (./sbprolog_doc.lof)
+\tf@lof=\write6
+\openout6 = `sbprolog_doc.lof'.
+
+ (./sbprolog_doc.lot)
+\tf@lot=\write7
+\openout7 = `sbprolog_doc.lot'.
+
+ [4]
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 32.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 32.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <9> on input line 33.
+
+
+LaTeX Warning: Reference `coding_for_efficiency' on page 5 undefined on input l
+ine 78.
+
+[5]
+LaTeX Font Info:    Trying to load font information for TS1+cmtt on input line 
+125.
+ (/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmtt.fd
+File: ts1cmtt.fd 2023/04/13 v2.5m Standard LaTeX font definitions
+) [6]
+
+LaTeX Warning: Reference `system_directories' on page 7 undefined on input line
+ 177.
+
+
+LaTeX Warning: Reference `system_directories' on page 7 undefined on input line
+ 187.
+
+[7]
+
+LaTeX Warning: Reference `cuts_and_if-then-else' on page 8 undefined on input l
+ine 201.
+
+[8]
+
+LaTeX Warning: Reference `debugging' on page 9 undefined on input line 266.
+
+
+LaTeX Warning: Reference `the_compiler' on page 9 undefined on input line 266.
+
+
+LaTeX Warning: Reference `compiler_options' on page 9 undefined on input line 2
+69.
+
+
+LaTeX Warning: Reference `terms' on page 9 undefined on input line 279.
+
+
+LaTeX Warning: Reference `search_path' on page 9 undefined on input line 286.
+
+[9]
+
+LaTeX Warning: Reference `debugging' on page 10 undefined on input line 330.
+
+
+LaTeX Warning: Reference `macros' on page 10 undefined on input line 345.
+
+[10]
+
+LaTeX Warning: Reference `operators' on page 11 undefined on input line 372.
+
+[11]
+Overfull \hbox (2.46295pt too wide) in paragraph at lines 464--464
+[]  \OT1/cmtt/m/n/10.95 |      /  \[] 
+ []
+
+
+Overfull \hbox (19.70901pt too wide) in paragraph at lines 464--464
+[]\OT1/cmtt/m/n/10.95 john    v     np[] 
+ []
+
+
+Overfull \hbox (13.96033pt too wide) in paragraph at lines 464--464
+[]        \OT1/cmtt/m/n/10.95 |     |[] 
+ []
+
+
+Overfull \hbox (25.4577pt too wide) in paragraph at lines 464--464
+[]      \OT1/cmtt/m/n/10.95 likes  mary[] 
+ []
+
+[12]
+
+LaTeX Warning: Reference `list' on page 13 undefined on input line 487.
+
+
+Overfull \hbox (3.77647pt too wide) in paragraph at lines 512--512
+[]\OT1/cmtt/m/n/10.95 [X|L]     [a,b|L][] 
+ []
+
+
+LaTeX Warning: Reference `structures' on page 13 undefined on input line 515.
+
+[13]
+
+LaTeX Warning: Reference `arithmetic' on page 14 undefined on input line 563.
+
+[14] [15]
+
+LaTeX Warning: Reference `operator_priorities' on page 16 undefined on input li
+ne 641.
+
+[16]
+Underfull \hbox (badness 10000) in paragraph at lines 714--718
+
+ []
+
+[17] [18]
+
+LaTeX Warning: Reference `indexing_directives' on page 19 undefined on input li
+ne 811.
+
+
+LaTeX Warning: Reference `inlinepredicatetable' on page 19 undefined on input l
+ine 829.
+
+[19]
+LaTeX Font Warning: Command \em invalid in math mode on input line 858.
+
+
+LaTeX Warning: Reference `builtins' on page 20 undefined on input line 867.
+
+
+LaTeX Warning: Reference `adding_builtins' on page 20 undefined on input line 8
+68.
+
+[20] [21]
+Overfull \hbox (8.2164pt too wide) in paragraph at lines 977--980
+\OT1/cmr/m/n/10.95 on the cur-rent out-put stream. Vari-ables are treated as in
+ \OT1/cmr/m/it/10.95 por-tray[]term\OT1/cmr/m/n/10.95 /1. 
+ []
+
+[22] [23] [24] [25]
+LaTeX Font Warning: Command \em invalid in math mode on input line 1187.
+LaTeX Font Warning: Command \em invalid in math mode on input line 1187.
+
+
+LaTeX Warning: Reference `cuts_and_if-then-else' on page 26 undefined on input 
+line 1198.
+
+
+Overfull \hbox (43.52519pt too wide) in paragraph at lines 1239--1239
+[]\OT1/cmtt/m/n/10.95 repeat :- repeat.[] 
+ []
+
+[26]
+Overfull \hbox (19.70764pt too wide) in paragraph at lines 1320--1320
+[]\OT1/cmtt/m/n/10.95 product(0,N,N-1) =.. [product,0,N,N-1][] 
+ []
+
+[27]
+
+LaTeX Warning: Reference `buffers' on page 28 undefined on input line 1388.
+
+[28]
+
+LaTeX Warning: Reference `comparison_of_terms' on page 29 undefined on input li
+ne 1410.
+
+
+LaTeX Warning: Reference `arithmetic' on page 29 undefined on input line 1461.
+
+[29] [30] [31] [32]
+LaTeX Font Warning: Command \em invalid in math mode on input line 1672.
+ [33]
+
+LaTeX Warning: Reference `internal_database' on page 34 undefined on input line
+ 1745.
+
+[34]
+Overfull \hbox (3.96632pt too wide) in paragraph at lines 1774--1782
+\OT1/cmr/m/n/10.95 deterministic fash-ion, i.e. it will suc-ces-sively back-tra
+ck to re-tract clauses
+ []
+
+
+Overfull \hbox (22.11482pt too wide) in paragraph at lines 1802--1809
+[]\OT1/cmr/m/n/10.95 The in-ter-nal database is searched for terms recorded
+ []
+
+
+Overfull \hbox (9.86589pt too wide) in paragraph at lines 1812--1815
+[]\OT1/cmr/m/n/10.95 The term \OT1/cmr/m/it/10.95 Term \OT1/cmr/m/n/10.95 is re
+corded in the in-ter-nal database
+ []
+
+
+Overfull \hbox (13.56302pt too wide) in paragraph at lines 1818--1821
+[]\OT1/cmr/m/n/10.95 The term \OT1/cmr/m/it/10.95 Term \OT1/cmr/m/n/10.95 is re
+corded in the in-ter-nal database
+ []
+
+[35]
+Overfull \hbox (6.68596pt too wide) in paragraph at lines 1865--1871
+[]\OT1/cmr/m/n/10.95 Generates (through back-track-ing) all cur-rently known
+ []
+
+[36]
+Overfull \hbox (22.06604pt too wide) in paragraph at lines 1890--1895
+\OT1/cmr/m/n/10.95 hence will not re-turn such pred-i-cates if both ar-gu-ments
+ to \OT1/cmr/m/it/10.95 cur-rent[]functor\OT1/cmr/m/n/10.95 /2
+ []
+
+
+Overfull \hbox (6.86803pt too wide) in paragraph at lines 1899--1909
+[]\OT1/cmr/m/n/10.95 Generates (through back-track-ing) all cur-
+ []
+
+[37]
+
+LaTeX Warning: Reference `operators' on page 38 undefined on input line 1948.
+
+
+LaTeX Warning: Reference `simulator_options' on page 38 undefined on input line
+ 2000.
+
+[38]
+
+LaTeX Warning: Reference `statistics' on page 39 undefined on input line 2007.
+
+[39]
+
+LaTeX Warning: Reference `unixsystemcalls' on page 40 undefined on input line 2
+095.
+
+[40] [41]
+LaTeX Font Warning: Command \em invalid in math mode on input line 2187.
+ [42]
+Overfull \hbox (2.03398pt too wide) in paragraph at lines 2229--2240
+[]\OT1/cmr/m/n/10.95 Creates an empty Prref, i.e. one with
+ []
+
+LaTeX Font Warning: Command \em invalid in math mode on input line 2249.
+
+Overfull \hbox (15.31897pt too wide) in paragraph at lines 2267--2271
+[]\OT1/cmr/m/n/10.95 Adds the clref \OT1/cmr/m/it/10.95 Clref
+ []
+
+[43]
+Overfull \hbox (5.10468pt too wide) in paragraph at lines 2296--2304
+[]\OT1/cmr/m/n/10.95 This re-turns, non-de-ter-min-is-ti-cally, all the
+ []
+
+[44]
+
+LaTeX Warning: Reference `compiler_options' on page 45 undefined on input line 
+2337.
+
+[45] [46] [47] [48] [49] [50]
+
+LaTeX Warning: Reference `debugging' on page 51 undefined on input line 2684.
+
+
+Overfull \hbox (8.05054pt too wide) in paragraph at lines 2678--2686
+\OT1/cmr/m/n/10.95 where \OT1/cmr/m/it/10.95 In-File\OT1/cmr/m/n/10.95 , \OT1/c
+mr/m/it/10.95 Out-File \OT1/cmr/m/n/10.95 and \OT1/cmr/m/it/10.95 Op-tion-sList
+ \OT1/cmr/m/n/10.95 are as be-fore; \OT1/cmr/m/it/10.95 com-pile\OT1/cmr/m/n/10
+.95 /4 uni-fies \OT1/cmr/m/it/10.95 PredList
+ []
+
+[51]
+
+LaTeX Warning: Reference `macros' on page 52 undefined on input line 2704.
+
+
+LaTeX Warning: Reference `macros' on page 52 undefined on input line 2705.
+
+
+Overfull \hbox (13.06084pt too wide) in paragraph at lines 2706--2710
+[]\OT1/cmr/m/n/10.95 If spec-i-fied, turns off as-sem-bler op-ti-miza-tions tha
+t elim-i-nate in-di-rect branches
+ []
+
+[52]
+Overfull \hbox (6.36893pt too wide) in paragraph at lines 2766--2769
+[]\OT1/cmr/m/n/10.95 Indicates that the cor-re-spond-ing ar-gu-ment po-si-tion 
+is al-ways a ground
+ []
+
+[53]
+Overfull \hbox (38.59521pt too wide) in paragraph at lines 2806--2806
+[]\OT1/cmtt/m/n/10.95 part([E|L], M, [E|U1], U2) :- E =< M, part(L, M, U1, U2).
+[] 
+ []
+
+
+Overfull \hbox (38.59521pt too wide) in paragraph at lines 2806--2806
+[]\OT1/cmtt/m/n/10.95 part([E|L], M, U1, [E|U2]) :- E  > M, part(L, M, U1, U2).
+[] 
+ []
+
+LaTeX Font Warning: Command \em invalid in math mode on input line 2827.
+[54]
+LaTeX Font Warning: Command \em invalid in math mode on input line 2856.
+LaTeX Font Warning: Command \em invalid in math mode on input line 2856.
+LaTeX Font Warning: Command \em invalid in math mode on input line 2856.
+LaTeX Font Warning: Command \em invalid in math mode on input line 2856.
+LaTeX Font Warning: Command \em invalid in math mode on input line 2860.
+LaTeX Font Warning: Command \em invalid in math mode on input line 2861.
+ [55]
+Overfull \hbox (63.76236pt too wide) in paragraph at lines 2928--2930
+[]\OT1/cmr/m/n/10.95 The source for the macro ex-pander is in the SB-Prolog sys
+-tem file \OT1/cmtt/m/n/10.95 modlib/src/\TS1/cmtt/m/n/10.95 $\OT1/cmtt/m/n/10.
+95 mac.P\OT1/cmr/m/n/10.95 . 
+ []
+
+[56] [57] [58]
+
+LaTeX Warning: Reference `impure_code' on page 59 undefined on input line 3076.
+
+
+[59] [60]
+LaTeX Font Info:    Trying to load font information for OMS+cmtt on input line 
+3214.
+ (/usr/share/texmf/tex/latex/R/tex/latex/omscmtt.fd
+File: omscmtt.fd 
+)
+LaTeX Font Info:    Font shape `OMS/cmtt/m/n' in size <10.95> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 3214.
+
+ [61] [62]
+[63] [64] [65] [66] (./sbprolog_doc.ind [67] [68
+
+] [69]
+Overfull \hbox (1.75146pt too wide) in paragraph at lines 192--193
+[]\OT1/cmr/m/n/10.95 floating point num-bers, uni-fi-ca-tion of,
+ []
+
+[70] [71] [72]) (./sbprolog_doc.pnd [73
+
+
+] [74]) [75]
+LaTeX Font Warning: Command \em invalid in math mode on input line 3583.
+
+
+LaTeX Warning: Reference `complementary_tests' on page 76 undefined on input li
+ne 3589.
+
+LaTeX Font Warning: Command \em invalid in math mode on input line 3611.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3611.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3612.
+[76
+
+]
+LaTeX Font Warning: Command \em invalid in math mode on input line 3614.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3614.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3615.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3623.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3623.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3623.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3624.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3624.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3626.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3626.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3626.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3627.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3627.
+LaTeX Font Warning: Command \em invalid in math mode on input line 3628.
+ [77]
+Overfull \hbox (0.5577pt too wide) in paragraph at lines 3693--3725
+[]$ 
+ []
+
+
+Overfull \hbox (13.6647pt too wide) in paragraph at lines 3693--3725
+[]$ 
+ []
+
+[78] [79]
+Overfull \hbox (25.18225pt too wide) in paragraph at lines 3795--3799
+\OT1/cmr/m/n/10.95 less pro-ce-dure named \OT1/cmr/m/it/10.95 b[]NEWBUILTIN\OT1
+/cmr/m/n/10.95 . Mod-ify the file \OT1/cmtt/m/n/10.95 init[]branch.c
+ []
+
+[80] [81] (./sbprolog_doc.aux)
+ ***********
+LaTeX2e <2023-11-01> patch level 1
+L3 programming layer <2024-01-22>
+ ***********
+
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ ) 
+Here is how much of TeX's memory you used:
+ 856 strings out of 474223
+ 15328 string characters out of 5748758
+ 1934972 words of memory out of 5000000
+ 23107 multiletter control sequences out of 15000+600000
+ 580334 words of font info for 115 fonts, out of 8000000 for 9000
+ 1141 hyphenation exceptions out of 8191
+ 43i,11n,50p,206b,351s stack positions out of 10000i,1000n,20000p,200000b,200000s
+
+Output written on sbprolog_doc.dvi (81 pages, 231824 bytes).

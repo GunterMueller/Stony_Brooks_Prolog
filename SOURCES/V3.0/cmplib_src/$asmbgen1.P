@@ -1,0 +1,235 @@
+/************************************************************************
+*									*
+* The SB-Prolog System							*
+* Copyright SUNY at Stony Brook, 1986; University of Arizona, 1987	*
+*									*
+************************************************************************/
+
+/*-----------------------------------------------------------------
+SB-Prolog is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the SB-Prolog General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+SB-Prolog, but only under the conditions described in the
+SB-Prolog General Public License.   A copy of this license is
+supposed to have been given to you along with SB-Prolog so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies. 
+------------------------------------------------------------------ */
+/* $asmbgen1.P */
+
+/* **********************************************************************
+$asmbgen1_export([$asm_symbol/1,$asm_putnum/2,$asm_gen/1,$asm_mark_eot/0]).
+
+$asmbgen1_use($name,[$name/2,_]).
+$asmbgen1_use($bio,[$writename/1,$writeqname/1,$put/1,$nl/0,$tab/1,$tell/1,
+	$telling/1,$told/0,$get/1,$get0/1,$see/1,$seeing/1,$seen/0]).
+$asmbgen1_use($meta,[_,_,$length/2]).
+$asmbgen1_use($blist,[$append/3,$member/2,$member1/2]).
+$asmbgen1_use($aux1,[_,_,_,_,$umsg/1,_,_,_,_]).
+$asmbgen1_use($opcode,[$opcode/2, $instruction/2] ).
+********************************************************************** */
+
+/* $asm_symbol outputs the PSC table in byte file header format */
+
+$asm_symbol(Symtab) :- $member(Sym, Symtab), $asm_putsym(Sym), fail.
+$asm_symbol(_).
+
+$asm_putsym((String, Arity, Value)) :-
+	$asm_putnum(Value, 4),
+	$asm_putnum(Arity, 1),
+	$conlength(String,L),
+	$asm_putnum(L,1),
+	$writename(String),
+	!.
+
+/*	Putnum(Number, Length) will write Number as a binary number
+which will be Length bytes long */
+
+$asm_putnum(Num,NBytes) :-
+	NBytes > 1 ->
+		(Byte is Num /\ 255,
+		 Rest is Num >> 8,
+		 N is NBytes - 1,
+		 $asm_putnum(Rest,N),
+		 $put(Byte)
+		) ;
+		(Num < 256, $put(Num)).
+
+
+$aspn(Num,NBytes) :-
+	NBytes > 1 ->
+		(Byte is Num /\ 255,
+		 Rest is Num >> 8,
+		 N is NBytes - 1,
+		 $aspn(Rest,N),
+		 $put(Byte)
+		) ;
+		(Num < 256, $put(Num)).
+
+/* Size assumptions:
+	opcode - 2 bytes
+        pad    - 2 bytes
+        short  - 2 bytes
+	adrs   - 4 bytes
+	conts  - 4 bytes
+	long   - 4 bytes
+	word   - 4 bytes     
+*/
+$asm_opcode(N)     :- $asm_putnum(N,4).
+$asm_1oprnd(A)     :- $asm_putnum(A,4).
+$asm_2oprnd(A,B)   :- $asm_putnum(A,4), $asm_putnum(B,4).
+$asm_3oprnd(A,B,C) :- $asm_putnum(A,4), $asm_putnum(B,4), $asm_putnum(C,4).
+
+$asm_P(N)           :- $aspn(N,2), $aspn(0,2).
+$asm_PSS(N,X,Y)     :- $aspn(N,2), $aspn(0,2), $aspn(X,2), $aspn(Y,2).
+$asm_PC(N,X)        :- $aspn(N,2), $aspn(0,2), $aspn(X,4).
+$asm_PL(N,X)        :- $aspn(N,2), $aspn(0,2), $aspn(X,4).
+$asm_PW(N,X)        :- $aspn(N,2), $aspn(0,2), $aspn(X,4).
+$asm_PA(N,X)        :- $aspn(N,2), $aspn(0,2), $aspn(X,4).
+$asm_PWW(N,X,Y)     :- $aspn(N,2), $aspn(0,2), $aspn(X,4), $aspn(Y,4).
+
+$asm_S(N,S)         :- $aspn(N,2), $aspn(S,2).
+$asm_SSS(N,S,X,Y)   :- $aspn(N,2), $aspn(S,2), $aspn(X,2), $aspn(Y,2).
+$asm_SC(N,S,X)      :- $aspn(N,2), $aspn(S,2), $aspn(X,4).
+$asm_SL(N,S,X)      :- $aspn(N,2), $aspn(S,2), $aspn(X,4).
+$asm_SW(N,S,X)      :- $aspn(N,2), $aspn(S,2), $aspn(X,4).
+$asm_SA(N,S,X)      :- $aspn(N,2), $aspn(S,2), $aspn(X,4).
+$asm_SAA(N,S,X,Y)   :- $aspn(N,2), $aspn(S,2), $aspn(X,4), $aspn(Y,4).
+
+$asm_BBW(X,B,N,I)   :- $aspn(X,2), $aspn(N,1), $aspn(B,1), $aspn(I,4).
+$asm_BBA(X,B,N,I)   :- $aspn(X,2), $aspn(N,1), $aspn(B,1), $aspn(I,4).
+
+$asm_SF(N,R,F)      :- $aspn(N,2), $aspn(R,2), $write4(F).
+$asm_PF(N,F)        :- $aspn(N,2), $aspn(0,2), $write4(F).
+
+:- mode($asm_gen,1,[c]).
+
+$asm_gen(label(L)).
+$asm_gen(pred(I, N)) :- $asm_putnum(I, 4), $asm_putnum(N, 4).
+$asm_gen(arglabel(T, Val, L)) :-
+	$writename(T),
+	(((T ?= i; T ?= c; T ?= s),
+	 (integer(Val) -> $asm_putnum(Val,4) ; $write4(Val)));
+	 true
+	),
+	$asm_putnum(L, 4).
+/*--------------------------------------------------------------*/
+$asm_gen(getpvar(V,R))     :- $opcode( getpvar,   X ), $asm_PSS( X, V, R).
+$asm_gen(getpval(V,R))     :- $opcode( getpval,   X ), $asm_PSS( X, V, R).
+$asm_gen(getstrv(I,V))     :- $opcode( getstrv,   X ), $asm_SW(  X, V, I).
+$asm_gen(gettval(R,R1))    :- $opcode( gettval,   X ), $asm_PSS( X, R, R1).
+$asm_gen(getcon(I,R))      :- $opcode( getcon,    X ), $asm_SC(  X, R, I).
+$asm_gen(getnil(R))        :- $opcode( getnil,    X ), $asm_S(   X, R ).
+$asm_gen(getstr(I,R))      :- $opcode( getstr,    X ), $asm_SW(  X, R, I).
+$asm_gen(getlist(R))       :- $opcode( getlist,   X ), $asm_S(   X, R).
+$asm_gen(unipvar(V))       :- $opcode( unipvar,   X ), $asm_S(   X, V).
+$asm_gen(unipval(V))       :- $opcode( unipval,   X ), $asm_S(   X, V).
+$asm_gen(unitvar(R))       :- $opcode( unitvar,   X ), $asm_S(   X, R).
+$asm_gen(unitval(R))       :- $opcode( unitval,   X ), $asm_S(   X, R).
+$asm_gen(unicon(I))        :- $opcode( unicon,    X ), $asm_PC(  X, I).
+$asm_gen(uninil)           :- $opcode( uninil,    X ), $asm_P(   X ).
+$asm_gen(getnumcon(N,R))   :- $opcode( getnumcon, X ), $asm_SL(  X, R, N).
+$asm_gen(putnumcon(N,R))   :- $opcode( putnumcon, X ), $asm_SL(  X, R, N).
+$asm_gen(putpvar(V,R))     :- $opcode( putpvar,   X ), $asm_PSS( X, V, R).
+$asm_gen(putpval(V,R))     :- $opcode( putpval,   X ), $asm_PSS( X, V, R).
+$asm_gen(puttvar(R,R1))    :- $opcode( puttvar,   X ), $asm_PSS( X, R, R1).
+$asm_gen(putstrv(I,V))     :- $opcode( putstrv,   X ), $asm_SW(  X, V, I).
+$asm_gen(putcon(I,R))      :- $opcode( putcon,    X ), $asm_SC(  X, R, I).
+$asm_gen(putnil(R))        :- $opcode( putnil,    X ), $asm_S(   X, R).
+$asm_gen(putstr(I,R))      :- $opcode( putstr,    X ), $asm_SW(  X, R, I).
+$asm_gen(putlist(R))       :- $opcode( putlist,   X ), $asm_S(   X, R).
+$asm_gen(bldpvar(V))       :- $opcode( bldpvar,   X ), $asm_S(   X, V).
+$asm_gen(bldpval(V))       :- $opcode( bldpval,   X ), $asm_S(   X, V).
+$asm_gen(bldtvar(R))       :- $opcode( bldtvar,   X ), $asm_S(   X, R).
+$asm_gen(bldtval(R))       :- $opcode( bldtval,   X ), $asm_S(   X, R).
+$asm_gen(bldcon(I))        :- $opcode( bldcon,    X ), $asm_PC(  X, I).
+$asm_gen(bldnil)           :- $opcode( bldnil,    X ), $asm_P(   X ).
+$asm_gen(uninumcon(N))     :- $opcode( uninumcon, X ), $asm_PL(  X, N).
+$asm_gen(bldnumcon(N))     :- $opcode( bldnumcon, X ), $asm_PL(  X, N).
+$asm_gen(getfloatcon(N,R)) :- $opcode( getfloatcon, X ), $asm_SF( X, R, N).
+$asm_gen(putfloatcon(N,R)) :- $opcode( putfloatcon, X ), $asm_SF( X, R, N).
+$asm_gen(unifloatcon(N))   :- $opcode( unifloatcon, X ), $asm_PF( X, N).
+$asm_gen(bldfloatcon(N))   :- $opcode( bldfloatcon, X ), $asm_PF( X, N).
+
+$asm_gen(test_unifiable(R,S,T)) :- $opcode( test_unifiable, X ),
+                                   $asm_SSS( X, R, S, T).
+
+$asm_gen(getlist_k(R))               :- $opcode( getlist, X ),
+                                        $asm_S(   X, R).
+$asm_gen(getlist_k_tvar_tvar(R,S,T)) :- $opcode( getlist_k_tvar_tvar, X ),
+                                        $asm_SSS( X, R, S, T).
+$asm_gen(getlist_tvar_tvar(R,S,T))   :- $opcode( getlist_tvar_tvar, X ),
+                                        $asm_SSS( X, R, S, T).
+$asm_gen(getcomma(R))                :- $opcode( getcomma, X ),
+                                        $asm_S(   X, R).
+$asm_gen(getcomma_tvar_tvar(R,S,T))  :- $opcode( getcomma_tvar_tvar, X ),
+                                        $asm_SSS( X, R, S, T).
+
+$asm_gen(trymeelse(L,A))     :- $opcode( trymeelse, X ),      $asm_SA( X, A, L).
+$asm_gen(retrymeelse(L,A))   :- $opcode( retrymeelse, X ),    $asm_SA( X, A, L).
+$asm_gen(trustmeelsefail(A)) :- $opcode( trustmeelsefail, X ),$asm_S(  X, A).
+$asm_gen(try(L,A))           :- $opcode( try, X ),            $asm_SA( X, A, L).
+$asm_gen(retry(L,A))         :- $opcode( retry, X ),          $asm_SA( X, A, L).
+$asm_gen(trust(L,A))         :- $opcode( trust, X ),          $asm_SA( X, A, L).
+$asm_gen(getpbreg(V))        :- $opcode( getpbreg, X ),       $asm_S(  X, V).
+$asm_gen(gettbreg(R))        :- $opcode( gettbreg, X ),       $asm_S(  X, R).
+$asm_gen(putpbreg(V))        :- $opcode( putpbreg, X ),       $asm_S(  X, V).
+$asm_gen(puttbreg(R))        :- $opcode( puttbreg, X ),       $asm_S(  X, R).
+
+$asm_gen(switchonterm(R,L,L1))  :- $opcode( switchonterm, X ),
+                                   $asm_SAA( X, R, L, L1).
+$asm_gen(arg(R,S,T))            :- $opcode( arg, X ),
+                                   $asm_SSS( X, R, S, T).
+$asm_gen(arg0(R,S,T))           :- $opcode( arg0, X ),
+                                   $asm_SSS( X, R, S, T).
+$asm_gen(switchonbound(R,L,L1)) :- $opcode( switchonbound, X ),
+                                   $asm_SAA( X, R, L, L1).
+$asm_gen(switchonlist(R,L,L1))  :- $opcode( switchonlist, X ),
+                                   $asm_SAA( X, R, L, L1).
+
+$asm_gen(get_tag(R1,R2))  :- $opcode( get_tag, X ), $asm_PSS( X, R1, R2).
+
+$asm_gen(movreg(R,R1))    :- $opcode( movreg, X ),   $asm_PSS( X, R, R1).
+$asm_gen(negate(R))       :- $opcode( negate, X ),   $asm_S(   X, R).
+$asm_gen(and(R,R1))       :- $opcode( and, X ),      $asm_PSS( X, R, R1).
+$asm_gen(or(R,R1))        :- $opcode( or, X ),       $asm_PSS( X, R, R1).
+$asm_gen(lshiftl(R,R1)) :- $opcode( lshiftl, X ),  $asm_PSS( X, R, R1).
+$asm_gen(lshiftr(R,R1)) :- $opcode( lshiftr, X ),  $asm_PSS( X, R, R1).
+$asm_gen(addreg(R,R1))    :- $opcode( addreg, X ),   $asm_PSS( X, R, R1).
+$asm_gen(subreg(R,R1))    :- $opcode( subreg, X ),   $asm_PSS( X, R, R1).
+$asm_gen(mulreg(R,R1))    :- $opcode( mulreg, X ),   $asm_PSS( X, R, R1).
+$asm_gen(divreg(R,R1))    :- $opcode( divreg, X ),   $asm_PSS( X, R, R1).
+$asm_gen(idivreg(R,R1))   :- $opcode( idivreg, X ),  $asm_PSS( X, R, R1).
+
+$asm_gen(putdval(V,R))    :- $opcode( putdval, X ),  $asm_PSS( X, V, R).
+$asm_gen(putuval(V,R))    :- $opcode( putuval, X ),  $asm_PSS( X, V, R).
+
+$asm_gen(call(I,N,B))     :- $opcode( call, X ),     $asm_BBW( X, B, N, I).
+$asm_gen(allocate(N))     :- $opcode( allocate, X ),   $asm_S( X, N).
+$asm_gen(deallocate)      :- $opcode( deallocate, X ), $asm_P(  X).
+$asm_gen(proceed)         :- $opcode( proceed, X ),    $asm_P(  X).
+$asm_gen(execute(I))      :- $opcode( execute, X ),    $asm_PW( X, I).
+
+$asm_gen(calld(L,N,B))    :- $opcode( calld, X ),  $asm_BBA( X, B, N, L).
+$asm_gen(jump(L))         :- $opcode( jump, X ),   $asm_PA( X, L).
+$asm_gen(jumpz(R,L))      :- $opcode( jumpz, X ),  $asm_SA( X, R, L).
+$asm_gen(jumpnz(R,L))     :- $opcode( jumpnz, X ), $asm_SA( X, R, L).
+$asm_gen(jumplt(R,L))     :- $opcode( jumplt, X ), $asm_SA( X, R, L).
+$asm_gen(jumple(R,L))     :- $opcode( jumple, X ), $asm_SA( X, R, L).
+$asm_gen(jumpgt(R,L))     :- $opcode( jumpgt, X ), $asm_SA( X, R, L).
+$asm_gen(jumpge(R,L))     :- $opcode( jumpge, X ), $asm_SA( X, R, L).
+
+$asm_gen(fail)            :- $opcode( fail, X ),    $asm_P( X).
+$asm_gen(noop)            :- $opcode( noop, X ),    $asm_P( X).
+$asm_gen(halt)            :- $opcode( halt, X ),    $asm_P( X).
+$asm_gen(builtin(W))      :- $opcode( builtin, X ), $asm_S( X, W).
+
+$asm_mark_eot             :- $opcode( endfile, X ), 
+                             $aspn(X,2), $aspn(0,2), $aspn(0,4).
+/*--------------------------------------------------------------*/

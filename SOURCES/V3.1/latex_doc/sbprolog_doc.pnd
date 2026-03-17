@@ -6,121 +6,121 @@
   \item $>/2$~(I), 24
   \item $>=$/2~(I), 24
   \item $\backslash$ =/2~(I), 26
-  \item $\backslash\,==/2$~(B), 31
-  \item $\wedge/2$~(L), 30
+  \item $\backslash\,==/2$~(B), 30
+  \item $\wedge/2$~(L), 29
   \item ,/2~(I), 25
   \item -$>/2$~(P), 26
   \item :--/1~(P), 11
-  \item ::--/2~(P), 57
+  \item ::--/2~(P), 56
   \item ;/2~(I), 25
-  \item =../2~(L), 28
+  \item =../2~(L), 27
   \item =/2~(I), 25
   \item =:=/2~(I), 24
   \item ==/2~(B), 30
   \item ?=/2~(I), 26
-  \item $</2$~(B), 31
+  \item $</2$~(B), 30
   \item $=</2$~(B), 31
-  \item $>/2$~(B), 31
+  \item $>/2$~(B), 30
   \item $>=/2$~(B), 31
-  \item \$absmember/2~(L), 67
-  \item \$alloc\_buff/5~(L), 43
-  \item \$append/3~(L), 67
-  \item \$asm/3, 53
-  \item \$assertf\_alloc\_t~(L), 44
-  \item \$current\_atom/2~(L), 37
-  \item \$current\_functor/3~(L), 37
+  \item \$absmember/2~(L), 66
+  \item \$alloc\_buff/5~(L), 42
+  \item \$append/3~(L), 66
+  \item \$asm/3, 52
+  \item \$assertf\_alloc\_t~(L), 43
+  \item \$current\_atom/2~(L), 36
+  \item \$current\_functor/3~(L), 36
   \item \$current\_predicate/3~(L), 37
-  \item \$db\_add\_clref/7~(L), 44
-  \item \$db\_assert\_fact/5~(L), 44
-  \item \$db\_call\_prref/2~(L), 45
-  \item \$db\_call\_prref\_s/2~(L), 45
-  \item \$db\_get\_clauses/3~(L), 45
-  \item \$db\_new\_prref/3~(L), 44
+  \item \$db\_add\_clref/7~(L), 43
+  \item \$db\_assert\_fact/5~(L), 43
+  \item \$db\_call\_prref/2~(L), 44
+  \item \$db\_call\_prref\_s/2~(L), 44
+  \item \$db\_get\_clauses/3~(L), 44
+  \item \$db\_new\_prref/3~(L), 43
   \item \$exists/1~(B), 21
-  \item \$getenv/2~(L), 39
-  \item \$member/2~(L), 67
-  \item \$member2/2~(L), 67
-  \item \$memberchk/2~(L), 67
-  \item \$merge/3~(L), 67
-  \item \$nthmember/3~(L), 67
-  \item \$reverse/2~(L), 67
-  \item \$trace/0~(L), 48
-  \item \$untrace/0~(L), 48
-  \item \_\$interrupt/2~(L), 50
-  \item `C'/3~(L), 64
+  \item \$getenv/2~(L), 38
+  \item \$member/2~(L), 66
+  \item \$member2/2~(L), 66
+  \item \$memberchk/2~(L), 66
+  \item \$merge/3~(L), 66
+  \item \$nthmember/3~(L), 66
+  \item \$reverse/2~(L), 66
+  \item \$trace/0~(L), 47
+  \item \$untrace/0~(L), 47
+  \item \_\$interrupt/2~(L), 49
+  \item `C'/3~(L), 63
 
   \indexspace
 
   \item abolish/1~(L), 35
-  \item abolish/2~(L), 36
-  \item abort/0~(B), 39
+  \item abolish/2~(L), 35
+  \item abort/0~(B), 38
   \item alloc\_heap/2~(L), 32
   \item alloc\_perm/2~(L), 32
   \item arg/3~(I), 27
   \item assert/1~(L), 33
   \item assert/2~(L), 33
-  \item assert/4~(L), 35
-  \item assert\_union/2~(L), 34
-  \item asserta/1~(L), 34
-  \item asserta/2~(L), 34
+  \item assert/4~(L), 34
+  \item assert\_union/2~(L), 33
+  \item asserta/1~(L), 33
+  \item asserta/2~(L), 33
   \item asserti/2~(L), 33
-  \item assertz/1~(L), 34
-  \item assertz/2~(L), 34
+  \item assertz/1~(L), 33
+  \item assertz/2~(L), 33
   \item atom/1~(B), 27
   \item atomic/1~(B), 27
 
   \indexspace
 
-  \item bagof/3~(L), 30
+  \item bagof/3~(L), 29
   \item break/0~(L), 38
 
   \indexspace
 
   \item call/1~(P), 28
-  \item call\_ref/2~(L), 43
-  \item call\_ref/3~(L), 43
-  \item clause/2~(L), 35
+  \item call\_ref/2~(L), 42
+  \item call\_ref/3~(L), 42
+  \item clause/2~(L), 34
   \item clause/3~(L), 35
   \item compare/3~(B), 31
   \item compile/1~(L), 8
   \item compile/2~(L), 8
   \item compile/3~(L), 8
   \item compile/4~(L), 8
-  \item conlength/2~(B), 29
-  \item conlength/2~(L), 33
+  \item conlength/2~(B), 28
+  \item conlength/2~(L), 32
   \item consult/1~(L), 10
   \item consult/2~(L), 10
-  \item count/1~(L), 65
-  \item countpreds/1~(L), 66
-  \item cputime/1~(B), 39
-  \item current\_atom/1~(L), 37
-  \item current\_functor/2~(L), 37
+  \item count/1~(L), 64
+  \item countpreds/1~(L), 65
+  \item cputime/1~(B), 38
+  \item current\_atom/1~(L), 36
+  \item current\_functor/2~(L), 36
   \item current\_predicate/2~(L), 37
 
   \indexspace
 
-  \item dcg/2~(L), 63
-  \item debug/0~(L), 47
-  \item debugging/0~(L), 47
+  \item dcg/2~(L), 62
+  \item debug/0~(L), 46
+  \item debugging/0~(L), 46
   \item display/1~(L), 21
 
   \indexspace
 
   \item erase/1~(L), 36
-  \item et/1~(L), 61
-  \item et\_answers/2~(L), 62
-  \item et\_calls/2~(L), 62
-  \item et\_points/1~(L), 61
-  \item et\_remove/1~(L), 61
-  \item et\_star/1~(L), 61
+  \item et/1~(L), 60
+  \item et\_answers/2~(L), 61
+  \item et\_calls/2~(L), 61
+  \item et\_points/1~(L), 60
+  \item et\_remove/1~(L), 60
+  \item et\_star/1~(L), 60
   \item eval/2~(L), 24
   \item exp/2~(B), 25
-  \item expand\_term/2~(L), 63
+  \item expand\_term/2~(L), 62
 
   \indexspace
 
   \item fail/0~(I), 26
-  \item findall/3~(L), 30
+  \item findall/3~(L), 29
   \item float/1~(I), 27
   \item floatc/3~(B), 25
   \item floor/2~(B), 25
@@ -128,15 +128,15 @@
 
   \indexspace
 
-  \item gennum/1~(L), 42
-  \item gensym/2~(L), 43
+  \item gennum/1~(L), 41
+  \item gensym/2~(L), 42
   \item get/1~(B), 22
   \item get0/1~(B), 22
-  \item globalset/1~(L), 42
+  \item globalset/1~(L), 41
 
   \indexspace
 
-  \item index/3~(D), 55
+  \item index/3~(D), 54
   \item instance/2~(L), 36
   \item integer/1~(I), 27
   \item is/2~(L), 24
@@ -148,28 +148,28 @@
 
   \indexspace
 
-  \item length/2~(L), 67
+  \item length/2~(L), 66
   \item listing/0~(L), 36
-  \item listing/1~(L), 37
+  \item listing/1~(L), 36
   \item load/1~(B), 9
 
   \indexspace
 
-  \item mode/3~(D), 54
+  \item mode/3~(D), 53
 
   \indexspace
 
   \item name/2~(B), 28
   \item nl/0~(B), 22
-  \item nocount/1~(L), 65
-  \item nodebug/0~(L), 47
+  \item nocount/1~(L), 64
+  \item nodebug/0~(L), 46
   \item nodynload/2~(L), 39
-  \item noet/1~(L), 61
-  \item nonvar/1~(I), 27
-  \item noprofile/0~(L), 66
-  \item nospy/1~(L), 47
+  \item noet/1~(L), 60
+  \item nonvar/1~(I), 26
+  \item noprofile/0~(L), 65
+  \item nospy/1~(L), 46
   \item not/1~(P), 26
-  \item notime/1~(L), 65
+  \item notime/1~(L), 64
   \item number/1~(B), 27
 
   \indexspace
@@ -178,75 +178,75 @@
 
   \indexspace
 
-  \item phrase/2~(L), 63
+  \item phrase/2~(L), 62
   \item portray\_clause/2~(L), 22
   \item portray\_term/2~(L), 22
-  \item predicate\_property/2~(L), 38
+  \item predicate\_property/2~(L), 37
   \item print/1~(L), 21
   \item print\_al/2~(L), 22
   \item print\_ar/2~(L), 22
-  \item prof\_reset/1~(L), 65
-  \item prof\_stats/0~(L), 66
-  \item prof\_stats/1~(L), 66
-  \item profile/0~(L), 66
-  \item profiling/0~(L), 65
+  \item prof\_reset/1~(L), 64
+  \item prof\_stats/0~(L), 65
+  \item prof\_stats/1~(L), 65
+  \item profile/0~(L), 65
+  \item profiling/0~(L), 64
   \item put/1~(B), 22
 
   \indexspace
 
   \item read/1~(B), 21
   \item real/1~(I), 27
-  \item recorda/3~(L), 36
-  \item recorded/3~(L), 36
-  \item recordz/3~(L), 36
+  \item recorda/3~(L), 35
+  \item recorded/3~(L), 35
+  \item recordz/3~(L), 35
   \item repeat/0~(L), 26
-  \item resetcount/1~(L), 65
-  \item resettime/1~(L), 66
-  \item restore/1~(B), 39
+  \item resetcount/1~(L), 64
+  \item resettime/1~(L), 65
+  \item restore/1~(B), 38
   \item retract/1~(L), 35
 
   \indexspace
 
-  \item save/1~(B), 39
+  \item save/1~(B), 38
   \item see/1~(B), 21
   \item seeing/1~(B), 21
   \item seen/0~(B), 21
   \item setof/3~(L), 29
   \item sin/2~(B), 25
   \item sort/2~(L), 31
-  \item spy/1~(L), 47
-  \item spypreds/1~(L), 48
+  \item spy/1~(L), 46
+  \item spypreds/1~(L), 47
   \item square/2~(B), 25
   \item statistics/0~(B), 39
   \item statistics/2~(L), 39
   \item structure/1~(B), 27
-  \item subsumes/2~(L), 67
-  \item symtype/2~(B), 41
-  \item syscall/3~(B), 41
-  \item system/1~(B), 41
+  \item subsumes/2~(L), 66
+  \item symtype/2~(B), 40
+  \item syscall/3~(B), 40
+  \item system/1~(B), 40
 
   \indexspace
 
   \item tab/1~(B), 22
   \item tell/1~(B), 21
   \item telling/1~(B), 21
-  \item term\_expansion/2~(U), 63
-  \item time/1~(L), 65
-  \item timepreds/1~(L), 66
+  \item term\_expansion/2~(U), 62
+  \item time/1~(L), 64
+  \item timepreds/1~(L), 65
   \item told/0~(B), 21
-  \item trace/1~(L), 45
-  \item tracepreds/1~(L), 48
+  \item trace/1~(L), 44
+  \item tracepreds/1~(L), 47
   \item trimbuff/3~(L), 32
   \item true/0~(I), 25
 
   \indexspace
 
   \item undefined\_pred/1~(L), 8
-  \item untrace/1~(L), 47
+  \item untrace/1~(L), 46
 
   \indexspace
 
-  \item var/1~(I), 27
+  \item var/1~(I), 26
 
   \indexspace
 

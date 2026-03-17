@@ -1,0 +1,4 @@
+p(X) :- foo(zero,X).
+
+foo(zero, 0) ::- true.
+

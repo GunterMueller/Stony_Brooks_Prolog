@@ -22,15 +22,15 @@
 # file named COPYING.  Among other things, the copyright notice
 # and this notice must be preserved on all copies. 
 # ------------------------------------------------------------------ */
-CFLAGS = -c -g
+CFLAGS = -c -g -m32 -fcommon
 #CC     = /usr/local/gcc
-CC     = cc
+CC     = gcc
 OBJ1   = aux.o dis.o dispatch.o evalexp.o float.o init.o io.o load_work.o 
 OBJ2   = loader.o main.o parse_oprnd.o print_inst.o sub_inst.o unify.o gc.o
 OBJS   = $(OBJ1) $(OBJ2)
 
 sbprolog : $(OBJS) builtin/builtin
-	$(CC) -o sbprolog $(OBJS) builtin/builtin
+	$(CC) -m32 -o sbprolog $(OBJS) builtin/builtin -lm
 clean :
 	rm $(OBJS)
 aux.o   : aux.c sim.h

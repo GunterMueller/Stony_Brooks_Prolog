@@ -43,6 +43,8 @@ static LONG_PTR hptr;
 static LONG_PTR reloc_table[500];
 static LONG_PTR last_text;
 
+struct hrec indextab[1024];
+
 WORD   eof_flag;
 LONG   psc_bytes, text_bytes, index_bytes, magic;
 
@@ -51,7 +53,7 @@ int    (*load_routine[20])();
 static FILE *fp;
 static BYTE perm = PERM;
 
-extern fread();
+
 extern LONG_PTR reloc_addr();        /* actually it is defined below */
 
 /****************************************************************************/

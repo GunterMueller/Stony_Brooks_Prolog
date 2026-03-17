@@ -1,0 +1,94 @@
+This document describes the changes made to SBProlog Version 3.0 to run on
+the Ultrix-basad DEC 3100 workstation.  These changes are not specific to 
+Ultrix or the DEC3100, so the system with the changes should still run on
+Sun's and other machines.  The following is a list of files and the changes
+I have made to them:
+
+aux.h:
+   Two macros have been added, MAKEADD and ADDVAL.  These are the definitions:
+
+    #define MAKEADD(op)       ((LONG)((((LONG)(op) << 3) | INT_TAG) ))
+    #define ADDVAL(op)        ((LONG)(((LONG)(op) >> 3)  & 0x1fffffff))
+
+    The macro MAKEADD(op) is a modification of MAKEINT, in which bit #31 is
+    not cleared.  The purpose of this macro is to replace MAKEINT when "op"
+    is an address, which is has up to 29 significant bits in the DEC3100. 
+    Prolog represents integers as tagged values: 0[bits 3 to 30]110, with
+    the leftmost bit cleared.  When we have to represent addresses using 
+    Prolog integers we need 29 bits instead of 28.  MAKEADD will not clear
+    the 31st bit.  ADDVAL(op) is the equivalent of INTVAL: it extracts the
+    integer value from a Prolog tagged integer.  It extracts bits 3-31 from
+    "op", using a logical shift (arithmetic shit + mask).  These two macros
+    are used exclusively by the routine "b_BUFF_CODE" in the file "buffer.c",
+    which is part of the "builtin" directory.
+
+init.c:
+    If any of the initial files passed to the simulator cannot be accessed, 
+    the error message if "File %s cannot be open" is issued, rather than 
+    "Error in loading initial files."
+    The default sizes of memory and program space have been changed to 
+    500K and 300K, more appropriate for modern machines.
+
+load_work.c:
+    <stdio.h> commented out as it is already included in "sim.h"
+
+loader.c:
+    The error messages given by the loader are now a bit more informative.
+    Also, the message "using dynamic loader! has been commented out.
+
+main.c
+    The call "init_parse_routine()" must come from a previous version of the
+    system.  Since the current version does not use it, I have removed it.
+
+builtin/buffer.c:
+    In function b_BUFF_CODE(), two new cases have been added: cases 32 and
+    33, which are functionally identical to cases 2 and 4, except that 
+    MAEADD and ADDVAL are used instead of MAKEINT and INTVAL.  
+
+builtin/other.c
+    The variable "errno" is not needed and has been commented out. 
+
+builtin/saverest.c
+    Error messages are a bit more informative.  Also, <stdio.h> is redundant,
+    and has been commented out. Finally, all the include files have been
+    replaced by "builtin.h". 
+
+modlib/src/$db.P, modlib/src/$dbcmpl.P
+    Several calls to buff_code with codes 2 and 4 have been replaced with
+    calls using codes 32 and 33 respectively.  The changes are detailed 
+    below:
+
+     line #                            file: modlib/src/$db.P 
+     ------                            ----------------------
+      239:        $buff_code(Sbuff, 40, 33, AddrTab), /* get addr of tab */
+      240:        $buff_code(Sbuff, 24, 32, AddrTab), /* store addr of tab */
+      255:        $buff_code(Clref, Disp, 33, FailAddr),
+      261:        $buff_code(Clref, Lin, 32 /* word num */, FailAddr),
+      294:        $buff_code(Tbuff, Faild, 33, Faddr),
+      302:        $buff_code(Tbuff, Bucket, 32, Hash_addr).
+      308:        $buff_code(Buff, Disp, 33, Hash_addr).
+
+     line #                            file: modlib/src/$dbcmpl.P 
+     ------                            ---------------------
+       55:        $buff_code(Buff, Li, 32 /*pn*/ ,Num), Lo is Li+4.
+      117:        $buff_code(Buff, 12, 33, EPADDR), 
+
+modlib/$db, modlib/$dbcmpl
+      These files have been recompiled to reflect the changes made above.
+      
+modlib/src/makeall
+      This file was not up-to-date.  It has been modified to generate all
+      the byte code files required in the "modlib" directory.
+
+cmplib/src/makeall
+      This file was not up-to-date.  It has been modified to generate all
+      the byte code files required in the "cmplib" directory.
+
+/bench/README
+      Updated to reflect the current files in the benchmark directory
+
+/INIT
+      This file initializes SIMPATH to the system directories plus
+      the user's home directory, a subdirectory named prolog and the
+      current working directory.  This file must be appended to the
+      user's .login or .cshrc file.

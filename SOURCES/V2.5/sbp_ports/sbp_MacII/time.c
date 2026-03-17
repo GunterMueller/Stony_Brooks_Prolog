@@ -1,0 +1,130 @@
+/************************************************************************
+*									*
+*	The SB-Prolog System						*
+*	Copyright SUNY at Stony Brook, 1986				*
+*									*
+************************************************************************/
+
+/*-----------------------------------------------------------------
+SB-Prolog is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the SB-Prolog General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+SB-Prolog, but only under the conditions described in the
+SB-Prolog General Public License.   A copy of this license is
+supposed to have been given to you along with SB-Prolog so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies. 
+------------------------------------------------------------------ */
+
+/* time.c */
+
+#ifndef A/UX
+#include <sys/time.h>
+#include <sys/resource.h>
+#else
+#include <sys/types.h>
+#include <sys/times.h>
+#endif
+#include "builtin.h"
+
+#ifndef A/UX
+
+b_CPUTIME()   /* R1: miliseconds */
+{
+    struct rusage usage;
+    int msec;
+
+    getrusage(0, &usage);
+    msec =  usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000;
+    if (!unify(gregc(1), makeint(msec))) {Fail0;}
+}
+
+b_STATS()   /* r1: code to indicate desired stat; r2: returned stat */
+{
+    register word op1;
+    register pw top;
+    int stat;
+    struct rusage usage;
+
+    op1 = gregc(1); deref(op1);
+    switch ((int)(intval(op1))) {
+        case 0:
+	    getrusage(0, &usage);
+	    stat = usage.ru_utime.tv_sec*1000 + usage.ru_utime.tv_usec/1000;
+	    break;
+	case 1: stat = maxmem; break; /* max available stack size */
+	case 2:	stat = local_bottom -
+			    ((breg < ereg) ? breg : ereg - *(cpreg-5));
+		break; /* local stack in use */
+	case 3: stat = local_bottom-mlocaltop;  /* local stack max used */
+		break;
+	case 4: stat = hreg-heap_bottom; break; /* heap stack used */
+	case 5: stat = mheaptop-heap_bottom; break; /* max heap used */
+	case 6: stat = maxpspace; break; /* max available perm space */
+	case 7: stat = ((int) curr_fence - (int) pspace)/4;
+		break; /* perm space in use */
+	case 8: stat = maxtrail; break; /* max available trail size */
+	case 9: stat = trail_bottom-trreg; break; /* trail stack in use */
+	case 10: stat = trail_bottom-mtrailtop; /* max trail stk used */
+		break;
+	case 11: stat = ((breg < ereg) ? breg : ereg - *(cpreg-5)) - hreg;
+		break;
+	default: stat = 0;
+    }
+    if (!unify(gregc(2), makeint(stat))) {Fail0;}
+}
+
+#else
+
+b_CPUTIME()   /* R1: miliseconds */
+{
+    struct tms usage;
+    int msec;
+
+    times(&usage);
+    msec =  (int)( (float)usage.tms_utime / 60.0 * 100.0 );
+    if (!unify(gregc(1), makeint(msec))) {Fail0;}
+}
+
+b_STATS()   /* r1: code to indicate desired stat; r2: returned stat */
+{
+    register word op1;
+    register pw top;
+    int stat;
+    struct tms usage;
+
+    op1 = gregc(1); deref(op1);
+    switch ((int)(intval(op1))) {
+        case 0:
+	    times(&usage);
+    	    stat =  (int)( (float)usage.tms_utime / 60.0 * 100.0 );
+	    break;
+	case 1: stat = maxmem; break; /* max available stack size */
+	case 2:	stat = local_bottom -
+			    ((breg < ereg) ? breg : ereg - *(cpreg-5));
+		break; /* local stack in use */
+	case 3: stat = local_bottom-mlocaltop;  /* local stack max used */
+		break;
+	case 4: stat = hreg-heap_bottom; break; /* heap stack used */
+	case 5: stat = mheaptop-heap_bottom; break; /* max heap used */
+	case 6: stat = maxpspace; break; /* max available perm space */
+	case 7: stat = ((int) curr_fence - (int) pspace)/4;
+		break; /* perm space in use */
+	case 8: stat = maxtrail; break; /* max available trail size */
+	case 9: stat = trail_bottom-trreg; break; /* trail stack in use */
+	case 10: stat = trail_bottom-mtrailtop; /* max trail stk used */
+		break;
+	case 11: stat = ((breg < ereg) ? breg : ereg - *(cpreg-5)) - hreg;
+		break;
+	default: stat = 0;
+    }
+    if (!unify(gregc(2), makeint(stat))) {Fail0;}
+}
+
+#endif

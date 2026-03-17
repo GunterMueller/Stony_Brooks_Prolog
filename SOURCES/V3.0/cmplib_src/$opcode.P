@@ -1,0 +1,147 @@
+/************************************************************************
+*									*
+* The SB-Prolog System							*
+* Copyright SUNY at Stony Brook, 1986; University of Arizona, 1987	*
+*									*
+************************************************************************/
+
+/*-----------------------------------------------------------------
+SB-Prolog is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the SB-Prolog General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+SB-Prolog, but only under the conditions described in the
+SB-Prolog General Public License.   A copy of this license is
+supposed to have been given to you along with SB-Prolog so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies. 
+------------------------------------------------------------------ */
+/* opcode.P */
+
+/* instruction name <=> opcode mapping 
+   see file sim/dispatch.c
+   THESE FILES MUST MATCH !
+
+   strip off extra junk before and after the table definition, then
+   use this filter :
+
+   main()
+   { 
+      char   buff[256], *p, *q;
+      int    i = 0;
+
+      while( gets( buff ) ) {
+         p = q = &buff[26];
+         while( *q != ',' )  q++;
+         *q = '\0';
+
+         printf( "$opcode( %-20s, %2d ).\n", p, i++ );
+      }
+   }
+*/
+
+$opcode_export( [ $opcode/2, $instruction/2 ] ).
+
+$opcode( getpvar             ,  0 ).
+$opcode( getpval             ,  1 ).
+$opcode( getstrv             ,  2 ).
+$opcode( gettval             ,  3 ).
+$opcode( getcon              ,  4 ).
+$opcode( getnil              ,  5 ).
+$opcode( getstr              ,  6 ).
+$opcode( getlist             ,  7 ).
+$opcode( unipvar             ,  8 ).
+$opcode( unipval             ,  9 ).
+$opcode( unitvar             , 10 ).
+$opcode( unitval             , 11 ).
+$opcode( unicon              , 12 ).
+$opcode( uninil              , 13 ).
+$opcode( getnumcon           , 14 ).
+$opcode( putnumcon           , 15 ).
+$opcode( putpvar             , 16 ).
+$opcode( putpval             , 17 ).
+$opcode( puttvar             , 18 ).
+$opcode( putstrv             , 19 ).
+$opcode( putcon              , 20 ).
+$opcode( putnil              , 21 ).
+$opcode( putstr              , 22 ).
+$opcode( putlist             , 23 ).
+$opcode( bldpvar             , 24 ).
+$opcode( bldpval             , 25 ).
+$opcode( bldtvar             , 26 ).
+$opcode( bldtval             , 27 ).
+$opcode( bldcon              , 28 ).
+$opcode( bldnil              , 29 ).
+$opcode( uninumcon           , 30 ).
+$opcode( bldnumcon           , 31 ).
+$opcode( getfloatcon         , 32 ).
+$opcode( putfloatcon         , 33 ).
+$opcode( unifloatcon         , 34 ).
+$opcode( bldfloatcon         , 35 ).
+$opcode( test_unifiable      , 36 ).
+$opcode( getlist_k           , 37 ).
+$opcode( getlist_k_tvar_tvar , 38 ).
+$opcode( getlist_tvar_tvar   , 39 ).
+$opcode( getcomma            , 40 ).
+$opcode( getcomma_tvar_tvar  , 41 ).
+$opcode( trymeelse           , 42 ).
+$opcode( retrymeelse         , 43 ).
+$opcode( trustmeelsefail     , 44 ).
+$opcode( try                 , 45 ).
+$opcode( retry               , 46 ).
+$opcode( trust               , 47 ).
+$opcode( getpbreg            , 48 ).
+$opcode( gettbreg            , 49 ).
+$opcode( putpbreg            , 50 ).
+$opcode( puttbreg            , 51 ).
+$opcode( switchonterm        , 52 ).
+$opcode( arg                 , 53 ).
+$opcode( arg0                , 54 ).
+$opcode( switchonbound       , 55 ).
+$opcode( switchonlist        , 56 ).
+$opcode( get_tag             , 57 ).
+$opcode( movreg              , 58 ).
+$opcode( negate              , 59 ).
+$opcode( and                 , 60 ).
+$opcode( or                  , 61 ).
+$opcode( lshiftl             , 62 ).
+$opcode( lshiftr             , 63 ).
+$opcode( addreg              , 64 ).
+$opcode( subreg              , 65 ).
+$opcode( mulreg              , 66 ).
+$opcode( divreg              , 67 ).
+$opcode( idivreg             , 68 ).
+$opcode( putdval             , 69 ).
+$opcode( putuval             , 70 ).
+$opcode( call                , 71 ).
+$opcode( allocate            , 72 ).
+$opcode( deallocate          , 73 ).
+$opcode( proceed             , 74 ).
+$opcode( execute             , 75 ).
+$opcode( calld               , 76 ).
+$opcode( jump                , 77 ).
+$opcode( jumpz               , 78 ).
+$opcode( jumpnz              , 79 ).
+$opcode( jumplt              , 80 ).
+$opcode( jumple              , 81 ).
+$opcode( jumpgt              , 82 ).
+$opcode( jumpge              , 83 ).
+$opcode( fail                , 84 ).
+$opcode( noop                , 85 ).
+$opcode( halt                , 86 ).
+$opcode( builtin             , 87 ).
+$opcode( endfile             , 88 ).
+$opcode( hash                , 89 ).
+$opcode( getival             , 90 ).
+$opcode( jumptbreg           , 91 ).
+$opcode( unexec              , 92 ).
+$opcode( unexeci             , 93 ).
+$opcode( executev            , 94 ).
+
+$instruction( OpName, Instr ) :-
+          $opcode( OpName, Instr ).

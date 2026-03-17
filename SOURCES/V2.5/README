@@ -1,0 +1,13 @@
+This directory contains Version 2.5 of SB-Prolog.  This version
+currently runs on machines like Vax, Sun-3, HP-9000, Amiga, etc.
+It will not run on alignment restricted processors like the Sun-4,
+Pyramid-98x and SGI Iris.  A version that does run on such
+alignment-restricted systems is in the directory ../v3.0, but
+that version currently lacks some builtin predicates (clause/{2,3},
+listing/{0,1}, recorda/recordz/recorded).
+
+Benchmarking: There are a couple of benchmarks in the
+directory bench, see bench/README.
+
+Some porting information can be found in sbp_ports/
+---

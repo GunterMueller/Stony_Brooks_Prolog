@@ -1,0 +1,302 @@
+From roch@b.cs.uiuc.edu Mon Mar 14 22:25:32 1988
+Received: from megaron.arizona.edu by granjon; Mon, 14 Mar 88 22:25:30 MST
+Received: from [192.5.69.2] by megaron.arizona.edu; Mon, 14 Mar 88 22:23:46 MST
+Received: by b.cs.uiuc.edu (UIUC-5.52/9.7)
+	id AA25306; Mon, 14 Mar 88 23:22:40 CST
+Date: Mon, 14 Mar 88 23:22:40 CST
+From: roch@b.cs.uiuc.edu (David Roch)
+Message-Id: <8803150522.AA25306@b.cs.uiuc.edu>
+To: debray@arizona.edu
+Subject: Re: Prolog for the AMIGA
+Status: RO
+
+Saumya,
+	I finally finished (more or less) porting 2.3.1
+to the Amiga.  At the end of this message I have included
+a list of the changes I had to make.  Should you care to
+examine the source itself, it will be available via 
+anonymous FTP at a.cs.uiuc.edu in the pub/amiga/ftp directory.
+I should get a chance to put it there within a week or two.
+(I want to work out a bug (Amiga version only) in the save/restore
+builtins).  If you intend to look at the source, I suggest you
+check with me first just to make sure that 2.3.1 will be there.
+
+	Finally, I have a question for you.  What happens
+when a file is reconsulted using consult?  Another member
+of my group and I have both occasionally had problems
+occasionally after consulting a file a few times.  (This
+was on the VAX, not the Amiga).  Our programs would not
+execute correctly, but if we exited SBP and restarted it,
+everything worked fine.  Also, we've both had SBP complain
+that we were attempting to redefine abolish.  I used abolish
+in the program, but only in the body of a clause.  Unfortunately,
+I have not been able to reproduce this behavior in any
+regular fashion.
+
+			Thank you,
+			David Roch
+			roch@b.cs.uiuc.edu
+
+
+
+---------------------------cut here----------------------------------------
+
+
+Copyright 1988 by David A. Roch
+
+Any or all of this document  may  be  redistributed  without
+charge provided the above copyright notice is included.
+
+     This document (such as it  is),  describes  a  port  of
+Stony Brook Prolog (version 2.3.1) to a Commodore-Amiga 1000
+microcomputer.
+
+     In my port, I never remove  original  code  which  will
+prevent  the  system  from running on UNIX (TM AT&T). All of
+the changes that would prevent execution on a UNIX  box  are
+accomplished  by  using  pre-processor conditional branches.
+The symbol MICRO must then be defined at compile time.  Note
+that  I  have not changed the make files.  Also, please note
+that  many  of  the  MICRO  changes  are  specific  to   the
+Commodore-Amiga.
+
+     The Amiga operating system, currently does not  support
+environment  variables  other  than  assigning  names  to  a
+specific path (logical devices).  Therefore, it  was  neces-
+sary to add a new flag to the simulator in order to pass the
+SIMPATH variable.  (See changes  to  file  init.c).   Unfor-
+tunately,  this makes SIMPATH static unless a new builtin is
+added to change the path.  I chose not to do this, as  there
+are rumors of AmigaDOS 1.3 possibly having environment vars.
+Also, the getenv builtin (in file builtin/other.c)  must  be
+changed  to always return the SIMPATH.  This is unfortunate,
+but necessary as the run time read loop frequently  requests
+the  value of SIMPATH.  To the best of my knowledge, this is
+the only environment  variable  the  system  ever  requests.
+Finally, I changed the separator for directories in SIMPATH.
+UNIX uses name in AmigaDOS, I replaced it with '!'.  It  can
+easily be changed by setting the preprocessor symbol SEPARA-
+TOR  (file  loader.c),  and  the  references   to   ':'   in
+modlib/modlib_src/$readloop.P.
+
+     The following is a list of files and the changes I have
+made to them.
+
+
+
+File index.h
+
+     Sets the flag INDEX so that aux.h knows whether or  not
+to define indextab as an external.
+
+File aux.h
+
+     If INDEX is defined, indextab becomes an  external  and
+the  indexing  macros are not included (as they were defined
+in index.h).  Prior to this, indextab was defined  in  every
+file (without being declared an external).
+
+
+
+
+                       March 14, 1988
+
+
+
+
+
+                           - 2 -
+
+
+File sub_inst.c
+
+     Interrupts must be changed  for  the  microcomputer  to
+which  the  system  is  being ported.  It is likely that the
+sigvec (signal vector) does not exist.  In  this  case,  two
+procedures  must  be  changed.   inercept_proc  may have the
+reset  the  signal  before   its   conditional   test,   and
+arm_intercept must set the interrupt signal.
+
+
+File load.c
+
+     <stdio.h> commented out as it is  already  included  in
+sim.h.
+
+
+File loader.c
+
+     The colon ':' is no longer hardcoded as  the  directory
+separator  for  SIMPATH.   It is defined by the preprocessor
+label SEPARATOR.  Also, the character string simulation_path
+has  been  added  to allow for the new runtime option -i for
+systems without environment  variables.   Some  hacking  was
+also  necessary due to the different file structure of Amiga
+DOS.  Amiga DOS thus not support links, and hence  there  is
+not  a character for local directories ('.').  I have solved
+this by invoking the loader on  everything  past  the  './'.
+This  works  for the loader, but not all code.  For example,
+the $exists will fail for the  query  $exists('./some_file')
+even  if some_file does exist in the local directory.  Also,
+while UNIX (TM AT&T) uses '/' for the root directory,  Amiga
+DOS uses logical device names ending in a colon ':'.  I scan
+for the colon and invoke the loader if it  is  present.  The
+function   call   to   getenv("SIMPATH")   first  checks  if
+simulation_path is non  NULL.   If  simulation_path  is  non
+NULL, getenv is not invoked and simulation_path is returned.
+Otherwise,  getenv("SIMPATH")  is  invoked.    Additionally,
+index.h is now included here.  There was no reference at all
+to this file previously.
+
+
+File init.c
+
+     The modifications to this file permit the user to  pass
+the   -i   SIMPATH   flag.    An   external   reference   to
+simulation_path has been added, and the variable  is  origi-
+nally  set  to  NULL  by  init_sim.   If the -i parameter is
+present, the simulation_path is set by a  switch  statement.
+A case for the i option must also be added in the procedures
+init_sym & init_loading.  This is to allow  these  procedure
+to  strip  out  the -i option when parsing the command line.
+Note that the case for 'i' must be placed before the  action
+to  increment  the loop variable.  This is necessary as i is
+followed by an argument.
+
+
+
+                       March 14, 1988
+
+
+
+
+
+                           - 3 -
+
+
+File builtin/builtin.h
+
+     The references to a parent directories must be  changed
+from '..' to '/'.
+
+
+File builtin/file.c
+
+     The header file <netdb.h> has been set to compile  only
+if  flag  MICRO  is  undefined.   Furthermore,  the function
+b_GETHOSTBYNAME prints an error message to standard out  and
+calls  fail0.   Also, the include <stdio.h> has been removed
+as it is already included in sim.h  (which  is  included  in
+builtin.h).
+
+
+File builtin/other.c
+
+     Include      files      <netdb.h>,      <sys/socket.h>,
+<netinet/in.h>,  and  <arpa/inet.h>  all  set to be included
+only if MICRO undefined.  Networking calls  based  on  these
+(b_BROCALL  with register R1 in the range of 21-46) are also
+compiled only if MICRO is undefined.   Finally,  the  getenv
+call    (R1    =   2)   returns   simulation_path   whenever
+simulation_path is non NULL.  As simulation_path should only
+be  set when there are no environment variables, this should
+be an acceptable change.
+
+
+File builtin/time.c
+
+     The include file <sys/resource.h> has been  changed  to
+only  be included if MICRO is undefined as most micros don't
+have resource tracking.  Also, the  function  b_CPUTIME  has
+been  modified  to  always  return 0.  This will change if I
+ever find a way to get CPU time out  of  the  Amiga.   Note,
+that the function will still work properly if the MICRO flag
+is undefined.  The CPU time  in  b_STATS  has  been  changed
+similarly (r1 = 0).
+
+
+File builtin/saverest.c
+
+     Removed the include <stdio.h> as redundant, and changed
+the  name  of <sys/file.h> to <fcntl.h> (Lattice C file con-
+trol).  Also changed notation for including  a  parent  file
+from  '..'  to  '/'.   Finally,  the numerous includes could
+probably be replaced by one include to builtin.h
+
+
+File modlib/modlib_src/$readloop.P
+
+     If the SEPARATOR character (see  loader.c)  is  changed
+for  the  SIMPATH environment variable (or equivalently, the
+
+
+
+                       March 14, 1988
+
+
+
+
+
+                           - 4 -
+
+
+new -i flag), $readloop.P must be changed as it  parses  the
+SIMPATH  variable.   Unfortunately,  to recompile requires a
+working version of SBP.   This  leaves  the  user  with  two
+alternatives:
+        1 - Make the change and compile on a working system
+        2 - Set up the simulator to work with the ':' as
+                SEPARATOR, make the change & recompile
+                $readloop.P, and finally recompile SBP
+                with the new SEPARATOR character.
+
+NEW FILES:
+
+sim/builtin/syscall.h
+
+     This is simply a recreation of  the  Berkely  syscall.h
+header  file which is naturally not available on non-Berkely
+UNIX machines.
+
+
+sim/builtin/syscall.c
+
+     This file contains one function which  is  designed  to
+emulate the Berkeley UNIX syscall function.  Assuming you do
+not wish to try to emulate sockets, the only function I have
+found  so far that is absolutely necessary is the SYS_ACCESS
+function.  Below is my implementation for the Amiga.
+/*
+syscall.c by David Roch
+This routine translates some of the Berkely Unix (tm)
+system calls to the Amiga.
+*/
+
+#include <stdio.h>
+#include "syscall.h"
+
+syscall(n, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+int     n;
+call_args       arg1, arg2, arg3, arg4, arg5, arg6, arg7;
+{
+        switch (n) {
+
+                case SYS_chdir:
+                        return(chdir(arg1));
+                case SYS_chmod:
+                        return(chmod(arg1, arg2));
+                case SYS_access:
+                        return(access(arg1, arg2));
+                default:
+                        printf("System call %d has not yet been implemented in this port of SBProlog.0,
+                                "If you wish to add this system primitive, you must add the proper case0,
+                                "statement to the C source file syscall.c and recompile.0);
+                        return(-1); /* command failed (hopefully) */
+                }
+}
+
+
+
+                       March 14, 1988
+
+

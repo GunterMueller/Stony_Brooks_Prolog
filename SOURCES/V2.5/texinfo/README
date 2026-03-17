@@ -1,0 +1,37 @@
+From: denys-duchier@cs.yale.edu
+
+This directory contains the following files:
+
+	README
+	doc.texinfo
+	doc.el
+
+In order to format `doc.texinfo' as an info file you need to load
+`texinfmt.el' (which should happen automatically when you visit
+`doc.texinfo') and then `doc.el'. Then issue the command:
+
+		M-x texinfo-format-buffer
+
+in GNU emacs while visiting `doc.texinfo', and 5 new files will be
+created:
+
+	sbprolog
+	sbprolog-1
+	sbprolog-2
+	sbprolog-3
+	sbprolog-4
+
+Move them to whereever you keep the GNU info files (possibly
+/usr/local/emacs/info) then edit GNU's `dir' info file and add a
+menu entry for SB-Prolog that looks like this:
+
+* SB-Prolog: (sbprolog).
+		Stony Brook Prolog, from the university of Arizona.
+
+In order to create the TeX version of the manual, simply type
+
+		tex doc.texinfo
+
+to the shell (provided that the file `texinfo.tex', which comes with
+the regular GNU distribution, is in a directory searched by TeX) and,
+finally, print the resulting `doc.dvi' file (lpr -d doc.dvi).

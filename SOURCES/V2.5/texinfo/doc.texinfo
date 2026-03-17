@@ -1,0 +1,3859 @@
+\input texinfo
+@setfilename sbprolog
+@settitle SB-Prolog Manual
+@tex
+\global\def\REFILL{\par}
+\global\def\ALPH#1{\ifcase#1\or a\or b\or c\or d\or e\or f\or g\or h\or
+i\or j\or k\or l\or m\or n\or o\or p\or q\or r\or s\or t\or u\or v\or
+w\or x\or y\or z\else BOGUS\fi}
+\global\def\alphanumerate{\itemizey{\ALPH{\the\itemno}.}\Ealphanumerate\flushcr}
+\global\def\sp#1{\par\vskip -\lastskip\vskip #1\baselineskip}
+\global\def\bb#1{{\bf#1}}
+\global\def\SP#1{{\itemno=#1 \SPaux}}
+\global\def\SPaux{\ifnum\itemno>0 \ \advance\itemno -1 \SPaux\fi}
+\global\let\ENTRY\entry
+\global\newdimen\Bdim
+\setbox0\hbox{(D)}
+\global\Bdim\wd0
+\global\def\B(#1){\hbox to\Bdim{(#1)\hfil}}
+\global\def\CENTER{\noindent\center}
+@end tex
+@titlepage
+@sp 10
+@center @titlefont{The SB-Prolog System, Version 2.5}
+@sp 2
+@center A User Manual
+@sp 2
+@center edited by
+@center Saumya K. Debray
+@center from material by
+@sp 2
+@center David Scott Warren
+@center Suzanne Dietrich
+@center SUNY at Stony Brook
+@sp 1
+@center Fernando Pereira
+@center SRI International
+@sp 5
+@center September 1988
+@sp 5
+@center Department of Computer Science
+@center University of Arizona
+@center Tucson, AZ 85721
+@end titlepage
+
+@node Top, Introduction, (dir), (dir)
+
+@center The SB-Prolog System, Version 2.5
+@center A User Manual
+@sp 5
+@center @b{ABSTRACT}
+@sp 2
+SB-Prolog is a Prolog system for Unix based systems.  The core of the  system
+is  an  emulator,  written  in C for portability, of a Prolog virtual machine that is an
+extension of the Warren Abstract Machine.  The remainder of the  system,  including  the
+translator from Prolog to the virtual machine instructions, is written in Prolog.  Parts
+of this manual, specifically the sections on Prolog syntax and descriptions of  some  of
+the builtins, are based on the C-Prolog User Manual by Fernando Pereira.@REFILL
+
+@menu
+Generalities
+* Dynamic Loader Search Path::
+* System Directories::
+* Invoking the Simulator::
+
+Loading , Running, and Compiling programs
+* Executing Programs::
+* Compiling Programs::
+* Loading Byte Code Files::
+* Consulting Programs::
+* Execution Directives::
+
+Syntax of terms, and Operators
+* Terms::
+* Operators::
+
+Operational Semantics
+* Standard Execution Behaviour::
+* Cuts and If-Then-Else::
+* Unification of Floating Point Numbers::
+
+Evaluable Predicates
+* File Handling::
+* Term I/O::
+* Character I/O::
+* Arithmetic::
+* Convenience::
+* Extra Control::
+* Meta-Logical::
+* Sets::
+* Comparison of Terms::
+* Buffers::
+* Modification of the Program::
+* Internal Database::
+* State of the Program::
+* Environmental::
+* Global Values::
+* Exotica::
+
+Debugging
+* High Level Tracing::
+* Low Level Tracing::
+
+The Simulator
+* Invoking the Simulator::
+* Simulator Options::
+* Interrupts::
+
+The Compiler::
+* Invoking the Compiler::
+* Compiler Options::
+* Assembly::
+
+Compiler Directives
+* Mode Declarations::
+* Indexing Directives::
+
+Libraries, Macros, and Other Utilities
+* Libraries::
+* Defining Macros::
+* Macro Expander Options::
+* Extension Tables::
+* Definite Clause Grammars::
+* Profiling Programs::
+* Utilities::
+* Adding Builtins::
+
+Index
+* Index of Evaluable Predicates::
+
+Coding for Efficiency
+* Avoiding Backtrack Points::
+* Minimizing Data Movement::
+* Processing Arguments::
+* Testing Unifiability::
+@end menu
+
+@node Introduction, Getting Started, Top, Top
+@chapter Introduction
+
+SB-Prolog is a Prolog system based on an extension of the Warren Abstract Machine
+@cite{D.H.D. Warren, ``An Abstract Prolog Instruction Set,'' Tech. Note 309, SRI
+International, 1983}. The WAM simulator is written in C to enhance portability.  Prolog
+source programs can be compiled into byte code files, which contain encodings of WAM
+instructions and are interpreted by the simulator.  Programs can also be interpreted via
+consult.@REFILL
+
+SB-Prolog offers several features  that  are  not  found  on  most  Prolog  systems
+currently  available.   These  include:  compilation to object files; dynamic loading of
+predicates; provision for generating executable code on the global stack, which  can  be
+later  be  reclaimed; an extension table facility that permits memoization of relations.
+Other features include full integration between compiled and  interpreted  code,  and  a
+facility  for  the  definition and expansion of macros that is fully compatible with the
+runtime system.@REFILL
+
+The system incorporates tail recursion optimization, and performs  clause  indexing
+in  both  compiled and interpreted code.  However, there is no garbage collector for the
+global stack.  This may be incorporated into a later version.@REFILL
+
+One of the few luxuries afforded to a person giving software away for free  is  the
+ability to take philosophical stances without hurting his wallet.  Based on our faith in
+the ``declarative ideal'', viz. that pure programs with declarative readings  are  Good,
+we have attempted to encourage, where possible, a more declarative style of programming.
+To this end, we have deliberately chosen to not reward programs containing cuts in  some
+situations  where more declarative code is possible (@pxref{Efficiency},
+@pxref{Adding Builtins}).  We have also resisted the temptation to make assert less expensive.
+We hope this will help promote a better programming style.@REFILL
+
+@node Getting Started, Syntax, Introduction, Top
+@chapter Getting Started
+
+This section is intended to give a broad overview of the  SB-Prolog  system,  so  as  to
+enable  the  new  user  to  begin using the system with a minimum of delay.  Many of the
+topics touched on here are covered in greater depth in later sections.@REFILL
+
+@menu
+* Dynamic Loader Search Path::
+* System Directories::
+* Invoking the Simulator::
+* Executing Programs::
+* Execution Directives::
+@end menu
+
+@node Dynamic Loader Search Path, System Directories, , Getting Started
+@section The Dynamic Loader Search Path
+
+In SB-Prolog, it is not necessary for the user to load all the predicates necessary to
+execute a program.  Instead, if an undefined predicate @code{foo} is encountered during
+execution, the system searches the user's directories in the order specified by the
+environment variable @code{SIMPATH} until it finds a directory containing a file @file{foo} whose name
+is that of the undefined predicate.  It then dynamically loads and links the file @file{foo}
+(which is expected to be a byte code file defining the predicate @code{foo}), and continues
+with execution; if no such file can be found, an error message is given and execution
+fails.  This feature makes it unnecessary for the user to have to explicitly link in all
+the predicates that might be necessary in a program: instead, only those files are
+loaded  which  are necessary to have the program execute.  This can significantly reduce
+the memory requirements of programs.@REFILL
+
+The key to this dynamic search-and-load behaviour is the @code{SIMPATH} environment
+variable, which specifies the order in which directories are to be searched.  It may be
+set by adding the following line to the user's @file{.cshrc} file:@REFILL
+
+@CENTER @t{setenv SIMPATH} @i{path}
+
+where @i{path} is a sequence of directory names separated by colons:@REFILL
+
+@CENTER @t{dir<1>:dir<2>: ... :dir<n>}
+
+and @code{dir<i>} are full path names to the respective directories.   For  example,  executing
+the command @REFILL
+
+@CENTER @t{setenv SIMPATH .:$HOME/prolog/modlib:$HOME/prolog/lib}
+
+sets the search order for undefined predicates to the following: first, the directory in
+which the program is executing is searched; if the appropriate file is not found in this
+directory, the directories searched are, in order, @file{~/prolog/modlib} and
+@file{~/prolog/lib}.  If the appropriate file is not found in any of these directories,
+the system gives an error message and execution fails.@REFILL
+
+The beginning user is advised to include the system directories (listed in the next
+section) in his @code{SIMPATH}, in order to be able to access the system libraries.@REFILL
+
+@node System Directories, Invoking the Simulator, Dynamic Loader Search Path, Getting Started
+@section System Directories
+
+There are four basic system directories: @file{cmplib}, @file{lib}, @file{modlib} and
+@file{sim}.  @file{cmplib} contains the Prolog to byte code translator; @file{lib} and @file{modlib}
+contain library routines.  The @file{src} subdirectory in each of these contains the
+corresponding Prolog source programs.  The directory @file{sim} contains the simulator, the
+subdirectory @file{builtin} contains code for the builtin predicates of the system. It is
+recommended that the beginning user include the system directories in his @code{SIMPATH},
+by setting @code{SIMPATH} to @file{.:SBP/modlib:SBP/lib:SBP/cmplib} where @file{SBP}
+denotes the path to the root of the SB-Prolog system directories.@REFILL
+
+@node Invoking the Simulator, Executing Programs, System Directories, Getting Started
+@section Invoking the Simulator
+
+The simulator is invoked by the command ``@t{sbprolog} @i{bc_file}'' where
+@i{bc_file} is a byte code file resulting from the compilation of a Prolog program.
+In almost all cases, the user will wish to interact with the SB-Prolog query evaluator,
+in which case @i{bc_file} will be @file{$readloop}, and the command will be
+``@t{sbprolog} @file{Path/$readloop}'' where @file{Path} is the path to the directory containing the
+command interpreter @file{$readloop}. This directory, typically, is @file{modlib}
+(@pxref{System Directories}).@REFILL
+
+The command interpreter reads in a query typed in by the user, evaluates it and prints
+the answer(s), repeating this until it encounters an end-of-file (the standard
+end-of-file character on the system, e.g. @kbd{C-d}), or the user types in
+@code{end_of_file} or @code{halt}.@REFILL
+
+The user should ensure that the the directory containing the executable file @file{sim}
+(typically, the system directory @file{sim}: see @xref{System Directories}) is included
+in the shell variable @code{path}; if not, the full path to the simulator will have to be
+specified.@REFILL
+
+In general, the simulator may be invoked with a variety of options, as
+follows:@REFILL
+
+@example
+    sbprolog -options @file{bc_file}
+@r{or}
+    sbprolog -option<1> -option<2> ... -option<n> @file{bc_file}
+@end example
+
+The options recognized by the simulator are described elsewhere
+(@pxref{Simulator Options}).@REFILL
+
+When called with a byte code file @file{bc_file}, the simulator begins execution with  the
+first  clause  in  that  file.   The first clause in such a file, therefore, should be a
+clause without any arguments in the head  (otherwise,  the  simulator  will  attempt  to
+dereference  argument pointers in the head that are really pointing into deep space, and
+usually come to a sad end).  If the user is executing a file in this manner rather  than
+using the command interpreter, he should also be careful to include the undefined predicate
+handler, consisting of  the  predicates  @b{_$interrupt}/2  and  @b{_$undefined_pred}/1,
+which is normally defined in the files @file{modlib/src/$init_sys.P} and
+@file{modlib/src/$readloop}.@REFILL
+
+@node Executing Programs, Execution Directives, Invoking the Simulator, Getting Started
+@section Executing Programs
+
+There are two ways of executing a program: a source file may be compiled into a
+byte-code file, which can then be loaded and executed; or, the source file may be
+interpreted via consult.  The system supports full integration of compiled and
+interpreted code, so that some predicates of a program may be compiled, while others may
+be interpreted.  However, the unit of compilation or consulting remains the file.  The
+remainder of this section describes each of these procedures in more detail.@REFILL
+
+@menu
+* Compiling Programs::
+* Loading Byte Code Files::
+* Consulting Programs::
+@end menu
+
+@node Compiling Programs, Loading Byte Code Files, , Executing Programs
+@subsection Compiling Programs
+
+The compiler is invoked through the Prolog  predicate  @b{compile}.   It  translates  Prolog
+source programs into byte code that can then be executed on the simulator.  The compiler
+may be invoked as follows:@REFILL
+
+@example
+    | ?- compile(InFile [, OutFile ] [, OptionsList ]).
+@r{or}
+    | ?- compile(InFile, OutFile, OptionsList, PredList).
+@end example
+
+where optional parameters are enclosed in brackets.  @code{InFile} is the name of the input
+(i.e.  source) file; @code{OutFile} is the name of the output file (i.e. byte code) file;
+@code{OptionsList} is a list of compiler options, and @code{PredList} is a list of terms
+P/N denoting the predicates defined in @code{InFile}, where P is a predicate name
+and N its arity.@REFILL
+
+The input and output file names must be Prolog atoms, i.e.  either begin with a lower
+case letter and consist only of letters, digits, dollar signs and underscores; or, be
+enclosed within single quotes.  If the output file name is not specified, it defaults to
+@code{InFile.out}.  The list of options, if specified, is a Prolog list, i.e. a term of the
+form:@REFILL
+
+@CENTER [ option<1>, option<2>, ..., option<n> ].
+
+If left unspecified, it defaults to the empty list @t{[]}.  @code{PredList}, if specified,
+is  usually  given as an uninstantiated variable; its principal use is for setting trace points
+on the predicates in the file (@pxref{Debugging} and @pxref{The Compiler}).  Notice  that
+PredList  can  only appear in @b{compile}/4.@REFILL
+
+A list of compiler options appears elsewhere (@pxref{Compiler Options}).
+
+@node Loading Byte Code Files, Consulting Programs, Compiling Programs, Executing Programs
+@subsection Loading Byte Code Files
+
+Byte code files may be loaded into the simulator using the predicate @bb{load}:@REFILL
+
+@example
+    | ?- @b{load}(ByteCode_File).
+@end example
+
+where @code{ByteCode_File} is a Prolog atom (@pxref{Terms}) that is the name of a  byte  code
+file.@REFILL
+
+The @bb{load} predicate invokes the dynamic loader, which carries out a search according
+to  the sequence specified by the environment variable @code{SIMPATH}
+(@pxref{Dynamic Loader Search Path}).  It is therefore not necessary to always specify the
+full path name to the file to be loaded.@REFILL
+
+Byte code files may be concatenated together to  produce  other  byte  code  files.
+Thus,  for  example, if @file{foo1} and @file{foo2} are byte code files resulting from the compilation
+of two Prolog source programs, then the file @file{foo}, obtained by executing the  shell
+command @REFILL
+
+@CENTER @t{cat foo1 foo2 > foo}
+
+is a byte code file as well, and may be loaded and executed.  In this case, loading  and
+executing  the  file @file{foo} would give the same result as loading @file{foo1} and @file{foo2}
+separately, which in turn would be the same as concatenating the original source files and compiling
+this  larger  file.  This makes it easier to compile large programs: one need only break
+them into smaller pieces, compile the individual pieces, and concatenate  the  resulting
+byte code files together.@REFILL
+
+@node Consulting Programs, , Loading Byte Code Files, Executing Programs
+@subsection Consulting Programs
+
+Instead of compiling a file to generate a byte code file which then has to be loaded,  a
+program may be executed interpretively by ``consulting'' the corresponding source file:@REFILL
+
+@example
+    | ?- consult(SourceFile [, OptionList ] ).
+@r{or}
+    | ?- consult(SourceFile, OptionList, PredList).
+@end example
+
+where @code{SourceFile} is a Prolog atom which is the name of a file containing a Prolog source
+program;  @code{OptionList}  is  a  list of options to @bb{consult}; and @code{PredList} is a list of terms
+P/N, where P is a predicate name and N its arity, specifying which predicates have  been
+consulted  from  @code{SourceFile}; its principal use is for setting trace points on the predicates
+in the file (@pxref{Debugging}).  Notice that @code{PredList} can only appear in @b{consult}/3.@REFILL
+
+At this point, the options recognized for consult are the following:@REFILL
+
+@table @asis
+@item @t{t} ``trace''
+Causes a trace point to be set on any predicate  in  the  current  file
+that does not already have a trace point set.@REFILL
+
+@item @t{v} ``verbose''
+Causes information regarding which predicates have been consulted  to
+be printed out. Default: off.@REFILL
+@end table
+
+In addition to the above, options for the macro expander are also recognized
+(@pxref{Macros}).@REFILL
+
+@bb{consult} will create an index on the printipal functor  of  the  first  argument  of  the
+predicates being consulted, unless this is changed using the @b{index}/3 directive.  In particular,
+note that if no index is desired on a predicate @t{foo}/n, then the directive @REFILL
+
+@CENTER @t{:- index(foo, n, 0).}
+
+@noindent
+should be given.
+
+It is important to note that SB-Prolog's @bb{consult} predicate is similar  to  that  of
+Quintus  Prolog,  and behaves like C-Prolog's @bb{reconsult}.  This means that if a predicate
+is defined across two or more files, consulting them will result in only the clauses  in
+the file consulted last being used.@REFILL
+
+@node Execution Directives, , Executing Programs, Getting Started
+@section Execution Directives
+
+Execution directives may be specified to @bb{compile} and @bb{consult} through :-/1.  If,  in  the
+read  phase  of  @bb{compile} or @bb{consult}, a term with principal functor :-/1 is read in, this
+term is executed directly via @b{call}/1.  This enables the user to dynamically  modify  the
+environment, e.g. via @bb{op} declarations (@pxref{Operators}), asserts etc.@REFILL
+
+A point to note is that if the environment is modified as a result of an  execution
+directive, the modifications are visible only in that environment.  This means that consulted
+code, which runs in the environment in which the source program is read  in  (and
+which  is  modified  by  such  execution  directives) feel the effects of such execution
+directives.  However, byte code resulting from compilation, which, in general,  executes
+in an environment different from that in which the source was compiled, does not inherit
+the effects of such directives.  Thus, an @bb{op} declaration can be used in a source file to
+change  the  syntax and allow the remainder of the program to be parsed according to the
+modified syntax; however, these modifications will not, in general, manifest  themselves
+if  the  byte  code  is executed in another environment.  Of course, if the byte code is
+loaded into the same environment as that in which the source program was compiled,  e.g.
+through @REFILL
+
+@example
+    | ?- compile(foo, bar), load(bar).
+@end example
+
+@noindent
+the effects of execution directives will continue to be felt.
+
+@node Syntax, Operational Semantics, Getting Started, Top
+@chapter Syntax
+
+@menu
+* Terms::	Syntax of SB-Prolog terms.
+* Operators::   Defining operators (prefix, infix, postfix).
+@end menu
+
+@node Terms, Operators, , Syntax
+@section Terms
+
+The syntax of SB-Prolog is by and large compatible with that of C-Prolog.  The data
+objects of the language are called terms.  A term is either a constant, a variable or a
+compound term.  Constants can be integers or atoms.  The symbol for an atom must begin
+with a lower case letter or the dollar sign @kbd{$}, and consist of any number of
+letters, digits, underscores and dollar signs; if it contains any character other than
+these, it must be enclosed within single quotes (Users are advised against using symbols
+beginning with @kbd{$} or @kbd{_$}, however, in order to minimize the possibility of
+conflicts with symbols internal to the system). As in other programming languages,
+constants are definite elementary objects.@REFILL
+
+Variables are distinguished by an initial capital letter or by the initial character
+@kbd{_}, for example @REFILL
+
+@CENTER @t{X@SP{3}Value@SP{3}A@SP{3}A1@SP{3}_3@SP{3}_RESULT@SP{3}_result}
+
+If a variable is only referred to once, it does not need to   be   named  and   may   be
+written as an anonymous variable, indicated by the underline character `@kbd{_}'.@REFILL
+
+A variable should be thought of as  standing  for  some  definite  but unidentified
+object.   A variable  is  not  simply  a  writeable storage  location  as  in  most
+programming languages;  rather it is a local name for some data object, cf.   the  variable
+of  pure  LISP  and constant declarations in Pascal.@REFILL
+
+The structured data objects of the language are the  compound  terms.   A  compound
+term  comprises  a  functor (called the principal functor of the term) and a sequence of
+one or more terms called arguments.  A functor is characterised by its name, which is an
+atom, and its arity or number of arguments.  For example the compound term whose functor
+is named @code{point} of arity 3, with arguments @code{X}, @code{Y} and @code{Z}, is written:@REFILL
+
+@CENTER @t{point(X,Y,Z)}
+
+An atom is considered to be a functor of arity 0.
+
+A functor or predicate symbol is uniquely identified by  its  name  and  arity  (in
+other  words, it is possible for different symbols having different arities to share the
+same name).  A functor or predicate symbol @code{p} with arity n is usually written @t{p}/n.@REFILL
+
+One  may  think  of  a  functor  as  a record type and the arguments of a  compound
+term  as  the   fields   of  a  record.   Compound terms are usefully pictured as trees.
+For example, the term:@REFILL
+
+@CENTER @t{s(np(john),vp(v(likes),np(mary)))}
+
+@noindent
+would be pictured as the structure
+
+@example
+                               s
+                             /   \
+                           np     vp
+                           |     /  \
+                        john    v    np
+                                |    |
+                             likes  mary
+@end example
+
+Sometimes it is convenient to write certain functors as operators -- 2-ary functors
+may  be  declared  as infix operators and 1-ary functors as prefix or postfix operators.
+Thus it is possible to write:@REFILL
+
+@CENTER @t{X+Y@SP{3}(P;Q)@SP{3}(X<Y)@SP{3}+X@SP{3}P;}
+
+@noindent
+as optional alternatives to
+
+@CENTER @t{+(X,Y)@SP{3};(P,Q)@SP{3}<(X,Y)@SP{3}+(X)@SP{3};(P)}
+
+Operators are described fully in the next section.
+
+Lists form an important class of data structures in Prolog.  They  are  essentially
+the  same  as  the  lists  of LISP: a list either is the atom @t{[]}, representing the empty
+list, or is a compound term  with   functor   `.'/2  and   two   arguments   which   are
+respectively  the  head  and  tail  of  the  list.  Thus  a  list  of  the  first  three
+natural  numbers  is  the structure:@REFILL
+
+@example
+                              .
+                             / \
+                            1   .
+                               / \
+                              2   .
+                                 / \
+                                3   []
+@end example
+
+@noindent
+which could be written, using the standard syntax, as @t{.(1,.(2,.(3,[])))},  but  which  is
+normally  written, in a special list notation, as @t{[1,2,3]}.  The special list notation in
+the case when the tail of  a  list  is  a variable is exemplified by:@REFILL
+
+@example
+                    [X|L]            [a,b|L]
+@r{representing}
+                       .                .
+                      / \              / \
+                     X   L            a   .
+                                         / \
+                                        b   L
+@end example
+
+@noindent
+respectively.
+
+Note that this list syntax is only syntactic sugar for terms of the form @t{`.'(_,  _)}
+and does not provide any new facilities that were not available otherwise.@REFILL
+
+For convenience, a  further   notational   variant   is   allowed   for  lists   of
+integers  which correspond to ASCII character codes.  Lists written in this notation are
+called strings.  For example,@REFILL
+
+@CENTER @t{"Prolog"}
+
+@noindent
+represents exactly the same list as
+
+@CENTER @t{[80,114,111,108,111,103]}
+
+@node Operators, , Terms, Syntax
+@section Operators
+
+Operators in Prolog are simply a notational convenience.  For example, the expression @REFILL
+
+@CENTER @t{2 + 1}
+
+@noindent
+could also be written @t{+(2,1)}.  It should be noticed that this expression represents  the
+structure @REFILL
+
+@example
+                                 +
+                               /   \
+                              2     1
+@end example
+
+@noindent
+and not the number 3.  The addition would only be performed if the structure was  passed
+as an argument to an appropriate procedure (such as @b{eval}/2, @pxref{Arithmetic}).@REFILL
+
+The Prolog syntax caters for operators of three main kinds -- infix, prefix and postfix.
+An infix operator appears between its two arguments, while a prefix operator precedes its
+single argument and a postfix operator is written after its single argument.@REFILL
+
+Each operator has a precedence, which is a number from 1 to 1200.  The precedence is used
+to disambiguate expressions where the structure of the term denoted is not made explicit
+through parenthesization.  The general rule is that the operator with the highest
+precedence is the principal functor.  Thus if @samp{+} has a higher precedence than
+@samp{/}, then @samp{a+b/c} and @samp{a+(b/c)} are equivalent and denote the term
+@code{+(a,/(b,c))}.  Note that the infix form of the term @code{/(+(a,b),c)} must be
+written with explicit parentheses, @samp{(a+b)/c}.@REFILL
+
+If there are two operators in the subexpression having the same highest precedence, the
+ambiguity must be resolved from the types of the operators.  The possible
+types for an infix operator are:@REFILL
+
+@CENTER @t{xfx@SP{3}xfy@SP{3}yfx}
+
+With an operator of type @code{xfx}, it is a requirement that both of the two
+subexpressions which are the arguments of the operator must be of lower precedence than
+the operator itself, i.e.  their principal functors must be of lower precedence, unless
+the subexpression is explicitly bracketed (which gives it zero precedence).  With an
+operator of type @code{xfy}, only the first or left-hand subexpression must be of lower
+precedence; the second can be of the same precedence as the main operator; and vice versa
+for an operator of type @code{yfx}.@REFILL
+
+For example, if the operators @code{+} and @code{-} both have type @code{yfx} and are of
+the same precedence, then the expression @samp{a-b+c} is valid, and means @samp{(a-b)+c},
+i.e.  @code{+(-(a,b),c)}.  Note that the expression would be invalid if the operators had
+type @code{xfx}, and would mean @samp{a-(b+c)}, i.e. @code{-(a,+(b,c))}, if the types were
+both @code{xfy}.@REFILL
+
+The possible types for a prefix operator are
+
+@CENTER @t{fx@SP{3}fy}
+
+@noindent
+and for a postfix operator they are
+
+@CENTER @t{xf@SP{3}yf}
+
+The meaning of the types should be clear by  analogy  with  those  for infix
+operators.@REFILL
+
+As an example, if @bb{not} were declared as a prefix operator of type @code{fy}, then
+`@b{not not @t{P}}' would be a permissible way to write `@t{@b{not}(@b{not}(P))}. If the
+type were @code{fx}, the preceding expression would not be legal, although `@t{@b{not} P}'
+would still be a permissible form for `@t{@b{not}(P)}'.@REFILL
+
+In SB-Prolog, a functor named @code{name} is declared as an operator of type @code{type}
+and precedence @code{precedence} by calling the evaluable predicate @bb{op}:@REFILL
+
+@example
+    | ?- op(precedence, type, name).
+@end example
+
+The argument @code{name} can also be a list of names of operators of the same @code{type}
+and @code{precedence}.@REFILL
+
+It is possible to have more than one operator of the  same  name, so long  as  they
+are  of different kinds, i.e.  infix, prefix or postfix.  An operator of any kind may be
+redefined by a new declaration  of  the same  kind.   This  applies equally to operators
+which are provided as standard in SB-Prolog, namely:@REFILL
+
+@example
+          :- op(  1200,   xfx,    [ :-, --> ]).
+          :- op(  1200,   fx,     [ :- ]).
+          :- op(  1198,   xfx,    [ ::- ]).
+          :- op( 1150,    fy,     [ mode, public, dynamic ]).
+          :- op(  1100,   xfy,    [ ; ]).
+          :- op(  1050,   xfy,    [ -> ]).
+          :- op(  1000,   xfy,    [ ',' ]).
+          :- op(  900,    fy,     [ not, \+, spy, nospy ]).
+          :- op(  700,    xfx,    [ =, is, =.., ==, \==, @@<, @@>, @@=<, @@>=,
+                                    =:=, =\=, <, >, =<, >=, ?=, \= ]).
+          :- op(  661,    xfy,    [ `.' ]).
+          :- op(  500,    yfx,    [ +, -, /\, \/ ]).
+          :- op(  500,    fx,     [ +, - ]).
+          :- op(  400,    yfx,    [ *, /, //, <<, >> ]).
+          :- op(  300,    xfx,    [ mod ]).
+          :- op(  200,    xfy,    [ ^ ]).
+@end example
+
+Operator declarations are most usefully placed in directives at  the  top  of  your
+program  files.  In  this case the directive should be a command as shown above. Another
+common method of organisation is to have one file just containing  commands  to  declare
+all the necessary operators. This file is then always consulted first.@REFILL
+
+Note that a comma written literally as  a  punctuation  character can  be  used  as
+though it were an infix operator of precedence 1000 and type code{xfy}:@REFILL
+
+@CENTER @t{X,Y@SP{3}','(X,Y)}
+
+@noindent
+represent the same compound term.  But note that a comma written as  a  quoted  atom  is
+not a standard operator.@REFILL
+
+Note also that the arguments of a compound term written in standard syntax must be
+expressions of precedence below 1000. Thus it is necessary to parenthesize the expression
+@code{P :- Q} in:@REFILL
+
+@CENTER @code{assert((P :- Q))}
+
+The following syntax restrictions serve  to remove potential ambiguity  associated  with
+prefix operators.@REFILL
+
+In a term written in standard syntax, the  principal  functor  and  its   following
+@t{(}  must  not be separated by any whitespace.  Thus:@REFILL
+
+@CENTER @t{point (X,Y,Z)}
+
+@noindent
+is invalid syntax (unless @code{point} were declared as a prefix operator).
+
+If the argument of a prefix operator  starts  with  a  @kbd{(},   this @kbd{(} must be
+separated   from   the  operator  by  at  least  one  space  or other non-printable
+character.  Thus:@REFILL
+
+@CENTER @t{:-(p;q),r.}
+
+@noindent
+(where @code{:-} is the prefix operator) is invalid syntax, and must be written as:@REFILL
+
+@CENTER @t{:- (p;q),r.}
+
+If a prefix  operator  is  written  without  an  argument,  as  an ordinary   atom,
+the   atom   is   treated   as   an expression of the same precedence as the prefix
+operator, and  must  therefore  be  bracketed where necessary.  Thus  the  brackets
+are necessary in @code{X = (?-)}.@REFILL
+
+@node Operational Semantics, Evaluable Predicates, Syntax, Top
+@chapter SB-Prolog: Operational Semantics
+
+@menu
+* Standard Execution Behaviour::
+* Cuts and If-Then-Else::
+* Unification of Floating Point Numbers::
+@end menu
+
+@node Standard Execution Behaviour, Cuts and If-Then-Else, , Operational Semantics
+@section Standard Execution Behaviour
+
+The normal execution behaviour of SB-Prolog follows the usual left to right order of
+literals within a clause, and the textual top to bottom order of clauses for a predicate.
+This corresponds to a depth first search of the leftmost SLD-tree for the program and the
+given query.  Unification without occurs check is used, and execution backtracks to the
+most recent choice point when unification fails.@REFILL
+
+@node Cuts and If-Then-Else, Unification of Floating Point Numbers, Standard Execution Behaviour, Operational Semantics
+@section Cuts and If-Then-Else
+
+This standard execution behaviour of SB-Prolog can be changed using constructs like
+@code{cut} (@samp{!}) and @code{if-then-else} (@samp{->}).  In SB-Prolog, cuts are usually
+treated as hard, i.e.  discard choice points of all the literals to the left of the cut
+in the clause containing the cut being executed, and also the choice point for the
+parent predicate, i.e.
+any remaining clauses for the predicate containing the cut being  executed.   There  are
+some  situations,  however,  where  the  scope of a cut is restricted to be smaller than
+this.  Restrictions apply under the following conditions:@REFILL
+
+@enumerate
+@item
+The cut occurs in a term which has been constructed at runtime and  called  through
+@b{call}/1, e.g. in:@REFILL
+
+@CENTER @t{@dots{}, X = (p(Y), !, q(Y)), @dots{}, call(X), @dots{}}
+
+In this case, the scope of the cut is restricted to be within the call, unless  one
+of the following cases also apply and serve to restrict its scope further.@REFILL
+
+@item
+The cut occurs in a negated goal, or within the scope of the test of an
+@code{if-then-else} (in an @code{if-then-else} of the form ``Test -> TruePart ;
+FalsePart'', the test is the goal Test).  In these cases, the scope of the cut is
+restricted to be within the negation or the test of the @code{if-then-else},
+respectively.@REFILL
+@end enumerate
+
+In cases involving nested occurrences of these situations, the scope of the cut is
+restricted  to that for the deepest such nested construct, i.e. most restricted.  For
+example, in the construct:@REFILL
+
+@CENTER @t{@dots{}, not((p(X) -> not((q(X), (r(X) -> s(X) ; (t(X), !, u(X))))))), @dots{}}
+
+@noindent
+the scope of the cut is restricted to the inner negation, and does not affect any choice
+point that may have been set up for @code{p(X)}.@REFILL
+
+@node Unification of Floating Point Numbers, , Cuts and If-Then-Else, Operational Semantics
+@section Unification of Floating Point Numbers
+
+As far as unification is concerned, no type distinction is  made  between  integers  and
+floating  point  numbers,  and no explicit type conversion is necessary when unifying an
+integer with a float.  However, due to the finite precision representation  of  floating
+point  numbers and cumulative round-off errors in floating point arithmetic, comparisons
+involving floating point numbers may not always give the expected results.  An effort is
+made  to minimize surprises by considering two numbers x and y (at least one of which is
+a float) to be unifiable if:@REFILL
+@ifinfo
+
+@center ||x| - |y||/min(|x|, |y|) < 10[-5]
+
+@end ifinfo
+@tex
+$$||x|-|y||/\min(|x|,|y|) < 10^{-5}$$
+@end tex
+
+However, this  does  not guarantee immunity against round-off errors.  For the same reason, users
+are warned that indexing on predicate arguments may  not  give  the
+expected results if floating point numbers are involved.@REFILL
+
+@node Evaluable Predicates, Debugging, Operational Semantics, Top
+@chapter Evaluable Predicates
+
+@menu
+* Input and Output::
+* Arithmetic::
+* Convenience::
+* Extra Control::
+* Meta-Logical::
+* Sets::
+* Comparison of Terms::
+* Buffers::
+* Modification of the Program::
+* Internal Database::
+* State of the Program::
+* Environmental::
+* Global Values::
+* Exotica::
+@end menu
+
+This section describes (most of) the evaluable predicates provided by SB-Prolog.   These
+can  be  divided  into  three classes: inline predicates, builtin predicates and library
+predicates.@REFILL
+
+Inline predicates represent ``primitive'' operations in the WAM.  Calls  to  inline
+predicates  are compiled into a sequence of WAM instructions in-line, i.e. without
+actually making a call to the predicate.  Thus, for  example,  relational  predicates
+(@t{>}/2, @t{>=}/2,  etc.)  compile  to,  essentially, a subtraction and a conditional branch.  Inline
+predicates cannot be redefined by the user.  The table below lists the SB-Prolog  inline  predicates:@REFILL
+
+@ifinfo
+@example
+        arg/3         =/2       </2    =</2
+         >=/2         >/2      /\/2    \//2
+         <</2        >>/2     =:=/2   =\=/2
+         is/2        ?=/2      \=/2     \/1
+  _$builtin/1    _$call/1  nonvar/1   var/1
+    integer/1      real/1    halt/0  true/0
+       fail/0
+@end example
+@end ifinfo
+@iftex
+@begingroup
+@catcode`@&=4
+@catcode`@#=6
+@noindent
+@centerline{@vbox{@halign{@hfil@tt#@quad&@hfil@tt#@quad&@hfil@tt#@quad&@hfil@tt#@cr
+arg{@rm/3} & ={@rm/2} & <{@rm/2} & =<{@rm/2}@cr
+>={@rm/2} & >{@rm/2} & /\{@rm/2} & \/{@rm/2}@cr
+<<{@rm/2} & >>{@rm/2} & =:={@rm/2} & =\={@rm/2}@cr
+is{@rm/2} & ?={@rm/2} & \={@rm/2} & \/{@rm/1}@cr
+_$builtin{@rm/1} & _$call{@rm/1} & nonvar{@rm/1} & var{@rm/1}@cr
+integer{@rm/1} & real{@rm/1} & halt{@rm/0} & true{@rm/0}@cr
+fail{@rm/0}&&&@cr}}}
+@endgroup
+@end iftex
+
+Unlike inline predicates, builtin predicates are implemented by C functions in  the
+simulator,  and  accessed  via  the  inline predicate @bb{_$builtin}/1.  Thus, if a builtin
+predicate @t{foo}/3 was defined as builtin number 38, there would be  a  definition  in  the
+system of the form:@REFILL
+
+@CENTER @t{foo(X,Y,Z) :- '_$builtin'(38).}
+
+In effect, a builtin is simply a segment of code in a large case (i.e.  switch)
+statement.  Each builtin is identified internally by an integer, referred to as its
+``builtin number'', associated with it.  The code for a builtin with builtin number k
+k[th.]  case in the switch statement.  SB-Prolog limits the total number of builtins to
+256.@REFILL
+
+Builtins, unlike inline predicates,  can be redefined by the  user.   For  example,
+the predicate @t{foo}/3 above can be redefined simply by compiling the new definition into a
+directory such that during dynamic loading, the  new  definition  would  be  encountered
+first and loaded.@REFILL
+
+For a list of the builtins currently provided: @pxref{Index of Evaluable Predicates}.
+@xref{Adding Builtins} for a description of the procedure to be followed in order to
+define new builtin predicates.@REFILL
+
+Like builtin predicates, library predicates may also be redefined by the user.  The
+essential  difference  between builtin and library predicates is that whereas the former
+are coded into the simulator in C, the latter are written in Prolog.@REFILL
+
+@node Input and Output, Arithmetic, , Evaluable Predicates
+@section Input and Output
+
+Input and output are done with respect to the current input and output streams.  These can
+be set, reset or checked using the file handling predicates described below.  The default
+input and output streams are denoted by @code{user}, and refer to the user's
+terminal.@REFILL
+
+@menu
+* File Handling::
+* Term I/O::
+* Character I/O::
+@end menu
+
+@node File Handling, Term I/O, , Input and Output
+@subsection File Handling
+
+@table @asis
+@item @b{see}(F)
+F becomes the current input stream.  F must be instantiated to an atom at the time of the
+call.@REFILL
+
+@item @b{seeing}(F)
+F is unified with the name of the current input file.@REFILL
+
+@item @b{seen}
+Closes the current input stream.@REFILL
+
+@item @b{tell}(F)
+F becomes the current output stream.  F must be instantiated to an atom at the time of the
+call.@REFILL
+
+@item @b{telling}(F)
+F is unified with the name of the current output file.@REFILL
+
+@item @b{told}
+Closes the current output stream.@REFILL
+
+@item @b{$exists}(F)
+Succeeds if file F exists.@REFILL
+@end table
+
+@node Term I/O, Character I/O, File Handling, Input and Output
+@subsection Term I/O
+
+@table @asis
+@item @b{read}(X)
+The next term, delimited by a full stop (i.e.  a ``.'' followed by a carriage-return or a
+space), is read from the current input stream and unified with X. The syntax of the term
+must accord with current operator declarations.  If a call @b{read}(X) causes the end of
+the current input stream to be reached, X is unified with the atom @samp{end_of_file}.
+Further calls to read for the same stream will then cause an error failure.@REFILL
+
+@item @b{write}(X)
+The term X is written to the current output stream according to operator declarations in
+force.@REFILL
+
+@item @b{display}(X)
+The term X is displayed on the terminal.@REFILL
+
+@item @b{writeq}(Term)
+Similar to @b{write}(Term), but the names of atoms and functors are quoted where necessary
+to make the result acceptable as input to read.@REFILL
+
+@item @b{print}(Term)
+Prints out the term Term onto the current output stream.  This predicate provides a handle
+for user-defined pretty-printing.  If Term is a variable then it is written using
+@b{write}/1; otherwise, if a user-defined predicate @b{portray}/1 is defined, then a call
+is made to @b{portray}(Term); otherwise, @b{print}/1 is equivalent to @b{write}/1.@REFILL
+
+@item @b{writename}(Term)
+If Term is an uninstantiated variable, its name, which looks a lot like an address in
+memory, is written out; otherwise, the principal functor of Term is written out.@REFILL
+
+@item @b{writeqname}(Term)
+As for @b{writename}, but the names are quoted where necessary.@REFILL
+
+@item @b{print_al}(N, A)
+Prints A (which must be an atom or a number) left-aligned in a field of width N, with
+blanks padded to the right.  If A's print name is longer than the field width N, then A is
+printed but with no right padding.@REFILL
+
+@item @b{print_ar}(N, A)
+Prints A (which must be an atom or a number) right-aligned in a field of width N, with
+blanks padded to the left.  If A's print name is longer than the field width N, then A is
+printed but with no left padding.@REFILL
+
+@item @b{portray_term}(Term)
+Writes out the term Term on the current output stream.  Variables are treated specially:
+an uninstantiated variable is printed out as Vn, where n is a number.@REFILL
+
+@item @b{portray_clause}(Term)
+Writes out the term Term, interpreted as a clause, on the current output stream.
+Variables are treated as in @b{portray_term}/1.@REFILL
+@end table
+
+@node Character I/O, , Term I/O, Input and Output
+@subsection Character I/O
+
+@table @asis
+@item @b{nl}
+A new line is started on the current output stream.@REFILL
+
+@item @b{get0}(N)
+N is the ASCII code of the next character from the current input stream.  If the current
+input stream reaches its end of file, a -1 is returned (however, unlike in C-Prolog, the
+input stream is not closed on encountering end-of-file).@REFILL
+
+@item @b{get}(N)
+N is the ASCII code of the next non-blank printable character from the current input
+stream. It has the same behaviour as @b{get0} on end of file.@REFILL
+
+@item @b{put}(N)
+ASCII character code N is output to the current output stream.  N must be an integer.@REFILL
+
+@item @b{tab}(N)
+N spaces are output to the current output stream.  N must be an integer.@REFILL
+@end table
+
+@node Arithmetic, Convenience, Input and Output, Evaluable Predicates
+@section Arithmetic
+
+Arithmetic is performed by evaluable predicates which take as arguments arithmetic
+expressions and evaluate them.  An arithmetic expression is a term built from evaluable
+functors, numbers and variables.  At the time of evaluation, each variable in an
+arithmetic expression must be bound to a number or to an arithmetic expression.  Each
+evaluable functor stands for an arithmetic operation.@REFILL
+
+The evaluable functors are as follows, where X and Y are arithmetic expressions.@REFILL
+
+@table @asis
+@item X + Y
+addition.
+
+@item X - Y
+subtraction.
+
+@item X * Y
+multiplication.
+
+@item X / Y
+division.
+
+@item X // Y
+integer division.
+
+@item X @b{mod} Y
+X (integer) modulo Y.
+
+@item -X
+unary minus.
+
+@item X /\ Y
+integer bitwise conjunction.
+
+@item X \/ Y
+integer bitwise disjunction.
+
+@item X << Y
+integer bitwise left shift of X by Y places.
+
+@item X >> Y
+integer bitwise right shift of X by Y places.
+
+@item \X
+integer bitwise negation.
+@end table
+
+As far as unification is concerned, no type distinction is made between integers and
+floating point numbers, and no explicit type conversion is necessary when unifying an
+integer with a float.  However, due to the finite precision representation of floating
+point numbers and cumulative round-off errors in floating point arithmetic, comparisons
+involving floating point numbers may not always give the expected results.  An effort is
+made to minimize surprises by considering two numbers x and y (at least one of which is a
+float) to be unifiable if:@REFILL
+
+@tex
+$$||x| - |y||/\min(|x|, |y|) < 10^{-5}$$
+@end tex
+@ifinfo
+@center ||x| - |y||/min(|x|, |y|) < 10[-5]
+@end ifinfo
+
+The user should note, however, that this does not guarantee immunity against round-off
+errors.@REFILL
+
+The arithmetic evaluable predicates are as follows, where X and Y stand for arithmetic
+expressions, and Z for some term.  Note that this means that is only evaluates one of
+its arguments as an arithmetic expression (the right-hand side one), whereas all the
+comparison predicates evaluate both their arguments.@REFILL
+
+@table @asis
+@item Z @b{is} X
+Arithmetic expression X is evaluated and the result, is unified with Z. Fails if X is not
+an arithmetic expression.  Unlike many other Prolog systems, variables in the expression X
+may be bound to other arithmetic expressions as well as to numbers.@REFILL
+
+@item @b{eval}(E, X)
+Evaluates the arithmetic expression E and unifies the result with the term X.  Fails if E
+is not an arithmetic expression. (Thus, @b{eval}/2 is, except for the switched argument
+order, the same as @b{is}/2.  It's around mainly for historical reasons.)@REFILL
+
+@item X =:= Y
+The values of X and Y are equal.  If either X or Y involve compound subexpressions that
+are created at runtime, they should first be evaluated using @b{eval}/2.@REFILL
+
+@item X =\= Y
+The values of X and Y are not equal.  If either X or Y involve compound subexpressions
+that are created at runtime, they should first be evaluated using @b{eval}/2.@REFILL
+
+@item X < Y
+The value of X is less than the value of Y.  If either X or Y involve compound
+subexpressions that are created at runtime, they should first be evaluated using
+@b{eval}/2.@REFILL
+
+@item X > Y
+The value of X is greater than the value of Y.  If either X or Y involve compound
+subexpressions that are created at runtime, they should first be evaluated using
+@b{eval}/2.@REFILL
+
+@item X =< Y
+The value of X is less than or equal to the value of Y.  If either X or Y involve compound
+subexpressions that are created at runtime, they should first be evaluated using
+@b{eval}/2.@REFILL
+
+@item X >= Y
+The value of X is greater than or equal to the value of Y.  If either X or Y involve
+compound subexpressions that are created at runtime, they should first be evaluated using
+@b{eval}/2.@REFILL
+
+@item @b{floor}(X, Y)
+If X is a floating point number in the call and Y is free, then Y is instantiated to the
+largest integer whose absolute value is not greater than the absolute value of X; if X is
+uninstantiated in the call and Y is an integer, then X is instantiated to the smallest
+float not less than Y.@REFILL
+
+@item @b{floatc}(F, M, E)
+If F is a number while M and E are uninstantiated in the call, then M is instantiated to
+a float m (of magnitude less than 1), and E to an integer n, such that @REFILL
+@tex
+$${\rm F} = {\rm m}\times 2^{\rm\scriptstyle n}$$
+@end tex
+@ifinfo
+
+@center F = m * 2[n].
+
+@end ifinfo
+If F is uninstantiated in the call while M is a float and E an integer, then F becomes
+instantiated to
+@tex
+$M\times 2^{\rm\scriptstyle E}$.
+@end tex
+@ifinfo
+M * 2[E].@REFILL
+@end ifinfo
+
+@item @b{exp}(X, Y)
+If X is instantiated to a number and Y is uninstantiated in the call, then Y is
+instantiated to
+@tex
+$\exp({\rm X})$
+@end tex
+@ifinfo
+e[X]
+@end ifinfo
+(where  e = 2.71828...); if X is uninstantiated in the call
+while Y is instantiated to a positive number, then X is instantiated to
+@tex
+$\log({\rm Y})$.
+@end tex
+@ifinfo
+log<e>(Y).@REFILL
+@end ifinfo
+
+@item @b{square}(X, Y)
+If X is instantiated to a number while Y is uninstantiated in the call, then Y becomes
+instantiated to
+@tex
+${\rm X}^2$;
+@end tex
+@ifinfo
+X[2];
+@end ifinfo
+if X is uninstantiated in the call while Y is instantiated to a positive number, then X
+becomes instantiated to the positive square root of Y (if Y is negative in the call, X
+becomes instantiated to 0.0).@REFILL
+
+@item @b{sin}(X, Y)
+If X is instantiated to a number (representing an angle in radians) and Y is
+uninstantiated in the call, then Y becomes instantiated to
+@tex
+$\sin({\rm X})$
+@end tex
+@ifinfo
+sin(X)
+@end ifinfo
+(the user should check the magnitude of X to make sure that the result is meaningful).
+If Y is instantiated to a number between
+@tex
+$-\pi/2$ and $\pi/2$
+@end tex
+@ifinfo
+-pi/2 and pi/2
+@end ifinfo
+and X is uninstantiated in the call, then X becomes instantiated to
+@tex
+$\arcsin({\rm Y})$.
+@end tex
+@ifinfo
+sin[-1](Y).@REFILL
+@end ifinfo
+@end table
+
+@node Convenience, Extra Control, Arithmetic, Evaluable Predicates
+@section Convenience
+
+@table @asis
+@item P , Q
+P and then Q.
+
+@item P ; Q
+P or Q.
+
+@item @b{true}
+Always  succeeds.
+
+@item X = Y
+Defined as if by the clause Z=Z, i.e. X and Y are unified.
+
+@item X \= Y
+Succeeds if X and Y are not unifiable, fails if X and Y are unifiable.  It is thus
+equivalent to @b{not}(X = Y), but is significantly more efficient.@REFILL
+
+@item X ?= Y
+Succeeds if X and Y are unifiable and fails if they are not, but does not instantiate any
+variables.  Thus, it tests whether X and Y are unifiable.  Equivalent to, but
+significantly more efficient than:@REFILL
+
+@CENTER @b{not}(@b{not}(X = Y))
+@end table
+
+@node Extra Control, Meta-Logical, Convenience, Evaluable Predicates
+@section Extra Control
+
+@table @asis
+@item !
+Cut (discard) all choice points made since the parent goal started execution.  (The scope
+of cut in different contexts is discussed in @xref{Cuts and If-Then-Else}).@REFILL
+
+@item @b{not} P
+If the goal P has a solution, fail, otherwise succeed.  It is defined as if
+by @REFILL
+@example
+                   not(P) :- P, !, fail.
+                   not(_).
+@end example
+
+@item P -> Q ; R
+Analogous to ``if P then Q else R'' i.e.  defined as if by @REFILL
+
+@example
+                   P -> Q ; R :- P, !, Q.
+                   P -> Q ; R :- R.
+@end example
+
+@item P -> Q
+When occurring other than as one of the alternatives of a disjunction, is equivalent
+to @REFILL
+
+@example
+                   P -> Q ; fail.
+@end example
+
+@item @b{repeat}
+Generates an infinite sequence of backtracking choices.  It is defined by the
+clauses:@REFILL
+
+@example
+                   repeat.
+                   repeat :- repeat.
+@end example
+
+@item @b{fail}
+Always fails.
+@end table
+
+@node Meta-Logical, Sets, Extra Control, Evaluable Predicates
+@section Meta-Logical
+
+@table @asis
+@item @b{var}(X)
+Tests whether X is currently instantiated to a variable.
+
+@item @b{nonvar}(X)
+Tests whether X is currently instantiated to a non-variable term.@REFILL
+
+@item @b{atom}(X)
+Checks that X is currently instantiated to an atom (i.e.  a non-variable term of arity 0,
+other than a number).@REFILL
+
+@item @b{integer}(X)
+Checks that X is currently instantiated to an integer.@REFILL
+
+@item @b{real}(X)
+Checks that X is currently instantiated to a floating point number.@REFILL
+
+@item @b{float}(X)
+Same as @b{real}/1, checks that X is currently instantiated to a floating point
+number.@REFILL
+
+@item @b{number}(X)
+Checks that X is currently instantiated to a number, i.e.  that it is either an integer or
+a real.@REFILL
+
+@item @b{atomic}(X)
+Checks that X is currently instantiated to an atom or number.@REFILL
+
+@item @b{structure}(X)
+Checks that X is currently instantiated to a compound term, i.e. to a nonvariable term
+that is not atomic.@REFILL
+
+@item @b{is_buffer}(X)
+Succeeds if X is instantiated to a buffer.@REFILL
+
+@item @b{functor}(T, F, N)
+The principal functor of term T has name F and arity N, where F is either an atom or,
+provided N is 0, a number. Initially, either T must be instantiated to a non-variable, or
+F and N must be instantiated to, respectively, either an atom and a non-negative integer
+or an integer and 0. If these conditions are not satisfied, an error message is given.  In
+the case where T is initially instantiated to a variable, the result of the call is to
+instantiate T to the most general term having the principal functor
+indicated.@REFILL
+
+@item @b{arg}(I, T, X)
+Initially, I must be instantiated to a positive integer and T to a compound term.  The
+result of the call is to unify X with the Ith argument of term T.  (The arguments are
+numbered from 1 upwards.) If the initial conditions are not satisfied or I is out of
+range, the call merely fails.@REFILL
+
+@item X =.. Y
+Y is a list whose head is the atom corresponding to the principal functor of X and whose
+tail is the argument list of that functor in X. E.g.@REFILL
+
+@example
+               product(0,N,N-1) =.. [product,0,N,N-1]
+
+               N-1 =.. [-,N,1]
+
+               product =.. [product]
+@end example
+
+If X is instantiated to a variable, then Y must be instantiated either to a list of
+determinate length whose head is an atom, or to a list of length 1 whose head is a
+number.@REFILL
+
+@item @b{name}(X,L)
+If X is an atom or a number then L is a list of the ASCII codes of the characters
+comprising the name of X. E.g.@REFILL
+
+@example
+               name(product,[112,114,111,100,117,99,116])
+@end example
+
+i.e.  @b{name}(product,"product").
+
+If X is instantiated to a variable, L must be instantiated to a list of ASCII character
+codes.  E.g.@REFILL
+
+@example
+              | ?- name(X,[104,101,108,108,111])).
+              X = hello
+
+              | ?- name(X,"hello").
+              X = hello
+@end example
+
+@item @b{call}(X)
+If X is a nonvariable term in the program text, then it is executed exactly as if X
+appeared in the program text instead of call(X), e.g.@REFILL
+
+@example
+              @dots{}, p(a), call( (q(X), r(Y)) ), s(X), @dots{}
+@end example
+
+@noindent
+is equivalent to
+
+@example
+              @dots{}, p(a), q(X), r(Y), s(X), @dots{}
+@end example
+
+However, if X is a variable in the program text, then if at runtime X is instantiated to a
+term which would be acceptable as the body of a clause, the goal @b{call}(X) is executed
+as if that term appeared textually in place of the @b{call}(X), except that any cut (@samp{!})
+occurring in X will remove only those choice points in X.  If X is not instantiated as
+described above, an error message is printed and call fails.@REFILL
+
+@item X
+(where X is a variable) Exactly the same as @b{call}(X).  However, we prefer the explicit
+usage of @b{call}/1 as good programming practice, and the use of a top level variable
+subgoal elicits a warning from the compiler.@REFILL
+
+@item @b{conlength}(C, L)
+Succeeds if the length of the print name of the constant C (which can be an atom, buffer
+or integer), in bytes, is L.  If C is a buffer (@pxref{Buffers}), it is the length of the
+buffer; if C is an integer, it is the length of the decimal representation of that
+integer, i.e., the number of bytes that a @b{$writename} will use.@REFILL
+@end table
+
+@node Sets, Comparison of Terms, Meta-Logical, Evaluable Predicates
+@section Sets
+
+When there are many solutions to a problem, and when all those solutions are required to
+be collected together, this can be achieved by repeatedly backtracking and gradually
+building up a list of the solutions.  The following evaluable predicates are provided to
+automate this process.@REFILL
+
+@table @asis
+@item @b{setof}(X, P, S)
+Read this as ``S is the set of all instances of X such that P is provable''.  If P is not
+provable, @b{setof}(X,P,S) succeeds with S instantiated to the empty list @t{[]}.  The term P
+specifies a goal or goals as in @b{call}(P). S is a set of terms represented as a list of
+those terms, without duplicates, in the standard order for terms (@pxref{Comparison of
+Terms}). If there are uninstantiated variables in P which do not also appear in X, then a
+call to this evaluable predicate may backtrack, generating alternative values for S
+corresponding to different instantiations of the free variables of P.  Variables occurring
+in P will not be treated as free if they are explicitly bound within P by an existential
+quantifier.  An existential quantification is written:@REFILL
+
+@CENTER Y^Q
+
+@noindent
+meaning ``there exists a Y such that Q is true'', where Y is some Prolog term (usually, a
+variable, or tuple or list of variables).@REFILL
+
+@item @b{bagof}(X, P, Bag)
+This is the same as @b{setof} except that the list (or alternative lists) returned will
+not be ordered, and may contain duplicates.  If P is unsatisfiable, @b{bagof} succeeds
+binding Bag to the empty list.  The effect of this relaxation is to save considerable time
+and space in execution.@REFILL
+
+@item @b{findall}(X, P, L)
+Similar to @b{bagof}/3, except that variables in P that do not occur in X are treated as
+local, and alternative lists are not returned for different bindings of such variables.
+The list L is, in general, unordered, and may contain duplicates.  If P is unsatisfiable,
+@b{findall} succeeds binding S to the empty list.@REFILL
+
+@item X^P
+The system recognises this as meaning ``there exists an X such that P is true'', and
+treats it as equivalent to @b{call}(P).  The use of this explicit existential quantifier
+outside the @b{setof} and @b{bagof} constructs is superfluous.@REFILL
+@end table
+
+@node Comparison of Terms, Buffers, Sets, Evaluable Predicates
+@section Comparison of Terms
+
+These evaluable predicates are meta-logical.  They treat uninstantiated variables as
+objects with values which may be compared, and they never instantiate those variables.
+They should not be used when what you really want is arithmetic comparison
+(@xref{Arithmetic}) or unification.  The predicates make reference to a standard total
+ordering of terms, which is as follows:@REFILL
+
+@table @asis
+@item variables
+in a standard order (roughly, oldest first -- the order is not related to the names of
+variables);@REFILL
+
+@item numbers
+@tex
+from $-\infty$ to $+\infty$;
+@end tex
+@ifinfo
+from -infinity to +infinity;@REFILL
+@end ifinfo
+
+@item atoms
+in alphabetical (i.e. ASCII) order;
+
+@item complex terms
+ordered first by arity, then by the name of principal functor, then by the arguments (in
+left-to-right order).@REFILL
+@end table
+
+For example, here is a list of terms in the standard order:
+
+@CENTER @t{[ X, -9, 1, fie, foe, fum, X = Y, fie(0,2), fie(1,1) ]}
+
+The basic predicates for comparison of arbitrary terms are:
+
+@table @asis
+@item X == Y
+Tests if the terms currently instantiating X and Y are literally identical (in particular,
+variables in equivalent positions in the two terms must be identical).  For example, the
+question @REFILL
+
+@example
+    | ?- X == Y.
+@end example
+
+@noindent
+fails (answers "no") because X and Y are distinct uninstantiated variables.  However, the
+question @REFILL
+
+@example
+    | ?- X = Y, X == Y.
+@end example
+
+@noindent
+succeeds because the first goal unifies the two variables
+(@pxref{Convenience}).@REFILL
+
+@item X \== Y
+Tests if the terms currently instantiating X and Y are not literally
+identical.@REFILL
+
+@item T1 @@< T2
+Term T1 is before term T2 in the standard order.
+
+@item T1 @@> T2
+Term T1 is after term T2 in the standard order.
+
+@item T1 @@=< T2
+Term T1 is not after term T2 in the standard order.
+
+@item T1 @@>= T2
+Term T1 is not before term T2 in the standard order.
+@end table
+
+Some further predicates involving comparison of terms are:
+
+@table @asis
+@item @b{compare}(Op, T1, T2)
+The result of comparing terms T1 and T2 is Op, where the possible values for Op
+are:@REFILL
+
+@table @asis
+@item =
+if T1 is identical to T2,
+
+@item <
+if T1 is before T2 in the standard order,
+
+@item >
+if T1 is after T2 in the standard order.
+@end table
+
+Thus @b{compare}(=,T1,T2) is equivalent to T1 == T2.
+
+@item @b{sort}(L1, L2)
+The elements of the list L1 are sorted into the standard order, and any identical (i.e.
+`==') elements are merged, yielding the list L2.@REFILL
+
+@item @b{keysort}(L1, L2)
+The list L1 must consist of items of the form Key-Value.  These items are sorted into
+order according to the value of Key, yielding the list L2.  No merging takes
+place.@REFILL
+@end table
+
+@node Buffers, Modification of the Program, Comparison of Terms, Evaluable Predicates
+@section Buffers
+
+SB-Prolog supports the concept of buffers.  A buffer is actually a constant and the
+characters that make up the buffer is the name of the constant.  However, the symbol table
+entry for a buffer is not hashed and thus is not added to the obj-list, so two different
+buffers will never unify.  Buffers can be allocated either in permanent space or on the
+heap.  Buffers in permanent space stay there forever; buffers on the heap are deallocated
+when the ``allocate buffer'' goal is backtracked over.@REFILL
+
+A buffer allocated on the heap can either be a simple buffer, or it can be allocated as a
+subbuffer of another buffer already on the heap.  A subbuffer will be deallocated when its
+superbuffer is deallocated.@REFILL
+
+There are occasions when it is not known, in advance, exactly how much space will be
+required and so how big a buffer should be allocated.  Sometimes this problem can be
+overcome by allocating a large buffer and then, after using as much as is needed,
+returning the rest of the buffer to the system. This can be done, but only under very
+limited circumstances: a buffer is allocated from the end of the permanent space, the top
+of the heap, or from the next available space in the superbuffer; if no more space has
+been used beyond the end of the buffer, a tail portion of the buffer can be returned to
+the system. This operation is called ``trimming'' the buffer.@REFILL
+
+The following is a list of library predicates for buffer management:
+
+@table @asis
+@item @b{alloc_perm}(Size, Buff)
+Allocates a buffer with a length Size in the permanent (i.e.  program) area.  Size must be
+bound to a number. On successful return, Buff will be bound to the allocated buffer.  The
+buffer, being in the permanent area, is never de-allocated.@REFILL
+
+@item @b{alloc_heap}(Size, Buff)
+Allocates a buffer of size Size on the heap and binds Buff to it. Since it is on the heap,
+it will be deallocated on backtracking.@REFILL
+
+@item @b{trimbuff}(Type, Buff, Newlen)
+This allows (in some very restricted circumstances) the changing of the size of a buffer.
+Type is 0 if the buffer is permanent, 1 if the buffer is on the heap. Buff is the buffer.
+Newlen is an integer: the size (which should be smaller than the original length of the
+buffer) to make the buffer. If the buffer is at the top of the heap (if heap buffer) or
+the end of the program area (if permanent) then the heap-top (or program area top) will be
+readjusted down.  The length of the buffer will be modified to Newlen.  This is
+(obviously) a very low-level primitive and is for hackers only to implement grungy
+stuff.@REFILL
+
+@item @b{conlength}(Constant,Length)
+Succeeds if the length of the print name of the constant Constant (which can be an atom,
+buffer or integer), in bytes, is Length.  If Constant is a buffer, it is the length of the
+buffer; if Constant is an integer, it is the length of the decimal representation of that
+integer, i.e., the number of bytes that a @b{$writename} will use.@REFILL
+@end table
+
+@node Modification of the Program, Internal Database, Buffers, Evaluable Predicates
+@section Modification of the Program
+
+The predicates defined in this section allow modification of the program as it is actually
+running.  Clauses can be added to the program (asserted) or removed from the program
+(retracted).  At the lowest level, the system supports the asserting of clauses with upto
+one literal in the body.  It does this by allocating a buffer and compiling code for the
+clause into that buffer.  Such a buffer is called a ``clause reference'' (clref).  The
+clref is then added to a chain of clrefs.  The chain of clrefs has a header, which is a
+small buffer called a ``predicate reference'' (prref), which contains pointers to the
+beginning and end of its chain of clrefs.  Clause references are quite similar to
+``database references'' of C-Prolog, and can be called.@REFILL
+
+When clauses are added to the program through @b{assert}, an index is normally created on
+the principal functor of the first argument in the head of the clause.  The argument on
+which the index is being created may be changed via the @b{index}/3 directive.  In
+particular, if no index is desired on a predicate, this should be specified using the
+@b{index}/3 directive with the argument number set to zero, e.g. if no index is desired on
+a predicate @b{foo}/3, then the directive @REFILL
+
+@CENTER @t{:- index(foo, 3, 0).}
+
+@noindent
+should be specified.
+
+The predicates that can be used to modify the program are the following:@REFILL
+
+@table @asis
+@item @b{assert}(C)
+The current instance of C is interpreted as a clause and is added to the program (with new
+private variables replacing any uninstantiated variables), at the end of the list of
+clauses for that predicate.  C must be instantiated to a non-variable.@REFILL
+
+@item @b{assert}(C, Ref)
+As for @b{assert}/1, but also unifies Ref with the clause reference of the clause
+asserted.@REFILL
+
+@item @b{asserti}(C,N)
+The current instance of C, interpreted as a clause, is asserted to the program with an
+index on its N[th] argument.  If N is zero, no index is created.@REFILL
+
+@item @b{asserta}(C)
+Similar to @b{assert}(C), except that the new clause becomes the first clause of the procedure
+concerned.@REFILL
+
+@item @b{asserta}(C, Ref)
+Similar to @b{asserta}(C), but also unifies Ref with the clause reference of the clause
+asserted.@REFILL
+
+@item @b{assertz}(C)
+Similar to @b{assert}(C), except that the new clause becomes the last clause of the procedure
+concerned.@REFILL
+
+@item @b{assertz}(C, Ref)
+Similar to @b{assertz}(C), but also unifies Ref with the clause reference of the clause
+asserted.@REFILL
+
+@item @b{assert_union}(P, Q)
+The clauses for Q are added to the clauses for P.  For example, the call @REFILL
+
+@example
+    | ?- assert_union(p(X,Y),q(X,Y)).
+@end example
+
+@noindent
+has the effect of adding the rule
+
+@example
+    p(X,Y) :- q(X,Y).
+@end example
+
+@noindent
+as the last rule defining @t{p}/2.  If P is not defined, it results in the call to Q being
+the only clause for P.@REFILL
+
+The variables in the arguments to @b{assert_union/2} are not significant, e.g.  the above
+would have been equivalent to @REFILL
+
+@example
+    | ?- assert_union(p(Y,X),q(X,Y)).
+@r{or}
+    | ?- assert_union(p(_,_),q(_,_)).
+@end example
+
+However, the arities of the two predicates involved must match, e.g.  even though the
+goal:@REFILL
+
+@example
+    | ?- assert_union(p(X,Y), r(X,Y,Z)).
+@end example
+
+@noindent
+will succeed, the predicate @t{p}/2 will not in any way depend on the clauses
+for @t{r}/3.@REFILL
+
+@item @b{assert}(Clause,AZ,Index,Clref)
+Asserts a clause to a predicate.  Clause is the clause to assert.  AZ is 0 for insertion
+as the first clause, 1 for insertion as the last clause.  Index is the number of the
+argument on which to index (0 for no indexing).  Clref is returned as the clause reference
+of the fact newly asserted.  If the main functor symbol of Clause has been declared (by
+@b{$assertf_alloc_t}/2, see below) to have its clauses on the heap, the clref will be
+allocated there. If the predicate symbol of Clause is undefined, it will be initialized
+and Clause added. If the predicate symbol has compiled clauses, it is first converted to
+be dynamic (cf{.} @b{symtype}/2, @pxref{Internal Database}) by adding a special clref that
+calls the compiled clauses.  Fact, AZ and Index are input arguments, and should be
+instantiated at the time of call; Clref is an output argument, and should be
+uninstantiated at the time of call.@REFILL
+
+@item @b{clause}(P,Q)
+P must be bound to a non-variable term, and the program is searched for a clause Cl whose
+head matches P.  The head and body of the clause Cl is unified with P and Q respectively.
+If Cl is a unit clause, Q will be unified with `true'.  Only interpreted clauses, i.e.
+those created through assert, can be accessed via @b{clause}/2.@REFILL
+
+@item @b{clause}(Head,Body,Ref)
+Similar to @b{clause}(Head,Body) but also unifies Ref with the database reference of the
+clause concerned.  @b{clause}/3 can be executed in one of two modes: either Head must be
+instantiated to a non-variable term at the time of the call, or Ref must be instantiated
+to a database reference.  As in the case of @b{clause}/2, only interpreted clauses, i.e.
+those created through assert, can be accessed via @b{clause}/3.@REFILL
+
+@item @b{retract}(Clause)
+The first clause in the program that unifies with Clause is deleted from the program.
+This predicate may be used in a non-deterministic fashion, i.e. it will successively
+backtrack to retract clauses whose heads match Head.  Head must be initially instantiated
+to a non-variable. In the current implementation, retract works only for asserted (e.g.
+consulted) clauses.@REFILL
+
+@item @b{abolish}(P)
+Completely remove all clauses for the procedure with head P (which should be a term). For
+example, the goal @REFILL
+
+@example
+    | ?- abolish( p(_, _, _) ).
+@end example
+
+@noindent
+removes all clauses for the predicate @t{p}/3.
+
+@item @b{abolish}(P, N)
+Completely remove all clauses for the predicate P (which should be an atom) with arity N
+(which should be an integer).@REFILL
+@end table
+
+@node Internal Database, State of the Program, Modification of the Program, Evaluable Predicates
+@section Internal Database
+
+@table @asis
+@item @b{recorded}(Key, Term, Ref)
+The internal database is searched for terms recorded under the key Key.  These terms are
+successively unified with Term in the order they occur in the database; at the same time,
+Ref is unified with the database reference of the recorded item.  The key must be given,
+and may be an atom or complex term.  If it is a complex term, only the principal functor
+is significant.@REFILL
+
+@item @b{recorda}(Key, Term, Ref)
+The term Term is recorded in the internal database as the first item for the key Key,
+where Ref is its database reference.  The key must be given, and only its principal
+functor is significant.@REFILL
+
+@item @b{recordz}(Key, Term, Ref)
+The term Term is recorded in the internal database as the last item for the key Key, where
+Ref is its database reference.  The key must be given, and only its principal functor is
+significant.@REFILL
+
+@item @b{erase}(Clref)
+The recorded item or clause whose database reference is Clref is deleted from the internal
+database or program.  Clref should be instantiated at the time of call.@REFILL
+
+@item @b{instance}(Ref, Term)
+A (most general) instance of the recorded term whose database reference is Ref is unified
+with Term.  Ref must be instantiated to a database reference.  Note that @b{instance}/2
+will not be able to access terms that have been erased.@REFILL
+@end table
+
+@node State of the Program, Environmental, Internal Database, Evaluable Predicates
+@section Information about the State of the Program
+
+@table @asis
+@item @b{listing}
+Lists in the current output stream the clauses for all the interpreted predicates in the
+program, except predicates that are ``internal'', i.e. whose names begin with `kbd{$}' or `@kbd{_$}',
+or which are provided as predefined (builtin or library) predicates.  A bug in the current
+system is that even though the user is allowed to redefine such predicates, @b{listing}/0
+does not know about such redefinitions, and will not list such predicates (they may,
+however, be accessed through @b{listing}/1 if they are interpreted).@REFILL
+
+@item @b{listing}(A)
+The argument A may be a predicate specification of the form Name/Arity in which case only
+the clauses for the specified predicate are listed.  Alternatively, it is possible for A
+to be a list of predicate specifications, e.g.@REFILL
+
+@example
+    | ?- listing([concatenate/3, reverse/2, go/0]).
+@end example
+
+Only interpreted clauses, i.e. clauses created via @b{assert}, can be accessed through
+@b{listing}/1.@REFILL
+
+@item @b{current_atom}(Atom)
+Generates (through backtracking) all currently known atoms, and unifies each in turn with
+Atom.  However, atoms considered ``internal'' symbols, i.e. those whose names begin with $
+or _$ are not returned.  The intrepid user who wishes to access such internal atoms as
+well can use the goal @REFILL
+
+@example
+    ?- $current_atom(Atom, 1).
+@end example
+
+@item @b{current_functor}(Name, Term)
+Generates (through backtracking) all currently known functors (which includes function and
+predicate symbols), and for each one returns its name and most general term as Name and
+Term respectively.  However, functors considered ``internal'' symbols, i.e.  those whose
+names begin with @kbd{$} or @kbd{_$}, or which are provided as predefined predicates, are not returned
+if both arguments to @b{current_functor}/2 are variables.  Internal symbols (of which
+there are a great many) as well as external ones may be accessed via @REFILL
+
+@example
+    ?- $current_functor(Name, Term, 1).
+@end example
+
+A bug in the current implementation is that even though the user is allowed to redefine
+``internal'' (builtin or library) predicates, @b{current_functor}/2 does not know whether
+they have been redefined, and hence will not return such predicates if both arguments to
+@b{current_functor}/2 are variables.@REFILL
+
+@item @b{current_predicate}(Name, Term)
+Generates (through backtracking) all currently known predicates, and for each one returns
+its name and most general term as Name and Term respectively.  However, predicates
+considered ``internal'', i.e. those whose names begin with @kbd{$} or @kbd{_$}, or which are provided
+as predefined predicates, are not returned if both arguments to @b{current_predicate}/2
+are variables.  Internal symbols (of which there are a great many) as well as external
+ones may be accessed via @REFILL
+
+@example
+    ?- $current_predicate(Name, Term, 1).
+@end example
+
+A bug in the current implementation is that even though the user is allowed to redefine
+``internal'' (builtin or library) predicates, @b{current_predicate}/2 does not know
+whether they have been redefined, and hence will not return such predicates if both
+arguments to @b{current_predicate}/2 are variables.@REFILL
+
+@item @b{predicate_property}(Term, Property)
+If Term is a term whose principal functor is a predicate, Property is unified with the
+currently known properties of the corresponding predicate.  If Term is a variable, then it
+is unified (successively, through backtracking) with the most general term for a predicate
+whose known properties are unified with Property.  For example, all the interpreted
+predicates in the program may be enumerated using @REFILL
+
+@example
+    ?- predicate_property(X, interpreted).
+@end example
+
+If the first argument to @b{predicate_property}/2 is uninstantiated at the time of the
+call, ``internal'' predicates will not be returned.  A bug in the current implementation
+is that even though the user is allowed to redefine such ``internal'' predicates,
+@b{predicate_property}/2 does not know about such redefinitions, and will not return such
+predicates if its first argument is uninstantiated.  Currently, the only properties that
+are considered are interpreted and compiled.@REFILL
+@end table
+
+@node Environmental, Global Values, State of the Program, Evaluable Predicates
+@section Environmental
+
+@table @asis
+@item @b{op}(priority, type, name)
+Treat name as an operator of the stated type and priority (@pxref{Operators}).  name may
+also be a list of names, in which all are to be treated as operators of the stated type
+and priority.@REFILL
+
+@item @b{break}
+Causes the current execution to be suspended at the next procedure call.  Then the
+message @REFILL
+
+@example
+                [  Break  (level  1) ]
+@end example
+
+@noindent
+is displayed.  The interpreter is then ready to accept input as though it was at the top
+level (except that at break level n > 0, the prompt is @code{@r{n}: ?- }).  If another call of
+break is encountered, it moves up to level 2, and so on.  To close the break and resume
+the execution which was suspended, type the END-OF-INPUT character.  Execution will be
+resumed at the procedure call where it had been suspended.  Alternatively, the suspended
+execution can be aborted by calling the evaluable predicate abort, which causes a return
+to the top level.@REFILL
+
+@item @b{abort}
+Aborts the current execution, taking you back to top level.@REFILL
+
+@item @b{save}(F)
+The system saves the current state of the system into file F.@REFILL
+
+@item @b{restore}(F)
+The system restores the saved state in file F to be the current state.  One restriction
+imposed by the current system is that various system parameters (e.g.  stack sizes,
+permanent space, heap space, etc.) of the saved state have to be the same as that of the
+current invocation.  Thus, it is not possible to save a state from an invocation where
+50000 words of permanent space had been allocated, and then restore the same state in an
+invocation with 100000 words of permanent space.@REFILL
+
+@item @b{cputime}(X)
+Unifies X with the time elapsed, in milliseconds, since the system was started
+up.@REFILL
+
+@item @b{$getenv}(Var,Val)
+Val is unified with the value of the Unix environment variable Var.  Fails is Var is
+undefined.@REFILL
+
+@item @b{statistics}
+Prints out the current allocations and amounts of space used for each of the four main
+areas: the permanent area, the local stack, the global stack and the trail stack.  Does
+not work well unless the simulator has been called with the -s option
+(@pxref{Simulator Options}).@REFILL
+
+@item @b{statistics}(Keyword, List)
+Usually used with Keyword instantiated to a keyword, e.g. @samp{runtime}, and List
+unbound.  It unifies List with a list of statistics determined by Keyword.  The keys and
+values are summarized below.  Times are given in milliseconds and sizes are given in
+bytes.@REFILL
+
+@example
+  KEYWORD               LIST
+
+  runtime               [cpu time used by Prolog, cpu time since
+                         last call to statistics/2]
+  memory                [total virtual memory, 0]
+  core                  ( same as for the keyword memory )
+  program               [program space in use, program space free]
+  heap                  ( same as for the keyword program )
+  global_stack          [global stack in use, global stack free]
+  local_stack           [local stack in use, local stack free]
+  trail                 [trail stack in use, trail stack free]
+  garbage_collection    [0, 0]
+  stack_shifts          [0, 0]
+@end example
+
+@enumerate
+@item
+For the keyword @samp{memory} the second element of the returned list is
+always 0.@REFILL
+
+@item
+For the keyword @samp{trail}, the second element of the returned list is the amount of
+trail stack free.  This is similar to Sicstus Prolog (version 0.5), but different from
+Quintus Prolog (version 1.6).@REFILL
+
+@item
+Currently, SB-Prolog does not have garbage collection or stack shifting, hence the list
+values returned for these are [0, 0].@REFILL
+@end enumerate
+
+@item @b{nodynload}(P, N)
+Flags the predicate P with arity N as one that should not be attempted to be dynamically
+loaded if it is undefined.  If a predicate so flagged is undefined when a call to it is
+encountered, the call fails quietly without trying to invoke the dynamic loader or giving
+an error message.  P and N should be instantiated to an atom and an integer, respectively,
+at the time of call to @b{nodynload}/2.@REFILL
+
+@item @b{symtype}(T, N)
+Unifies N with the ``internal type'' of the principal functor of the term T, which must be
+instantiated at the time of the call.  N is bound to 0 if T does not have an entry point
+defined (i.e. cannot be executed); to 1 if the principal functor of T is ``dynamic'', i.e.
+has asserted code; to 2 if the principal functor for T is a compiled predicate; and 3 if T
+denotes a buffer.  Thus, for example, if the predicate @b{p}/2 is a compiled predicate
+which has been loaded into the system, the goal:@REFILL
+
+@example
+    | ?- symtype(p(_,_), X).
+@end example
+
+@noindent
+will succeed binding X to 2; on the other hand, the goal:@REFILL
+
+@example
+    | ?- assert(q(a,b,c)), symtype(q(_,_,_), X).
+@end example
+
+@noindent
+will succeed binding X to 1.
+
+@item @b{system}(Call)
+Calls the operating system with the atom Call as argument.  For example,
+the call:@REFILL
+
+@example
+    | ?- system('ls').
+@end example
+
+@noindent
+will produce a directory listing.  Since @b{system}/1 is executed by forking off a shell
+process, it cannot be used, for example, to change the working directory of
+the simulator.@REFILL
+
+@item @b{syscall}(N, Args, Res)
+Executes the Unix system call number N with arguments Args, and returns the result in Res.
+N is an integer, and Args a Prolog list of the arguments to the system call.  For example,
+to execute the system call @samp{creat(File,Mode)}, knowing that the syscall number for
+the Unix command creat(2) is 8, we execute the goal @REFILL
+
+@example
+    | ?- syscall(8, [File, Mode], Des).
+@end example
+
+@noindent
+where Des is the file descriptor returned by creat.  The syscall numbers for some Unix
+system calls are given in the table below:@REFILL
+
+@tex
+\centerline{\vbox{\halign{\hfil\tt#&\hfil#\quad&\hfil\tt#&\hfil#\cr
+exit & 1 & fork & 2 \cr
+read & 3 & write & 4\cr
+open & 5 & close & 6\cr
+creat & 8 & link & 9\cr
+unlink & 10 & chdir & 12\cr
+chmod & 15 & lseek & 19\cr
+access & 33 & kill & 37\cr
+wait & 84 & socket & 97\cr
+connect & 98 & accept & 99\cr
+send & 101 & recv & 102\cr
+bind & 104 & setsockopt & 105\cr
+listen & 106 & recvmsg & 113\cr
+sendmsg & 114 & getsockopt & 118\cr
+recvfrom & 125 & sendto & 133\cr
+socketpair & 135 & mkdir & 136\cr
+rmdir & 137 & getsockname & 150\cr}}}
+@end tex
+@ifinfo
+@example
+          exit            1       fork            2
+          read            3       write           4
+          open            5       close           6
+          creat           8       link            9
+          unlink          10      chdir           12
+          chmod           15      lseek           19
+          access          33      kill            37
+          wait            84      socket          97
+          connect         98      accept          99
+          send            101     recv            102
+          bind            104     setsockopt      105
+          listen          106     recvmsg         113
+          sendmsg         114     getsockopt      118
+          recvfrom        125     sendto          133
+          socketpair      135     mkdir           136
+          rmdir           137     getsockname     150
+@end example
+@end ifinfo
+@end table
+
+@node Global Values, Exotica, Environmental, Evaluable Predicates
+@section Global Values
+
+SB-Prolog has some primitives that permit the programmer to manipulate global values.
+These are provided primarily as an efficiency hack, and needless to say, should be used
+with a great deal of care.@REFILL
+
+@table @asis
+@item @b{globalset}(Term)
+Allows the user to save a global value.  Term must be bound to a compound term, say @code{p(V)}.
+@code{V} must be a number or a constant or a variable.  If @code{V} is a number or a constant, the
+effect of @code{@b{globalset}(p(V))} can be described as:@REFILL
+
+@CENTER @t{retract(p(_)), assert(p(V)).}
+
+@noindent
+I.e., @code{p} is a predicate that when called will, from now on (until some other change
+by @b{globalset}/1), deterministically return @code{V}.  If @code{V} is a variable, the
+effect is to make @code{V} a global variable whose value is accessible by calling
+@code{p}. For example, executing @code{@b{globalset}(p(X))} makes @code{X} a global
+variable. @code{X} can be set by unification with some other term.  On backtracking,
+@code{X} will be restored to its earlier value.@REFILL
+
+@item @b{gennum}(Newnum)
+@b{gennum}/1 sets its argument to a new integer every time it is invoked.@REFILL
+
+@item @b{gensym}(C, Newsym)
+@b{gensym}/2 sets its second argument to an atom whose name is made by concatenating the
+name of the atom C to the current gennum number. This new constant is bound to Newsym.
+For example, if the current gennum number is 37, then the call @REFILL
+
+@example
+    | ?- gensym(aaa,X)
+@end example
+
+@noindent
+will succeed binding @t{X} to the atom @samp{aaa37}.
+@end table
+
+@node Exotica, , Global Values, Evaluable Predicates
+@section Exotica
+
+This section describes some low level routines that are sometimes useful in mucking around
+with buffers.  These are for serious hackers only.@REFILL
+
+@table @asis
+@item @b{$alloc_buff}(Size,Buff,Type,Supbuff,Retcode)
+Allocates a buffer.  Size is the length (in bytes) of the buffer to allocate; Buff is the
+buffer allocated, and should be unbound at the time of the call; Type indicates where to
+allocate the buffer: a value of 0 indicates that the buffer is to be allocated in
+permanent space, 1 that it should be on the heap, and 2 indicates that it should be
+allocated from a larger heap buffer; Supbuff is the larger buffer to allocate a subbuffer
+out of, and is only looked at if the value of Type is 2; Retcode is the return code: a
+value of 0 indicates that the buffer has been allocated, while a value of 1 indicates
+that the buffer could not be allocated due to lack of space.  The arguments Size, Type,
+and Supbuff (if Type = 2) are input arguments, and should be bound at the time of the
+call; Buff and Retcode are output arguments, and should be unbound at the time of the
+call.@REFILL
+
+@item @b{call_ref}(Call, Ref)
+Calls the predicate whose database reference (prref) is Ref, using the literal Call as the
+call.  This is similar to @b{call_ref}(Call, Ref, 0).@REFILL
+
+@item @b{call_ref}(Call, Ref, Tr)
+Calls the predicate whose database reference (prref) is Ref, using the literal Call as the
+call.  Tr must be either 0 or 1: if Tr is 0 then the call Call is made assuming the
+``trust'' optimization will be made; if Tr is 1 then the ``trust'' optimization is not
+used, so that any new fact added before final failure will be seen by Call.  (Also, this
+currently does not take advantage of any indexing that might have been constructed.) Call,
+Ref and Tr are all input arguments, and should be instantiated at the time
+of call.@REFILL
+
+@item @b{$assertf_alloc_t}(Palist,Size)
+Declares that each predicate in the list Palist of predicate/arity pairs (terms of the
+form `/'(P,N) where P is a predicate symbol and N the arity of P) is to have any facts
+asserted to them stored in a buffer on the heap, to be allocated here.  This allocates a
+superbuffer of size Size on the heap.  Future assertions to these predicates will have
+their clauses put in this buffer.  When this call is backtracked over, any clauses
+asserted to these predicates are deallocated, and a subsequent call to any of those
+predicates will cause the simulator to report an error and fail.  Both Palist and Size are
+input arguments, and should be instantiated at the time of call.@REFILL
+
+@item @b{$db_new_prref}(Prref,Where,Supbuff)
+Creates an empty Prref, i.e. one with no facts in it. If called, it will simply fail.
+Where indicates where the prref should be allocated: a value of 0 indicates the permanent
+area, while a value of 2 indicates that it is to be allocated as a subbuffer.  Supbuff is
+the superbuffer from which to allocate Prref if Where is 2.  Where should be instantiated
+at the time of call, while Prref should be uninstantiated; in addition, if Where is 2,
+Supbuff should be instantiated at the time of call.@REFILL
+
+@item @b{$db_assert_fact}(Fact,Prref,AZ,Index,Clref,Where,Supbuff)
+Fact is a fact to be asserted; Prref is a predicate reference to which to add the asserted
+fact; AZ is either 0, indicating the fact should be inserted as the first clause in Prref,
+or 1, indicating it should be inserted as the last; Index is 0 if no index is to be built,
+or n if an index on the n[th] argument of the fact is to be used.  (Asserting at the
+beginning of the chain with indexing is not yet supported.)  Where indicates where the
+clref is to be allocated: a value of 0 indicates that it should be in the permanent area,
+while a value of 2 indicates that it should be allocated as a subbuffer of Supbuff.  Clref
+is returned and it is the clause reference of the asserted fact.  Fact, Prref, AZ, Index
+and Where are input arguments, and should be instantiated at the time of call; in
+addition, if Where is 2, then Supbuff should also be instantiated.  Clref is an output
+argument, and should be uninstantiated at the time of call.@REFILL
+
+@item @b{$db_add_clref}(Fact,Prref,AZ,Index,Clref,Where,Supbuff)
+Adds the clref Clref to the prref Prref. Fact is the fact that has been compiled into
+Clref (used only to get the arity and for indexing).  The other parameters are as for
+@b{$db_assert_fact}/7.@REFILL
+
+@item @b{$db_call_prref}(Call,Prref)
+Calls the prref Prref using the literal Call as the call.  The call is done by simply
+branching to the first clause.  New facts added to Prref after the last fact has been
+retrieved by Call, but before Call is failed through, will not be used.  Both Call and
+Prref are input arguments, and should be instantiated at the time of call.@REFILL
+
+@item @b{$db_call_prref_s}(Call,Prref)
+This also calls the prref Prref using Call as the call.  The difference from
+@b{$db_call_prref} is that this does not use the ``trust'' optimization, so that any new
+fact added before final failure will be seen by Call.  (Also, this currently does not take
+advantage of any indexing that might have been constructed, while @b{$db_call_prref}
+does.)  Both Call and Prref are input arguments, and should be instantiated at the time of
+call.@REFILL
+
+@item @b{$db_get_clauses}(Prref,Clref,Dir)
+This returns, nondeterministically, all the clause references Clref for clauses asserted
+to prref Prref.  If Dir is 0, then the first clref on the list is returned first; if Dir
+is 1, then they are returned in reverse order.  Prref and Dir are input arguments, and
+should be instantiated at the time of call; Clref is an output argument, and should be
+uninstantiated at the time of call.@REFILL
+@end table
+
+@node Debugging, Simulator, Evaluable Predicates, Top
+@chapter Debugging
+
+@menu
+* High Level Tracing::
+* Low Level Tracing::
+@end menu
+
+@node High Level Tracing, Low Level Tracing,, Debugging
+@section High Level Tracing
+
+The preferred method of tracing execution is through the predicate @b{trace}/1.  This
+predicate takes as argument a term P/N, where P is a predicate name and N its arity, and
+sets a ``trace point'' on the corresponding predicate; it can also be given a list of such
+terms, in which case a trace point is set on each member of the list.  For example,
+executing @REFILL
+
+@example
+    | ?- trace(pred1/2), trace([pred2/3, pred3/2]).
+@end example
+
+@noindent
+sets trace points on predicates @t{pred1}/2, @t{pred2}/3 and @t{pred3}/2.  Only those
+predicates are traced that have trace points set on them.@REFILL
+
+If all the predicates in a file are to be traced, it is usually convenient to use the
+@code{PredList} parameter of @b{compile}/4 or @b{consult}/3, e.g.:@REFILL
+
+@example
+    | ?- compile(foo, 'foo.out', [t,v], Preds), load('foo.out'), trace(Preds).
+@r{or}
+    | ?- consult(foo, [v], Preds), trace(Preds).
+@end example
+
+Notice that in the first case, the @code{t} compiler option (@pxref{Compiler Options})
+should be specified in order to turn off certain assembler optimizations and facilitate
+tracing.  In the second case, the same effect may be achieved by specifying the @code{t}
+option to @bb{consult}.@REFILL
+
+The trace points set on predicates may be overwritten by loading byte code files via
+@b{load}/1, and in this case it may be necessary to explicitly set trace points again on
+the loaded predicates.  This does not happen with @b{consult}: predicates that were being
+traced continue to have trace points set after consulting.@REFILL
+
+The tracing facilities of SB-Prolog are in many ways very similar to those of C-Prolog.
+However, leashing is not supported, and only those predicates can be traced which have had
+trace points set on them through @b{trace}/1.  This makes @b{trace}/1 and @b{spy}/1 very
+similar: essentially, trace amounts to two levels of spy points.  In SB-Prolog, tracing
+occurs at Call (i.e. entry to a predicate), successful Exit from a clause, and Failure of
+the entire call.  The tracing options available during debugging are the following:@REFILL
+
+@table @asis
+@item @t{c}, NEWLINE: Creep
+Causes the system to single-step to the next port (i.e.  either the entry to a traced
+predicate called by the executed clause, or the success or failure exit from
+that clause).@REFILL
+
+@item @t{a}: Abort
+Causes execution to abort and control to return to the top level
+interpreter.@REFILL
+
+@item @t{b}: Break
+Calls the evaluable predicate break, thus invoking recursively a new incarnation of the
+system interpreter.  The command prompt at break level n is:@REFILL
+
+@CENTER @t{@r{n}: ?-}
+
+The user may return to the previous break level by entering the system end-of-file
+character (e.g.  ctrl-D), or typing in the atom @samp{end_of_file}; or to the top level
+interpreter by typing in @b{abort}.@REFILL
+
+@item @t{f}: Fail
+Causes execution to fail, thus transferring control to the Fail port of the current
+execution.@REFILL
+
+@item @t{h}: Help
+Displays the table of debugging options.@REFILL
+
+@item @t{l}: Leap
+Causes the system to resume running the program, only stopping when a spy-point is reached
+or the program terminates.  This allows the user to follow the execution at a higher level
+than exhaustive tracing.@REFILL
+
+@item @t{n}: Nodebug
+Turns off debug mode.@REFILL
+
+@item @t{q}: Quasi-skip
+This is like Skip except that it does not mask out spy points.@REFILL
+
+@item @t{r}: Retry (fail)
+Transfers to the Call port of the current goal.  Note, however, that side effects, such as
+database modifications etc., are not undone.@REFILL
+
+@item @t{s}: Skip
+Causes tracing to be turned off for the entire execution of the procedure.  Thus, nothing
+is seen until control comes back to that procedure, either at the Success or the Failure
+port.@REFILL
+@end table
+
+Other predicates that are useful in debugging are:
+
+@table @asis
+@item @b{untrace}(Preds)
+where Preds is a term P/N, where P is a predicate name and N its arity, or a list of such
+terms.  Turns off tracing on the specified predicates.  Preds must be instantiated at the
+time of the call.@REFILL
+
+@item @b{spy}(Preds)
+where Preds is a term P/N, where P is a predicate name and N its arity, or a list of such
+terms.  Sets spy points on the specified predicates.  Preds must be instantiated at the
+time of the call.@REFILL
+
+@item @b{nospy}(Preds)
+where Preds is a term P/N, where P is a predicate name and N its arity, or a list of such
+terms.  Removes spy points on the specified predicates.  Preds must be instantiated at the
+time of the call.@REFILL
+
+@item @b{debug}
+Turns on debugging mode.  This causes subsequent execution of predicates with trace or spy
+points to be traced, and is a no-op if there are no such predicates.  The predicates
+@b{trace}/1 and @b{spy}/1 cause debugging mode to be turned on
+automatically.@REFILL
+
+@item @b{nodebug}
+Turns off debugging mode.  This causes trace and spy points to be ignored.@REFILL
+
+@item @b{debugging}
+Displays information about whether debug mode is on or not, and lists predicates that have
+trace points or spy points set on them.@REFILL
+
+@item @b{tracepreds}(L)
+Binds L to a list of terms P/N where the predicate P of arity N has a trace point set on
+it.@REFILL
+
+@item @b{spypreds}(L)
+Binds L to a list of terms P/N where the predicate P of arity N has a spy point set
+on it.@REFILL
+@end table
+
+There is one known bug in the package: attempts to set trace points, via @b{trace}/1, on
+system and library predicates that are used by the trace package can cause bizarre
+behaviour.@REFILL
+
+@node Low Level Tracing,, High Level Tracing, Debugging
+@section Low Level Tracing
+
+SB-Prolog also provides a facility for low level tracing of execution.  This can be
+activated by invoking the simulator with the @code{-T} option, or through the predicate
+@b{$trace}/0.  It causes trace information to be printed out at every call (including
+those to system trap handlers).  The volume of such trace information can very become
+large very quickly, so this method of tracing is not recommended in general.@REFILL
+
+Low level tracing may be turned off using the predicate @b{untrace}/0.
+
+@node Simulator, Compiler, Debugging, Top
+@chapter The Simulator
+
+The simulator resides in the SB-Prolog system directory @file{sim}.  The following
+sections describe various aspects of the simulator.@REFILL
+
+@menu
+* Invoking the Simulator::
+* Simulator Options::
+* Interrupts::
+@end menu
+
+@node Invoking the Simulator, Simulator Options,, Simulator
+@section Invoking the Simulator
+
+The simulator is invoked by the command
+
+@CENTER @t{sbprolog} @i{bc_file}
+
+where `@i{bc_file}' is a byte code file resulting from the compilation of a Prolog
+program.  In almost all cases, the user will wish to interact with the SB-Prolog query
+evaluator, in which case `@i{bc_file}' will be @file{$readloop}, and the command will be:@REFILL
+
+@CENTER @t{sbprolog Path/$readloop}
+
+@noindent
+where @t{Path} is the path to the directory containing the command interpreter @file{$readloop}.
+This directory, typically, is the system directory @file{modlib}.@REFILL
+
+The command interpreter reads in a query typed in by the user, evaluates it and prints the
+answer(s), repeating this until it encounters an end-of-file (the standard end-of-file
+character on the system, e.g. ctrl-D), or the user types in @code{end_of_file} or @code{halt}.@REFILL
+
+The user should ensure that the the directory containing the executable file @file{sim}
+(typically, the system directory @file{sim}) is included in the shell variable path; if
+not, the full path to the simulator will have to be specified.@REFILL
+
+In general, the simulator may be invoked with a variety of options, as
+follows:@REFILL
+
+@example
+    sbprolog -options @i{bc_file}
+@r{or}
+    sbprolog -option<1> -option<2> ... -option<n> @i{bc_file}
+@end example
+
+The options recognized by the simulator are described below.@REFILL
+
+When called with a byte code file `@i{bc_file}', the simulator begins execution with the
+first clause in that file.  The first clause in such a file, therefore, should be a clause
+without any arguments in the head (otherwise, the simulator will attempt to dereference
+argument pointers in the head that are really pointing into deep space, and usually come
+to a sad end).  If the user is executing a file in this manner rather than using the
+command interpreter, he should also be careful to include the undefined predicate handler
+@b{_$undefined_pred}/1, which is normally defined in the file @file{modlib/$init_sys.P}.@REFILL
+
+@node Simulator Options, Interrupts, Invoking the Simulator, Simulator
+@section Simulator Options
+
+The following is a list of options recognized by the simulator.@REFILL
+
+@table @t
+@item T
+Generates a trace at entry to each called routine.
+
+@item d
+Produces a disassembled dump of `@i{bc_file} into a file named @file{dump.pil} and
+exits.@REFILL
+
+@item n
+Adds machine addresses when producing trace and dump.
+
+@item s
+Maintains information for the builtin @b{statistics}/0.  Default: off.
+
+@item m @r{size}
+Allocates size words (4 bytes) of space to the local stack and heap together.  Default:
+100000.@REFILL
+
+@item p @r{size}
+Allocates size words of space to the program area.  Default: 100000.@REFILL
+
+@item b @r{size}
+Allocates size words of space to the trail stack.  Default: m/5, where m is the amount of
+space allocated to the local stack and heap together.  This parameter, if specified, must
+follow the @code{-m} parameter.@REFILL
+@end table
+
+As an example, the command:
+
+@CENTER @t{sbprolog -s -p 60000 -m 150000 \$readloop}
+
+@noindent
+starts the simulator executing the command interpreter with 60000 bytes of program space,
+150000 bytes of local and global stack space and (by default) 30000 bytes of trail stack
+space; the @code{s} option also results in statistics information being maintained.@REFILL
+
+@node Interrupts,, Simulator Options, Simulator
+@section Interrupts
+
+SB-Prolog provides a facility for exception handling using user-definable interrupt
+handlers.  This can be used both for external interrupts, e.g. those generated from the
+keyboard by the user or from signals other processes; or internal traps, e.g.  those
+caused by stack overflows, encountering undefined predicates, etc.  For example, the
+``undefined predicate'' interrupt is handled, by default, by the predicate
+@b{_$undefined_pred}/1, which is defined in the files @file{modlib/src/$init_sys.P} and
+@file{modlib/src/$readloop.P}. The default action on encountering an undefined predicate
+is to attempt to dynamically load a file whose name matches that of the undefined
+predicate.  However, the user may easily alter this behaviour by redefining the undefined
+predicate handler.@REFILL
+
+In general, interrupts are handled by the predicate @b{_$interrupt}/2: a call to this
+predicate is of the form @b{_$interrupt}(Call, Code), where Call is the call that
+generated the interrupt, and Code is an integer indicating the nature of the interrupt.
+For each interrupt code, the interrupt handler then calls a handler that is designed to
+handle that particular kind of interrupt.  At this point, the following interrupt codes
+have predefined meanings:@REFILL
+
+@table @asis
+@item 0
+undefined predicate;
+
+@item 1
+keyboard interrupt ( ^C );
+
+@item 2
+stack overflow.
+@end table
+
+Other interrupt codes may be incorporated by modifying the definition of the predicate
+@b{_$interrupt}/2 in the file @file{modlib/src/$readloop.P}.@REFILL
+
+Interrupts during execution are signalled from within the WAM simulator.  The general
+method for raising an interrupt is using the function @code{set_intercode} in the file
+@file{sim/sub_inst.c}: to raise an interrupt whose code is n, the line:@REFILL
+
+@CENTER @t{lpcreg = set_intercode(@r{n});}
+
+@noindent
+is added to the appropriate place in the main loop of the interpreter, defined in
+@file{sim/main.c}.@REFILL
+
+@node Compiler, Libraries, Simulator, Top
+@chapter The Compiler
+
+The compiler translates Prolog source files into byte-code object files.  It is written
+entirely in Prolog.  The byte code for the compiler can be found in the SB-Prolog system
+directory @file{cmplib}, with the source code resident in @file{cmplib/src}.@REFILL
+
+Byte code files may be concatenated together to produce other byte code files.  Thus, for
+example, if @file{foo1} and @file{foo2} are byte code files resulting from the compilation of two Prolog
+source programs, then the file @file{foo}, obtained by executing the shell command:@REFILL
+
+@CENTER @t{cat foo1 foo2 > foo}
+
+@noindent
+is a byte code file as well, and may be loaded and executed.  In this case, loading and
+executing the file @file{foo} would give the same result as loading @file{foo1} and
+@file{foo2} separately, which in turn would be the same as concatenating the original
+source files and compiling this larger file.  This makes it easier to compile large
+programs: one need only break them into smaller pieces, compile the individual pieces, and
+concatenate the byte files together.@REFILL
+
+The following sections describe the various aspects of the compiler in more
+detail.@REFILL
+
+@menu
+* Invoking the Compiler::
+* Compiler Options::
+* Assembly::
+* Compiler Directives::
+@end menu
+
+@node Invoking the Compiler, Compiler Options,, Compiler
+@section Invoking the Compiler
+
+The compiler is invoked through the Prolog predicate @b{compile}:
+
+@example
+    | ?- compile(InFile [, OutFile ] [, OptionsList ]).
+@end example
+
+@noindent
+where optional parameters are enclosed in brackets.  @code{InFile} is the name of the input (i.e.
+source) file; @code{OutFile} is the name of the output file (i.e. byte code) file; @code{OptionsList} is
+a list of compiler options (see below).@REFILL
+
+The input and output file names must be Prolog atoms, i.e.  either begin with a lower case
+letter or dollar sign `@kbd{$}', and consist only of letters, digits, and underscores; or, be
+enclosed within single quotes.  If the output file name is not specified, it defaults to
+@file{InFile.out}.  The list of options, if specified, is a Prolog list, i.e. a term of the form:@REFILL
+
+@CENTER @t{[ option<1>, option<2>, @dots{}, option<n> ]}
+
+@noindent
+If left unspecified, it defaults to the empty list @t{[]}.
+
+In fact, the output file name and the options list may be specified in any order.  Thus,
+for example, the queries:@REFILL
+
+@example
+    | ?- compile('/usr/debray/foo', foo_out, [v]).
+@r{and}
+    | ?- compile('/usr/debray/foo', [v], foo_out).
+@end example
+
+@noindent
+are equivalent, and specify that the Prolog source file @file{/usr/debray/foo} is to be
+compiled in verbose mode (@pxref{Compiler Options}), and that the byte code is to be
+generated into the file @file{foo_out}.@REFILL
+
+The @bb{compile} predicate may also be called with a fourth parameter:@REFILL
+
+@example
+    | ?- compile(InFile, OutFile, OptionsList, PredList).
+@end example
+
+@noindent
+where @code{InFile}, @code{OutFile} and @code{OptionsList} are as before; @b{compile}/4
+unifies @code{PredList} with a list of terms P/N denoting the predicates defined in
+@code{InFile}, where P is a predicate name and N its arity. @code{PredList}, if specified,
+is usually given as an uninstantiated variable; its principal use is for setting trace
+points on the predicates in the file (@pxref{Debugging}), e.g. by executing:@REFILL
+
+@example
+    | ?- compile('/usr/debray/foo', foo_out, [v], L), load(foo_out), trace(L).
+@end example
+
+Notice that @code{PredList} can only appear in @b{compile}/4.
+
+@node Compiler Options, Assembly, Invoking the Compiler, Compiler
+@section Compiler Options
+
+The following options are currently recognized by the compiler:
+
+@table @t
+@item a
+Specifies that an ``assembler'' file is to be created.  The name of the assembler file is
+obtained by appending @file{.asl} to the source file name.  While the writing out of assembly
+code slows down the compilation process to some extent, it allows the assembler to do a
+better job of optimizing away indirect subroutine linkages (since in this case the
+assembler has assembly code for the entire program to work with at once, not just a single
+predicate).  This results in code that is faster and more compact.@REFILL
+
+@item d
+Dumps expanded macros to the user (@pxref{Macro Expander Options}).
+
+@item e
+Expand macros (@pxref{Macro Expander Options}).
+
+@item t
+If specified, turns off assembler optimizations that eliminate indirect branches through
+the symbol table in favour of direct branches.  This is useful in debugging compiled code.
+It is necessary if the extension table feature is to be used.@REFILL
+
+@item v
+If specified, compiles in ``verbose'' mode, which causes messages regarding progress of
+compilation to be printed out.@REFILL
+@end table
+
+@node Assembly, Compiler Directives, Compiler Options, Compiler
+@section Assembly
+
+The SB-Prolog assembler can be invoked by loading the compiler and using the predicate
+@b{$asm}/3:@REFILL
+
+@example
+    | ?- $asm(InFile, OutFile, OptionsList).
+@end example
+
+where @code{InFile} is a Prolog atom which is the name of a WAM assembly source file (e.g.
+the @file{.asl} file generated when a Prolog program is compiled with the @code{a}
+option), @code{OutFile} is an atom which is the name of the intended byte code file, and
+@code{OptionsList} is a list of options.  The options recognized by the assembler
+are:@REFILL
+
+@table @t
+@item v
+``Verbose'' mode.  Prints out information regarding progress of assembly.@REFILL
+
+@item t
+``Trace''.  If specified, the assembler generates code to force procedure calls to branch
+indirectly via the symbol table, instead of using a direct branch.  This is useful for
+tracing compiled code.  It is necessary if the extension table feature is to be
+used.@REFILL
+@end table
+
+The assembler is intended primarily to support the compiler, so the assembly language
+syntax is quirky in places.  The interested reader is advised to look at the assembly
+files resulting from compilation with the @code{a} option for more on SB-Prolog assembler
+syntax.@REFILL
+
+@node Compiler Directives,, Assembly, Compiler
+@section Compiler Directives
+
+@menu
+* Mode Declarations::
+* Indexing Directives::
+@end menu
+
+@node Mode Declarations, Indexing Directives,, Compiler Directives
+@subsection Mode Declarations
+
+The user may declare input and output arguments of predicates using mode declarations.
+These declarations, for an n-ary predicate @code{p}, are of the form @REFILL
+
+@CENTER @t{:- mode p( Mode ).}
+
+@noindent
+where @code{Mode} consists of n mode values; or
+
+@CENTER @t{:- mode(p, n, ModeList)}
+
+@noindent
+where @code{ModeList} is a list of mode values of length n.  Mode values may be the
+following:@REFILL
+
+@table @t
+@item c@r{,} ++
+Indicates that the corresponding argument position is always a ground term in any call to
+the predicate.  The argument is therefore an input argument.@REFILL
+
+@item nv@r{,} +
+Indicates that the corresponding argument position is always a nonvariable term (i.e.  is
+instantiated) in any call in any call to the predicate.  The argument is therefore an
+input argument.@REFILL
+
+@item f@r{,} -
+Indicates that the corresponding argument position is always an uninstantiated variable in
+any call to the predicate.  The argument is therefore an output argument.@REFILL
+
+@item d@r{,} ?
+Indicates that the corresponding argument may be any term in calls to the
+predicate.@REFILL
+@end table
+
+For example, a 3-ary predicate @code{p} whose first argument is always a ground term in a call,
+whose second argument is always uninstantiated, and whose third argument can be any term,
+may have its mode declared as:@REFILL
+
+@example
+    :- mode p(++, -, d).
+@r{or as}
+    :- mode(p, 3, [c, f, d]).
+@end example
+
+Currently, mode information is used by the compiler in two ways.  First, it often allows
+more compact code to be generated.  The second use is in guiding program transformations
+that allow faster code to be generated.  For example, the predicate:@REFILL
+
+@example
+    part([], _, [], []).
+    part([E|L], M, [E|U1], U2) :- E =< M, part(L, M, U1, U2).
+    part([E|L], M, U1, [E|U2]) :- E  > M, part(L, M, U1, U2).
+@end example
+
+@noindent
+executes about 30% faster with the mode declaration
+
+@example
+    :- mode part(++, ++, -, -).
+@end example
+
+@noindent
+than without.
+
+@node Indexing Directives,, Mode Declarations, Compiler Directives
+@subsection Indexing Directives
+
+The compiler usually generates an index on the principal functor of the first argument of
+a predicate.  The user may direct the compiler to generate an index on any other argument
+by means of an indexing directive.  This is of the form @REFILL
+
+@example
+    :- index(Pred, Arity, IndexArg)
+@end example
+
+@noindent
+indicating that an index should be created on the @code{IndexArg@r{[th.]}} argument of the predicate
+@code{Pred@r{/}Arity}.  All of the values @code{Pred}, @code{Arity} and @code{IndexArg} should be bound in the directive:
+@code{Pred} should be an atom, @code{Arity} a nonnegative integer, and @code{IndexArg} an integer between 0 and
+@code{Arity}.  If @code{IndexArg} is 0, then no index is created for that predicate.  As an example, if
+we wished to create an index on the third argument of a 5-ary predicate @code{foo}, the compiler
+directive would be:@REFILL
+
+@example
+    :- index(foo, 5, 3).
+@end example
+
+An index directive may be placed anywhere in the file containing the predicate it refers
+to.@REFILL
+
+@node Libraries, Macros, Compiler, Top
+@chapter Libraries
+
+To describe how libraries are currently supported in our system, we must describe the
+@b{_$undefined_pred}/1 interrupt handler.  The system keeps a table of libraries and
+routines that are needed from each.  When a predicate is found to be undefined, the table
+is searched to see if it is defined by some library file.  If so, that file is loaded (if
+it hasn't been previously loaded) and the association is made between the routine name as
+defined in the library file, and the routine name as used by the invoker.@REFILL
+
+The table of libraries and needed routines is:
+
+@example
+    @b{defined_mods}(Modname, [pred<1>/arity<1>, @dots{}, pred<n>/arity<n>]).
+@end example
+
+@noindent
+where @code{Modname} is the name of the library.  It exports n predicate definitions.  The
+first exported pred is of arity @code{arity<1>}, and needs to be invoked by the name of
+@code{pred<1>}.@REFILL
+
+The table of libraries that have already been loaded is given by
+
+@example
+    @b{loaded_mods}(Modname).
+@end example
+
+A library file is a file of predicate definitions, together with a fact defining a list of
+predicates exported by it; and a set of facts, each of which specifies, for some other
+library file, the predicates imported from that library file.  For example, consider a
+library name @code{p}. It contains a single fact, named @bb{p_export}, that is true of the list of
+predicate/arity's that are exported.  E.g.@REFILL
+
+@example
+    @b{p_export}([p1/2, p2/4]).
+@end example
+
+@noindent
+indicates that the module @code{p} exports the predicates @t{p1}/2 and @t{p2}/4.  For each
+library @code{m} which contains predicates needed by the library @code{p}, there is a fact for
+@bb{p_use}, describing what library is needed and the names of the predicates defined there
+that are needed.  For example, if library @code{p} needs to import predicates @t{ip1}/2 and @t{ip2}/3
+from library @code{q}, there would be a fact:@REFILL
+
+@example
+    @b{p_use}(q,[ip1/2, ip2/3])
+@end example
+
+@noindent
+where @code{q} is a module that exports two predicates: one 2-ary and one 3-ary.  This list
+corresponds to the export list of library @code{q}.@REFILL
+
+The correspondence between the predicates in the export list of an exporting library, and
+those in the import or use list of a library which imports one or more of them, is by
+position, i.e. the predicate names at the exporting and importing names may be different,
+and the association between names in the two lists is by the position in the list.  If the
+importing library does not wish to import one or more of the predicates exported by the
+exporting module, it may put an anonymous variable in the corresponding position in its
+use list.  Thus, for example, if library @code{p} above had wished to import only the predicate
+@t{ip2}/3 from library @code{q}, the corresponding use fact would be:@REFILL
+
+@example
+    @b{p_use}(q, [_, ip2/3]).
+@end example
+
+The initial set of predicates and the libraries from which they are to be loaded is set up
+by an initial call to @b{$prorc}/0 (see the SB-Prolog system file
+@file{modlib/src/$prorc.P}).  This predicate makes initial calls to the predicate
+@bb{$define_mod} which set up the tables described above so that the use of standard
+predicates will cause the correct libraries to be loaded in the @bb{_$undefined_pred}
+routine, and the correct names to be used.@REFILL
+
+@node Macros, Extension Tables, Libraries, Top
+@chapter Macros
+
+SB-Prolog features a facility for the definition and expansion of macros that is fully
+compatible with the runtime system.  Its basic mechanism is a simple partial evaluator.
+It is called by both @bb{consult} and @bb{compile}, so that macro expansion occurs independently of
+whether the code is interpreted or compiled (but not when asserted).  Moreover, the macro
+definitions are retained as clauses at runtime, so that invocation of macros via
+@b{call}/1 at runtime (or from asserted clauses) does not pose a problem.  This means,
+however, that if the same macro is used in many different files, it will be loaded more
+than once, thus leading to wasted space.  This ought to be thought about and fixed. @REFILL
+
+The source for the macro expander is in the SB-Prolog system file
+@file{modlib/src/$mac.P}.@REFILL
+
+@menu
+* Defining Macros::
+* Macro Expander Options::
+@end menu
+
+@node Defining Macros, Macro Expander Options,, Macros
+@section Defining Macros
+
+`Macros', or predicates to be evaluated at compile-time, are defined by clauses of the
+form @REFILL
+
+@CENTER Head ::- Body
+
+where facts have `true' as their body.  The partial evaluator will expand any call to a
+predicate defined by ::-/2 that unifies with the head of only one clause in ::-/2. If a
+call unifies with the head of more than one clause in ::-/2, it will not be expanded
+Notice that this is not a fundamental restriction, since `;' is permitted in the body of a
+clause.  The partial evaluator also converts each definition of the form:@REFILL
+
+@CENTER Head ::- Body.
+
+@noindent
+to a clause of the form
+
+@CENTER Head :- Body.
+
+@noindent
+and adds this second clause to the other ``normal'' clauses that were read from the file.
+This ensures that calls to the macro at runtime, e.g. through @b{call}/1 or from
+unexpanded calls in the program do not cause any problems.@REFILL
+
+The partial evaluator is actually a Prolog interpreter written `purely' in Prolog, i.e.,
+variable assignments are explicitly handled.  This is necessary to be able to handle
+impure constructs such as `@b{var}(X), X=a'.  As a result this is a very slow Prolog
+evaluator.@REFILL
+
+Since naive partial evaluation can go into an infinite loop, SB-Prolog's partial evaluator
+maintains a depth-bound and will not expand recursive calls deeper than that.  The depth
+is determined by the @b{globalset} predicate @b{$mac_depth}.  The default value for
+@b{$mac_depth} is 50 This can be changed to some other value n by executing @REFILL
+
+@example
+    | ?- globalset($mac_depth(n)).
+@end example
+
+@node Macro Expander Options,, Defining Macros, Macros
+@section Macro Expander Options
+
+The following options are recognized by the macro expander:
+
+@table @t
+@item d
+Dumps all clauses to the user after expansion.  Useful for debugging.@REFILL
+
+@item e
+Expand macros.  If omitted, the expander simply converts each ::-/2 clause
+to a normal :-/2 clause.
+
+@item v
+``Verbose'' mode.  Prints macros that are/are not being expanded.@REFILL
+@end table
+
+@node Extension Tables, Definite Clause Grammars, Macros, Top
+@chapter Extension Tables: Memo Relations
+
+Extension tables store the calls and answers for a predicate. If a call has been made
+before, answers are retrieved from the extension table instead of being recomputed.
+Extension tables provide a caching mechanism for Prolog. In addition, extension tables
+affect the termination characteristics of recursive programs. Some Prolog programs, which
+are logically correct, enter an infinite loop due to recursive predicates.  An extension
+table saved on recursive predicates can find all answers (provided the set of such answers
+is finite) and terminate for some logic programs for which Prolog's evaluation strategy
+enters an infinite loop. Iterations over the extension table execution strategy provides
+complete evaluation of queries over function-free Horn clause programs.@REFILL
+
+To be able to use the simple extension table evaluation on a set of predicates, the source
+file should either be consulted, or compiled with the @code{t} option (the @code{t} option keeps the
+assembler from optimizing subroutine linkage and allows the extension table facility to
+intercept calls to predicates).@REFILL
+
+To use extension table execution, all predicates that are to be saved in the extension
+table must be passed to @b{et}/1. For example:@REFILL
+
+@example
+    | ?- et([pred1/1, pred2/2]), et(pred3/2)
+@end example
+
+@noindent
+will set up ``ET-points'' for the for predicates @t{pred1}/1, @code{pred2}/2 and
+@code{pred3}/2, which will cause extension tables for these predicates to be maintained
+during execution. At the time of the call to @b{et}/1, these predicates must be defined,
+either by having been loaded, or through @bb{consult}.@REFILL
+
+The predicate @b{noet}/1 takes a list of predicate/arity pairs for which ET-points should
+be deleted.  Notice that once an ET-point has been set up for a predicate, it will be
+maintained unless explicitly deleted via @b{noet}/1.  If the definition of a predicate
+which has an ET-point defined is to be updated, the ET-point must first be deleted via
+@b{noet}/1.  The predicate can then be reloaded and a new ET-point established.  This is
+enforced by the failure of the goal ``@b{et}(P/N)'' if an ET-point already exists for the
+argument predicate.  In this case, the following error message will be displayed:@REFILL
+
+@CENTER @t{*et* already defined for:} P/N
+
+There are, in fact, two extension table algorithms: a simple one, which simply caches
+calls to predicates which have ET-points defined; and a complete ET algorithm, which
+iterates the simple extension table algorithm until no more answers can be found.  The
+simple algorithm is more efficient than the complete one; however, the simple algorithm is
+not complete for certain especially nasty forms of mutual recursion, while the complete
+algorithm is.  To use the simple extension table algorithm, predicates can simply be
+called as usual.  The complete extension table algorithm may be used via the query:@REFILL
+
+@example
+    | ?- et_star(Query).
+@end example
+
+The extension table algorithm is intended for predicates that are ``essentially pure'',
+and results are not guaranteed for code using impure code.  The extension table algorithm
+saves only those answers which are not instances of what is already in the table,
+and uses these answers if the current call is an instance of a call already made.  For
+example, if a call @t{p(X, Y)}, with @t{X} and @t{Y} uninstantiated, is encountered and
+inserted into the extension table, then a subsequent call @code{p(X, b)} will be computed
+using the answers for @t{p(X, Y)} already in the extension table.  Notice that this might
+not work if @b{var}/@b{nonvar} tests are used on the second argument in the evaluation of
+@t{p}.@REFILL
+
+Another problem with using impure code is that if an ET predicate is cut over, then the
+saved call implies that all answers for that predicate were computed, but there are only
+partial results in the ET because of the cut.  So on a subsequent call the incomplete
+extension table answers are used when all answers are expected.@REFILL
+
+@example
+    r(X,Y) :- p(X,Y),q(Y,Z),!,fail.
+    | ?-  r(X,Y) ; p(X,Y).
+@end example
+
+Let p be an ET predicate whose evaluation yields many tuples.  In the evaluation of the
+query, r(X,Y) makes a call to p(X,Y).  Assuming that there is a tuple such that q(Y,Z)
+succeeds with the first p tuple then the evaluation of p is cut over. The call to p(X,Y)
+in the query uses the extension table because of the previous call in the evaluation of
+r(X,Y). Only one answer is found, whereas the relation p contains many tuples, so the
+computation is not complete.  Note that ``cuts'' used within the evaluation of an ET
+predicate are ok, as long as they don't cut over the evaluation of another ET predicate.
+The evaluation of the predicate that uses cuts does not cut over any et processing (such
+as storing or retrieving answers) so that the tuples that are computed are saved. In the
+following example, the ET is used to generate prime numbers where an ET point is put on
+@b{prime}/1.@REFILL
+
+@example
+    prime(I) :- globalset(globalgenint(2)),fail. /* Generating Primes */
+    prime(I) :- genint(I), not(div(I)).
+    div(I) :- prime(X), 0 is I mod X.
+
+    genint(N) :-
+        repeat,
+            globalgenint(N),
+            N1 is N+1,
+            globalset(globalgenint(N1)).
+@end example
+
+The following summarizes the library predicates supporting the extension table
+facility:@REFILL
+
+@table @asis
+@item @b{et}(L)
+Sets up an ET-point on the predicates L, which causes calls and anwers to these predicates
+to be saved in an ``extension table''.  L is either a term Pred/Arity, where Pred is a
+predicate symbol and Arity its arity, or a set of such terms represented as a list.  L
+must be instantiated, and the predicates specified in it defined, at the time of the call
+to @b{et}/1.  Gives error messages and fails if any of the predicates in L is undefined,
+or if an ET-point already exists on any of them; in this case, no ET-point is set up on
+any of the predicates in L.@REFILL
+
+@item @b{et_star}(Goal)
+Invokes the complete extension table algorithm on the goal Goal.@REFILL
+
+@item @b{et_points}(L)
+Unifies L with a list of predicates for which an ET-point is defined.  L is the empty list
+[] if there are no ET-points defined.@REFILL
+
+@item @b{noet}(L)
+Deletes ET-points on the predicates specified in L.  L is either a term P/N, where P is
+the name of a predicate and N its arity, or a set of such terms represented as a list.
+Gives error messages and fails if there is no ET-point on any of the predicates specified
+in L.  Deleting an ET-point for a predicate also removes the calls and answers stored in
+the extension table for that predicate.  The extension tables for all predicates for which
+ET-points are defined may be deleted using @b{et_points}/1 in conjunction with @b{noet}/1.
+L must be instantiated at the time of the call to @b{noet}/1.@REFILL
+
+@item @b{et_remove}(L)
+Removes both calls and answers for the predicates specified in L.  In effect, this results
+in the extension table for these predicates to be set to empty.  L must be instantiated at
+the time of the call to either a term P/N, where P is a predicate with arity N, or a list
+of such terms.  An error occurs if any of the predicates in L does not have an ET-point
+set.@REFILL
+
+All extension tables can be emptied by using @b{et_points}/1 in conjunction with
+@iftex
+{@bf et_@discretionary{}{}{}re@-move}/1
+@end iftex
+@ifinfo
+@b{et_remove}/1.@REFILL
+@end ifinfo
+
+@item @b{et_answers}(P/N, Term)
+Retrieves the answers stored in the extension table for the predicate P/N in Term one at a
+time.  Term is of the form P(t<1>, ..., t<N>).  An error results and @b{et_answers}/2 fails if
+P/N is not fully specified (ground), or if P/N does not have an ET-point
+set.@REFILL
+
+@item @b{et_calls}(P/N, Term)
+Retrieves the calls stored in the extension table for the predicate P/N in Term one at a
+time.  Term is of the form P(t<1>, ..., t<N>).  An error results and 2b{et_calls}/2 fails if
+P/N is not fully specified (ground), or if P/N does not have an ET-point
+set.@REFILL
+@end table
+
+@node Definite Clause Grammars, Profiling Programs, Extension Tables, Top
+@chapter Definite Clause Grammars
+
+Definite clause grammars are an extension of context free grammars, and may be conveniently
+expressed in Prolog.  A grammar rule in Prolog has the form @REFILL
+
+@CENTER Head @t{-->} Body.
+
+@noindent
+with the interpretation ``a possible form for Head is Body''.  Extra conditions, in the
+form of explicit Prolog literals or control constructs such as if-then-else (@samp{->}) or cut
+(@samp{!}), may be included in Body.@REFILL
+
+The syntax of DCGs supported by SB-Prolog is as follows:
+
+@enumerate
+@item
+A non-terminal symbol may be any Prolog term other than a variable.@REFILL
+
+@item
+A terminal symbol may be any Prolog term.  To distinguish terminals from nonterminals, a
+sequence of terminal symbols @REFILL
+
+@CENTER @t{a, b, c, d, @dots{}}
+
+is written as a Prolog list @t{[a, b, c, d, @dots{} ]}, with the empty sequence written as the
+empty list @t{[]}.  If the terminal symbols are ASCII character codes, they can be written (as
+elsewhere) as strings.@REFILL
+
+@item
+Extra consitions, in the form of Prolog literals, can be included in the right-hand side
+of a rule by enclosing such conditions in curly braces, { and }.  E.g., one can
+write:@REFILL
+
+@CENTER natnum(X) @t{-->} @{integer(X), X >= 0@}.
+
+@item
+The left hand side of a rule consists of a single nonterminal.  Notice that ``push-back
+lists'' are thus not supported.@REFILL
+
+@item
+The right hand side of a rule may contain alternatives (written using the disjunction
+operator @samp{;} or @samp{|}), and control primitives such as if-then-else (@samp{->}),
+@b{not}/1 and cut (@samp{!}).  The use of @b{not}/1 on the right hand side of grammar
+rules is not recommended, however, because their semantics in this context is murky at
+best.  All other control primitives, e.g. @b{repeat}/0, must explicitly be enclosed within
+curly braces if they are not to be interpreted as nonterminals.@REFILL
+@end enumerate
+
+Except for the restriction of lists of terminals in the left hand sides of rules, the
+translation of DCGs in SB-Prolog is very similar to that in Quintus Prolog.@REFILL
+
+Library predicates supporting DCGs are the following:
+
+@table @asis
+@item @b{dcg}(Rule, Clause)
+Succeeds if the DCG rule Rule corresponds to the Prolog clause Clause.  At the time of
+call, Rule must be bound to a term whose principal functor is @t{-->}/2.@REFILL
+
+@item @b{phrase}(Phrase, List)
+The usual way to commence execution of grammar rules.  The list List is a phrase (i.e.,
+sequence of terminals) generated by Phrase according to the current grammar rules.  Phrase
+is a nonterminal (in general, the right hand side of a grammar rule), and must be
+instantiated to a nonvariable term in the call.  If List is bound to a list of terminals
+in the call, then the goal corresponds to parsing List; if List is unbound in the call,
+then the grammar is being used for generation.@REFILL
+
+@item @b{expand_term}(T1, T2)
+This predicate is used to transform terms that are read in, when a file is consulted or
+compiled.  The usual use is to transform grammar rules into Prolog clauses: if T1 is a
+grammar rule, then T2 is the corresponding Prolog clause.  Users may define their own
+transformations by defining the predicate @b{term_expansion}/2.  When a term T1 is read in
+when a file is being compiled or consulted, @b{expand_term}/2 first calls
+@b{term_expansion}/2: if the expansion succeeds, the transformed term so obtained is used;
+otherwise, if T1 is a grammar rule, then it is expanded using @b{dcg}/2; otherwise, T1 is
+used as is.@REFILL
+
+@item `C'(S1, Terminal, S2)
+Used to handle terminal symbols in the expansion of grammar rules.  Not usually of direct
+use to the user.  This is defined as:@REFILL
+
+@CENTER @t{'C'([X|S], X, S).}
+@end table
+
+@node Profiling Programs, Utilities, Definite Clause Grammars, Top
+@chapter Profiling Programs
+
+There is an experimental utility for profiling programs interactively.  Two kinds of
+profiling are supported: one may count the number of calls to a predicate, or compute the
+time spent in a predicate.  It is important that the predicates being profiled are either
+consulted, or compiled with the @code{t} option, so that calls to the relevant predicates can be
+intercepted by the profiler.@REFILL
+
+To use the profiler, predicates whose calls are to be counted must be passed to
+@b{count}/1, e.g.@REFILL
+
+@example
+    | ?- count([p/1, q/2]), count(r/3).
+@end example
+
+@noindent
+will set up ``count-points'' on the predicates @t{p}/1, @t{q}/2 and @t{r}/3.  Predicates whose calls
+are to be timed have to be passed to @b{time}/1, e.g.@REFILL
+
+@example
+    | ?- time([s/1, t/2]), time(u/3).
+@end example
+
+@noindent
+will set up ``time-points'' on the predicates @t{s}/1, @t{t}/2 and @t{u}/3.  It is possible to set
+both count-points and time-points on the same predicate.  After count-points and
+timepoints have been set, the program may be executed as many times as desired: the
+profiling system will accumulate call counts and execution times for the appropriate
+predicates.  Execution profiles may be obtained using the predicates @b{prof_stats}/0 or
+@b{prof_stats}/1.  Using @b{prof_stats}/0 to display the execution profile will cause the
+call counts and execution times of predicates being profiled to be reset to 0 (this may be
+avoided by using @b{prof_stats}/1).@REFILL
+
+It should be noted that in this context, the ``execution time'' for a predicate is an
+estimate of the total time spent in the subtrees below calls to that predicate (including
+failed subtrees): thus, the execution time figures may be dilated slightly if the subtree
+below a timed predicate contains predicates that are being profiled, because of the time
+taken for updating the call counts and execution times.  For each predicate, the execution
+time is displayed as the fraction of time spent, in computation in subtrees under calls to
+that predicate, relative to the time elapsed from the last time profiling was timed on or
+the last time profiling statistics were taken, whichever was more recent.@REFILL
+
+Bugs: May behave bizarrely if a predicate being profiled contains cuts.@REFILL
+
+The following summarizes the library predicates supporting profiling:@REFILL
+
+@table @asis
+@item @b{count}(L)
+Sets up a count-point on the predicates L, which causes calls to these predicates to be
+counted, and turns profiling on.  L is either a term Pred/Arity, where Pred is a predicate
+symbol and Arity its arity, or a set of such terms represented as a list.  L must be
+instantiated, and the predicates specified in it defined, at the time of the call to
+@b{count}/1.@REFILL
+
+@item @b{time}(L)
+Sets up a time-point on the predicates L, which causes execution times for calls to these
+predicates to be accumulated, and turns profiling on.  L is either a term Pred/Arity,
+where Pred is a predicate symbol and Arity its arity, or a set of such terms represented
+as a list.  L must be instantiated, and the predicates specified in it defined, at the
+time of the call to @b{time}/1.@REFILL
+
+@item @b{nocount}(L)
+Deletes the count-point on the predicates L.  L is either a term Pred/Arity, where Pred is
+a predicate symbol and Arity its arity, or a set of such terms represented as a list.  L
+must be instantiated, and the predicates specified in it defined, at the time of the call
+to @b{nocount}/1.@REFILL
+
+@item @b{notime}(L)
+Deletes the time-point on the predicates L.  L is either a term Pred/Arity, where Pred is
+a predicate symbol and Arity its arity, or a set of such terms represented as a list.  L
+must be instantiated, and the predicates specified in it defined, at the time of the call
+to @b{time}/1.@REFILL
+
+@item @b{profiling}
+Displays information about whether profile mode is on or not, and lists predicates that
+have count- and time-points set on them.@REFILL
+
+@item @b{prof_reset}(L)
+Resets call counts and/or execution times for the predicates L.  L is either a term
+Pred/Arity, where Pred is a predicate symbol and Arity its arity, or a set of such terms
+represented as a list.  L must be instantiated, and the predicates specified in it
+defined, at the time of the call to @b{prof_reset}/1.@REFILL
+
+@item @b{resetcount}(L)
+Resets call counts for the predicates L.  L is either a term Pred/Arity, where Pred is a
+predicate symbol and Arity its arity, or a set of such terms represented as a list.  L
+must be instantiated, and the predicates specified in it defined, at the time of the call
+to @b{resetcount}/1.@REFILL
+
+@item @b{resettime}(L)
+Resets execution times for the predicates L.  L is either a term Pred/Arity, where Pred is
+a predicate symbol and Arity its arity, or a set of such terms represented as a list.  L
+must be instantiated, and the predicates specified in it defined, at the time of the call
+to @b{resettime}/1.@REFILL
+
+@item @b{profile}
+Turns profiling on.  This causes subsequent execution of predicates with count- or
+time-points to be profiled, and is a no-op if there are no such predicates.  The
+predicates @b{count}/1 and @b{time}/1 cause profiling to be turned on
+automatically.@REFILL
+
+@item @b{noprofile}
+Turns profiling off.  This causes count- and time-points to be ignored.@REFILL
+
+@item @b{timepreds}(L)
+Unifies L to a list of terms P/N where the predicate P of arity N has a time point set on
+it.@REFILL
+
+@item @b{countpreds}(L)
+Unifies L to a list of terms P/N where the predicate P of arity N has a count point set on
+it.@REFILL
+
+@item @b{prof_stats}
+Causes the call counts and/or execution times accumulated since the last call to
+@b{prof_stats}/0 to be printed out for predicates that are being profiled.  The execution
+times are given as fractions of the total time elapsed since the last time profiling was
+turned on, or the last time @bb{prof_stats} was called, whichever was most recent.  This
+also results in the call counts and relative execution times of these predicates being
+reset to 0.  Equivalent to @b{prof_stats}(1).@REFILL
+
+@item @b{prof_stats}(N)
+Causes the call counts and/or execution times accumulated since the last call to
+@b{prof_stats}/0 to be printed out for predicates that are being profiled.  The execution
+times are given as fractions of the total time elapsed since the last time profiling was
+turned on, or the last time @bb{prof_stats} was called, whichever was most recent.  If N is 1,
+then this also results in the call counts and execution times of these predicates being
+reset to 0; otherwise, the call counts and execution times are not reset.@REFILL
+@end table
+
+@node Utilities, Credits, Profiling Programs, Top
+@chapter Other Library Utilities
+
+The SB-Prolog library contains various other utilities, some of which are listed
+below.@REFILL
+
+@table @asis
+@item @b{append}(X, Y, Z)
+Succeeds if list Z is the concatenation of lists X and Y.@REFILL
+
+@item @b{member}(X, L)
+Checks whether X unifies with any element of list L, succeeding more than once if there
+are multiple such elements.@REFILL
+
+@item @b{$memberchk}(X, L)
+Similar to @b{member}/2, except that @b{$memberchk}/2 is deterministic, i.e.  does not
+succeed more than once for any call.@REFILL
+
+@item @b{$reverse}(L, R)
+Succeeds if R is the reverse of list L.  If L is not a fully determined list, i.e.  if the
+tail of L is a variable, this predicate can succeed arbitrarily many
+times.@REFILL
+
+@item @b{$merge}(X, Y, Z)
+Succeeds if Z is the list resulting from ``merging'' lists X and Y, i.e.  the elements of
+X together with any element of Y not occurring in X.  If X or Y contain duplicates, Z may
+also contain duplicates.@REFILL
+
+@item @b{$absmember}(X, L)
+Similar to @b{$member}/2, except that it checks for identity (through ==/2) rather than
+unifiability (through =/2) of X with elements of L.@REFILL
+
+@item @b{$nthmember}(X, L, N)
+Succeeds if the N[th.] element of the list L unifies with X.  Fails if N is greater than
+the length of L.  Either X and L, or L and N, should be instantiated at the time of the
+call.@REFILL
+
+@item @b{$member2}(X, L)
+Checks whether X unifies with any of the actual elements of L.  The only difference
+between this and @b{$member}/2 is on lists with a variable tail, e.g. @samp{[a,b,c|_]}:
+while @b{$member}/2 would insert X at the end of such a list if it did not find it,
+@b{$member2}/2 only checks for membership but does not insert it into the list if it is
+not there.@REFILL
+
+@item @b{length}(L, N)
+Succeeds if the length of the list L is N.  This predicate is deterministic if L is
+instantiated to a list of definite length, but is nondeterministic if L is a variable or
+has a variable tail.@REFILL
+
+@item @b{subsumes}(X, Y)
+Succeeds if the term X subsumes the term Y (i.e. if Y is an instance of
+X).@REFILL
+@end table
+
+@node Credits, Index of Evaluable Predicates, Utilities, Top
+@unnumbered CREDITS
+
+The initial development of SB-Prolog, from 1984 to August 1986, was at SUNY at Stony
+Brook, where Versions 1.0 and 2.0 were developed.  Since August 1986, its development has
+continued at the University of Arizona, Tucson.@REFILL
+
+A large number of people were involved, at some time or another, with the Logic
+Programming group at SUNY, Stony Brook, and deserve credit for helping to bring SB-Prolog
+to its present form.  David Scott Warren led the project at Stony Brook.  Most of the
+simulator and builtins were written by Jiyang Xu and David S. Warren (I added the later
+stuff, Versions 2.1 onwards).  Much of the library was also by David, with some
+contributions from me.  Weidong Chen did the work on clause indexing.  Suzanne Dietrich
+wrote the Extension Table package.  I wrote most of the compiler.@REFILL
+
+Several people helped debug previous versions, including Leslie Rohde; Bob Beck of Sequent
+Computers; and Mark Gooley of the University of Illinois at Urbana-Champaign.@REFILL
+
+Special thanks are due to Richard O'Keefe, who contributed the Prolog code for the parser
+(in the form of the predicates @b{read}/1 and @b{read}/2), the C code for the tokenizer,
+and the code for @b{setof}/3 and @b{bagof}/3.@REFILL
+
+Denys Duchier converted the original troff documentation to GNU emacs' texinfo format.@REFILL
+
+I am grateful to Fernando Pereira for permission to use material from the C-Prolog manual
+for the descriptions of Prolog syntax and many of the builtins in this User Manual.@REFILL
+
+                                                            - S.K.D.
+
+@node Index of Evaluable Predicates, Efficiency, Credits, Top
+@appendix Index of Evaluable Predicates
+
+An entry of ``B'' indicates a builtin predicate, ``I'' an inline predicate, and ``L'' a
+library predicate.  A ``P'' indicates that the predicate is handled by the preprocessor
+during compilation and/or consulting.  A ``D'' denotes a compiler directive.@REFILL
+
+@ENTRY{@B(L)@SP{6}_$undefined_pred/1}{@pxref{Invoking the Simulator}}
+@ENTRY{@B(P)@SP{6}:-/1}{@pxref{Execution Directives}}
+@ENTRY{@B(B)@SP{6}$exists/1}{@pxref{File Handling}}
+@ENTRY{@B(I)@SP{6}=:=/2}{@pxref{Arithmetic}}
+@ENTRY{@B(I)@SP{6}=\=/2}{@pxref{Arithmetic}}
+@ENTRY{@B(I)@SP{6}</2}{@pxref{Arithmetic}}
+@ENTRY{@B(I)@SP{6}>/2}{@pxref{Arithmetic}}
+@ENTRY{@B(I)@SP{6}=</2}{@pxref{Arithmetic}}
+@ENTRY{@B(I)@SP{6}>=/2}{@pxref{Arithmetic}}
+@ENTRY{@B(I)@SP{6}`,'/2}{@pxref{Convenience}}
+@ENTRY{@B(I)@SP{6}`;'/2}{@pxref{Convenience}}
+@ENTRY{@B(I)@SP{6}=/2}{@pxref{Convenience}}
+@ENTRY{@B(I)@SP{6}\=/2}{@pxref{Convenience}}
+@ENTRY{@B(I)@SP{6}?=/2}{@pxref{Convenience}}
+@ENTRY{@B(P)@SP{6}!/0}{@pxref{Extra Control}}
+@ENTRY{@B(P)@SP{6}->/2}{@pxref{Extra Control}}
+@ENTRY{@B(L)@SP{6}=../2}{@pxref{Meta-Logical}}
+@ENTRY{@B(B)@SP{6}==/2}{@pxref{Comparison of Terms}}
+@ENTRY{@B(B)@SP{6}\==/2}{@pxref{Comparison of Terms}}
+@ENTRY{@B(B)@SP{6}@@</2}{@pxref{Comparison of Terms}}
+@ENTRY{@B(B)@SP{6}@@>/2}{@pxref{Comparison of Terms}}
+@ENTRY{@B(B)@SP{6}@@=</2}{@pxref{Comparison of Terms}}
+@ENTRY{@B(B)@SP{6}@@>=/2}{@pxref{Comparison of Terms}}
+@ENTRY{@B(L)@SP{6}$current_atom/2}{@pxref{State of the Program}}
+@ENTRY{@B(L)@SP{6}$current_functor/3}{@pxref{State of the Program}}
+@ENTRY{@B(L)@SP{6}$current_predicate/3}{@pxref{State of the Program}}
+@ENTRY{@B(L)@SP{6}$getenv/2}{@pxref{Environmental}}
+@ENTRY{@B(L)@SP{6}$alloc_buff/5}{@pxref{Exotica}}
+@ENTRY{@B(L)@SP{6}$assertf_alloc_t}{@pxref{Exotica}}
+@ENTRY{@B(L)@SP{6}$db_new_prref/3}{@pxref{Exotica}}
+@ENTRY{@B(L)@SP{6}$db_assert_fact/5}{@pxref{Exotica}}
+@ENTRY{@B(L)@SP{6}$db_add_clref/7}{@pxref{Exotica}}
+@ENTRY{@B(L)@SP{6}$db_call_prref/2}{@pxref{Exotica}}
+@ENTRY{@B(L)@SP{6}$db_call_prref_s/2}{@pxref{Exotica}}
+@ENTRY{@B(L)@SP{6}$db_get_clauses/3}{@pxref{Exotica}}
+@ENTRY{@B(L)@SP{6}$trace/0}{@pxref{Low Level Tracing}}
+@ENTRY{@B(L)@SP{6}$untrace/0}{@pxref{Low Level Tracing}}
+@ENTRY{@B(L)@SP{6}`_$interrupt'/2}{@pxref{Interrupts}}
+@ENTRY{@B(P)@SP{6}::-/2}{@pxref{Defining Macros}}
+@ENTRY{@B(L)@SP{6}$reverse/2}{@pxref{Utilities}}
+@ENTRY{@B(L)@SP{6}$merge/3}{@pxref{Utilities}}
+@ENTRY{@B(L)@SP{6}$absmember/2}{@pxref{Utilities}}
+@ENTRY{@B(L)@SP{6}$nthmember/3}{@pxref{Utilities}}
+@sp 2
+@ENTRY{@B(B)@SP{6}atom/1}{@pxref{Meta-Logical}}
+@ENTRY{@B(B)@SP{6}atomic/1}{@pxref{Meta-Logical}}
+@ENTRY{@B(I)@SP{6}arg/3}{@pxref{Meta-Logical}}
+@ENTRY{@B(L)@SP{6}alloc_perm/2}{@pxref{Buffers}}
+@ENTRY{@B(L)@SP{6}alloc_heap/2}{@pxref{Buffers}}
+@ENTRY{@B(L)@SP{6}assert/1}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}assert/2}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}asserti/2}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}asserta/1}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}asserta/2}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}assertz/1}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}assertz/2}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}assert_union/2}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}assert/4}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}abolish/1}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}abolish/2}{@pxref{Modification of the Program}}
+@ENTRY{@B(B)@SP{6}abort/0}{@pxref{Environmental}}
+@ENTRY{@B(L)@SP{6}append/3}{@pxref{Utilities}}
+@sp 2
+@ENTRY{@B(L)@SP{6}bagof/3}{@pxref{Sets}}
+@ENTRY{@B(L)@SP{6}break/0}{@pxref{Environmental}}
+@sp 2
+@ENTRY{@B(L)@SP{6}compile/1}{@pxref{Compiling Programs}}
+@ENTRY{@B(L)@SP{6}compile/2}{@pxref{Compiling Programs}}
+@ENTRY{@B(L)@SP{6}compile/3}{@pxref{Compiling Programs}}
+@ENTRY{@B(L)@SP{6}compile/4}{@pxref{Compiling Programs}}
+@ENTRY{@B(L)@SP{6}consult/1}{@pxref{Consulting Programs}}
+@ENTRY{@B(L)@SP{6}consult/2}{@pxref{Consulting Programs}}
+@ENTRY{@B(P)@SP{6}call/1}{@pxref{Meta-Logical}}
+@ENTRY{@B(B)@SP{6}conlength/2}{@pxref{Meta-Logical}}
+@ENTRY{@B(B)@SP{6}compare/3}{@pxref{Comparison of Terms}}
+@ENTRY{@B(L)@SP{6}clause/2}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}clause/3}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}current_atom/1}{@pxref{State of the Program}}
+@ENTRY{@B(L)@SP{6}current_functor/2}{@pxref{State of the Program}}
+@ENTRY{@B(L)@SP{6}current_predicate/2}{@pxref{State of the Program}}
+@ENTRY{@B(B)@SP{6}cputime/1}{@pxref{Environmental}}
+@ENTRY{@B(L)@SP{6}call_ref/2}{@pxref{Exotica}}
+@ENTRY{@B(L)@SP{6}call_ref/3}{@pxref{Exotica}}
+@ENTRY{@B(L)@SP{6}`C'/3}{@pxref{Definite Clause Grammars}}
+@ENTRY{@B(L)@SP{6}count/1}{@pxref{Profiling Programs}}
+@ENTRY{@B(L)@SP{6}countpreds/1}{@pxref{Profiling Programs}}
+@sp 2
+@ENTRY{@B(L)@SP{6}display/1}{@pxref{Term I/O}}
+@ENTRY{@B(L)@SP{6}debug/0}{@pxref{High Level Tracing}}
+@ENTRY{@B(L)@SP{6}debugging/0}{@pxref{High Level Tracing}}
+@ENTRY{@B(L)@SP{6}dcg/2}{@pxref{Definite Clause Grammars}}
+@sp 2
+@ENTRY{@B(L)@SP{6}eval/2}{@pxref{Arithmetic}}
+@ENTRY{@B(B)@SP{6}exp/2}{@pxref{Arithmetic}}
+@ENTRY{@B(L)@SP{6}erase/1}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}et/1}{@pxref{Extension Tables}}
+@ENTRY{@B(L)@SP{6}et_star/1}{@pxref{Extension Tables}}
+@ENTRY{@B(L)@SP{6}et_points/1}{@pxref{Extension Tables}}
+@ENTRY{@B(L)@SP{6}et_remove/1}{@pxref{Extension Tables}}
+@ENTRY{@B(L)@SP{6}et_calls/2}{@pxref{Extension Tables}}
+@ENTRY{@B(L)@SP{6}expand_term/2}{@pxref{Definite Clause Grammars}}
+@sp 2
+@ENTRY{@B(B)@SP{6}floor/2}{@pxref{Arithmetic}}
+@ENTRY{@B(B)@SP{6}floatc/3}{@pxref{Arithmetic}}
+@ENTRY{@B(I)@SP{6}fail/0}{@pxref{Extra Control}}
+@ENTRY{@B(I)@SP{6}float/1}{@pxref{Meta-Logical}}
+@ENTRY{@B(L)@SP{6}functor/3}{@pxref{Meta-Logical}}
+@sp 2
+@ENTRY{@B(B)@SP{6}get0/1}{@pxref{Character I/O}}
+@ENTRY{@B(B)@SP{6}get/1}{@pxref{Character I/O}}
+@ENTRY{@B(L)@SP{6}globalset/1}{@pxref{Global Values}}
+@ENTRY{@B(L)@SP{6}gennum/1}{@pxref{Global Values}}
+@ENTRY{@B(L)@SP{6}gensym/2}{@pxref{Global Values}}
+@sp 2
+@ENTRY{@B(I)@SP{6}is/2}{@pxref{Arithmetic}}
+@ENTRY{@B(I)@SP{6}integer/1}{@pxref{Meta-Logical}}
+@ENTRY{@B(B)@SP{6}is_buffer/1}{@pxref{Meta-Logical}}
+@ENTRY{@B(L)@SP{6}instance/2}{@pxref{Internal Database}}
+@ENTRY{@B(D)@SP{6}index/3}{@pxref{Indexing Directives}}
+@sp 2
+@ENTRY{@B(L)@SP{6}keysort/2}{@pxref{Comparison of Terms}}
+@sp 2
+@ENTRY{@B(B)@SP{6}load/1}{@pxref{Loading Byte Code Files}}
+@ENTRY{@B(L)@SP{6}listing/0}{@pxref{State of the Program}}
+@ENTRY{@B(L)@SP{6}listing/1}{@pxref{State of the Program}}
+@ENTRY{@B(L)@SP{6}length/2}{@pxref{Utilities}}
+@sp 2
+@ENTRY{@B(D)@SP{6}mode/3}{@pxref{Mode Declarations}}
+@ENTRY{@B(L)@SP{6}member/2}{@pxref{Utilities}}
+@sp 2
+@ENTRY{@B(B)@SP{6}nl/0}{@pxref{Character I/O}}
+@ENTRY{@B(P)@SP{6}not/1}{@pxref{Extra Control}}
+@ENTRY{@B(I)@SP{6}nonvar/1}{@pxref{Meta-Logical}}
+@ENTRY{@B(B)@SP{6}number/1}{@pxref{Meta-Logical}}
+@ENTRY{@B(B)@SP{6}name/2}{@pxref{Meta-Logical}}
+@ENTRY{@B(L)@SP{6}nodynload/2}{@pxref{Environmental}}
+@ENTRY{@B(L)@SP{6}nospy/1}{@pxref{High Level Tracing}}
+@ENTRY{@B(L)@SP{6}nodebug/0}{@pxref{High Level Tracing}}
+@ENTRY{@B(L)@SP{6}noet/1}{@pxref{Extension Tables}}
+@ENTRY{@B(L)@SP{6}nocount/1}{@pxref{Profiling Programs}}
+@ENTRY{@B(L)@SP{6}notime/1}{@pxref{Profiling Programs}}
+@ENTRY{@B(L)@SP{6}noprofile/0}{@pxref{Profiling Programs}}
+@sp 2
+@ENTRY{@B(L)@SP{6}op/3}{@pxref{Operators}}
+@sp 2
+@ENTRY{@B(L)@SP{6}print/1}{@pxref{Term I/O}}
+@ENTRY{@B(L)@SP{6}print_al/2}{@pxref{Term I/O}}
+@ENTRY{@B(L)@SP{6}print_ar/2}{@pxref{Term I/O}}
+@ENTRY{@B(L)@SP{6}portray_term/2}{@pxref{Term I/O}}
+@ENTRY{@B(L)@SP{6}portray_clause/2}{@pxref{Term I/O}}
+@ENTRY{@B(B)@SP{6}put/1}{@pxref{Character I/O}}
+@ENTRY{@B(L)@SP{6}predicate_property/2}{@pxref{State of the Program}}
+@ENTRY{@B(L)@SP{6}phrase/2}{@pxref{Definite Clause Grammars}}
+@ENTRY{@B(L)@SP{6}profiling/0}{@pxref{Profiling Programs}}
+@ENTRY{@B(L)@SP{6}prof_reset/1}{@pxref{Profiling Programs}}
+@ENTRY{@B(L)@SP{6}profile/0}{@pxref{Profiling Programs}}
+@ENTRY{@B(L)@SP{6}prof_stats/0}{@pxref{Profiling Programs}}
+@ENTRY{@B(L)@SP{6}prof_stats/1}{@pxref{Profiling Programs}}
+@sp 2
+@ENTRY{@B(L)@SP{6}read/1}{@pxref{Term I/O}}
+@ENTRY{@B(L)@SP{6}repeat/0}{@pxref{Extra Control}}
+@ENTRY{@B(I)@SP{6}real/1}{@pxref{Meta-Logical}}
+@ENTRY{@B(L)@SP{6}retract/1}{@pxref{Modification of the Program}}
+@ENTRY{@B(L)@SP{6}recorded/3}{@pxref{Internal Database}}
+@ENTRY{@B(L)@SP{6}recorda/3}{@pxref{Internal Database}}
+@ENTRY{@B(L)@SP{6}recordz/3}{@pxref{Internal Database}}
+@ENTRY{@B(B)@SP{6}restore/1}{@pxref{Environmental}}
+@ENTRY{@B(L)@SP{6}resetcount/1}{@pxref{Profiling Programs}}
+@ENTRY{@B(L)@SP{6}resettime/1}{@pxref{Profiling Programs}}
+@sp 2
+@ENTRY{@B(B)@SP{6}see/1}{@pxref{File Handling}}
+@ENTRY{@B(B)@SP{6}seen}{@pxref{File Handling}}
+@ENTRY{@B(B)@SP{6}square/2}{@pxref{Arithmetic}}
+@ENTRY{@B(B)@SP{6}sin/2}{@pxref{Arithmetic}}
+@ENTRY{@B(B)@SP{6}structure/1}{@pxref{Meta-Logical}}
+@ENTRY{@B(L)@SP{6}setof/3}{@pxref{Sets}}
+@ENTRY{@B(L)@SP{6}sort/2}{@pxref{Comparison of Terms}}
+@ENTRY{@B(B)@SP{6}save/1}{@pxref{Environmental}}
+@ENTRY{@B(B)@SP{6}statistics/0}{@pxref{Environmental}}
+@ENTRY{@B(L)@SP{6}statistics/2}{@pxref{Environmental}}
+@ENTRY{@B(B)@SP{6}symtype/2}{@pxref{Environmental}}
+@ENTRY{@B(B)@SP{6}system/1}{@pxref{Environmental}}
+@ENTRY{@B(B)@SP{6}syscall/3}{@pxref{Environmental}}
+@ENTRY{@B(L)@SP{6}spy/1}{@pxref{High Level Tracing}}
+@ENTRY{@B(L)@SP{6}spypreds/1}{@pxref{High Level Tracing}}
+@ENTRY{@B(L)@SP{6}subsumes/2}{@pxref{Utilities}}
+@sp 2
+@ENTRY{@B(B)@SP{6}tell/1}{@pxref{File Handling}}
+@ENTRY{@B(B)@SP{6}telling/1}{@pxref{File Handling}}
+@ENTRY{@B(B)@SP{6}told/0}{@pxref{File Handling}}
+@ENTRY{@B(B)@SP{6}tab/1}{@pxref{Character I/O}}
+@ENTRY{@B(I)@SP{6}true/0}{@pxref{Convenience}}
+@ENTRY{@B(L)@SP{6}trimbuff/3}{@pxref{Buffers}}
+@ENTRY{@B(L)@SP{6}trace/1}{@pxref{High Level Tracing}}
+@ENTRY{@B(L)@SP{6}tracepreds/1}{@pxref{High Level Tracing}}
+@ENTRY{@B(U)@SP{6}term_expansion/2}{@pxref{Definite Clause Grammars}}
+@ENTRY{@B(L)@SP{6}time/1}{@pxref{Profiling Programs}}
+@ENTRY{@B(L)@SP{6}timepreds/1}{@pxref{Profiling Programs}}
+@sp 2
+@ENTRY{@B(L)@SP{6}untrace/1}{@pxref{High Level Tracing}}
+@sp 2
+@ENTRY{@B(I)@SP{6}var/1}{@pxref{Meta-Logical}}
+@sp 2
+@ENTRY{@B(L)@SP{6}write/1}{@pxref{Term I/O}}
+@ENTRY{@B(L)@SP{6}writeq/1}{@pxref{Term I/O}}
+@ENTRY{@B(B)@SP{6}writename/1}{@pxref{Term I/O}}
+@ENTRY{@B(B)@SP{6}writeqname/1}{@pxref{Term I/O}}
+
+@node Efficiency, Adding Builtins, Index of Evaluable Predicates, Top
+@appendix A Note on Coding for Efficiency
+
+The SB-Prolog system tends to favour programs that are relatively pure.  Thus, for
+example, asserts tend to be quite expensive, encouraging the user to avoid them if
+possible.  This section points out some syntactic constructs that lead to the generation
+of efficient code.  These involve (i) avoiding the creation of backtrack points; and (ii)
+minimizing data movement between registers.  Optimization of logic programs is an area of
+ongoing research, and we expect to enhance the capabilities of the system further in
+future versions.@REFILL
+
+@menu
+* Avoiding Backtrack Points::
+* Minimizing Data Movements::
+* Processing Arguments::
+* Testing Unifiability::
+@end menu
+
+@node Avoiding Backtrack Points, Minimizing Data Movement,, Efficiency
+@section Avoiding Creation of Backtrack Points
+
+Since the creation of backtrack points is relatively expensive, program efficiency may be
+improved substantially by using constructs that avoid the creation of backtrack points
+where possible.  The SB-Prolog compiler recognizes conditionals involving certain
+complementary inline tests, and generates code that does not create choice points for such
+cases.  Two inline tests p(t<1>, @dots{}, t<n>) and q(t<1>, @dots{}, t<n>) are
+complementary if and only if:@REFILL
+
+@tex
+\gdef\EQUIV{$\equiv$}
+@end tex
+@iftex
+@CENTER p(t<1>, @dots{}, t<n>) @EQUIV{} not(q(t<1>, @dots{}, t<n>)).
+@end iftex
+@ifinfo
+@center p(t<1>, @dots{}, t<n>) <==> not(q(t<1>, @dots{}, t<n>)).
+@end ifinfo
+
+For example, the literals `X > Y' and `X =< Y' are complementary.  At this point,
+complementary tests are recognized as such only if their argument tuples are identical.
+The inline predicates that are treated in this manner, with their corresponding
+complementary literals, are shown in the table below:@REFILL
+
+@ifinfo
+            Inline Test    Complementary Test
+                >/2            =</2
+               =</2             >/2
+               >=/2             </2
+                </2            >=/2
+              =:=/2           =\=/2
+              =\=/2           =:=/2
+               ?=/2            \=/2
+               \=/2            ?=/2
+              var/1        nonvar/1
+           nonvar/1           var/1
+@end ifinfo
+@tex
+\centerline{\vbox{\halign{\hfil#\hfil\quad&\quad\hfil#1\hfil\cr
+Inline Test & Complementary Test\cr
+$>$&${=}{<}$\cr
+${=}{<}$&$>$\cr
+${>}{=}$&$<$\cr
+$<$&${>}{=}$\cr
+${=}{:}{=}$&${=}{\rm\char`\\}{=}$\cr
+${=}{\rm\char`\\}{=}$&${=}{:}{=}$\cr
+${\rm?}{=}$&${\rm\char`\\}{=}$\cr
+${\rm\char`\\}{=}$&${\rm?}{=}$\cr
+{\bf var}&{\bf nonvar}\cr
+{\bf nonvar}&{\bf var}\cr}}}
+@end tex
+
+The syntactic constructs recognized are:
+
+@enumerate
+@item
+Disjuncts of the form:
+
+@example
+    head(@dots{}) :- ((test(t1,@dots{},tn),@dots{}) ; ((not(test(t1,@dots{},tn),@dots{})).
+@r{or}
+    head(@dots{}) :- ((test(t1,@dots{},tn),@dots{}) ; ((comp_test(t1,@dots{},tn),@dots{})).
+@end example
+
+@noindent
+where test is one of the inline tests in the table above, and comp_test the corresponding
+complementary test (note that the arguments to @code{test} and @code{comp_test} have to be
+identical).@REFILL
+
+@item
+Conditionals of the form:
+
+@example
+    head :- (test<1>,@dots{},test<n>) -> @r{True_Case} ; @r{False_Case}.
+@r{or}
+    head :- (test<1>;@dots{};test<n>) -> @r{True_Case} ; @r{False_Case}.
+@end example
+
+@noindent
+where each @code{test<i>} is an inline test, as mentioned in the table above.@REFILL
+
+The code generated for these cases involves a test and conditional branch, and no choice
+point is created.  We expect future versions of the translator to recognize a wider class
+of complementary tests.@REFILL
+@end enumerate
+
+Notice that this discourages the use of explicit cuts.  For example, whereas a choice
+point will be created for @REFILL
+
+@example
+    part(M,[E|L],U1,U2) :-
+       ((E =< M, !, U1 = [E|U1a], U2 = U2a) ;
+        (U1 = U1a, U2 = [E|U2a])),
+       part(M,L,U1a,U2a).
+@end example
+
+@noindent
+no choice point will be created for either:
+
+@example
+    part(M,[E|L],U1,U2) :-
+       (E =< M ->
+          (U1 = [E|U1a], U2 = U2a) ;
+          (U1 = U1a, U2 = [E|U2a])),
+       part(M,L,U1a,U2a).
+@r{or}
+    part(M,[E|L],U1,U2) :-
+       ((E =< M, U1 = [E|U1a], U2 = U2a) ;
+        (E > M,  U1 = U1a, U2 = [E|U2a])),
+       part(M,L,U1a,U2a).
+@end example
+
+Thus, either of the two later versions will be more efficient than the version with the
+explicit cut (this is a design decision we have consciously made, in the hope of
+discouraging blatantly non-declarative code where efficient declarative code can be
+written).@REFILL
+
+@node Minimizing Data Movement, Processing Arguments, Avoiding Backtrack Points, Efficiency
+@section Minimizing Data Movement Between Registers
+
+Data movement between registers for parameter passing may be minimized by leaving variables
+in the same argument position wherever possible.  Thus, the clause @REFILL
+
+@CENTER p(X,Y) :- p1(X,Y,0).
+@*is preferable to@*
+@CENTER p(X,Y) :- p1(0,X,Y).
+
+@noindent
+because the first definition leaves the variables X and Y in the same argument positions
+(first and second, respectively), while the second definition does not.@REFILL
+
+@node Processing Arguments, Testing Unifiability, Minimizing Data Movement, Efficiency
+@section Processing All Arguments of a Term
+
+It is often the case that we wish to process each of the arguments of a term in turn.  For
+example, to decide whether a compound term is ground, we have to check that each of its
+arguments is ground.  One possibility is to create a list of those arguments, and traverse
+the list processing each element.  Using this approach, a predicate to check for
+groundness would be @REFILL
+
+@example
+    ground(T) :- atomic(T).
+    ground(T) :- structure(T), T =.. [_|Args], groundargs(Args).
+    groundargs([]).
+    groundargs([A|ARest]) :- ground(A), groundargs(ARest).
+@end example
+
+This is not the most efficient way to process all the arguments of a term, because it
+involves the creation of intermediate lists, which is expensive both in space and time.  A
+much better alternative is to use @b{arg}/3 to index into the term and retrieve arguments.
+Using this approach, the @t{ground}/1 predicate above would be written as:@REFILL
+
+@example
+    ground(T) :- atomic(T).
+    ground(T) :- structure(T), functor(T,P,N), groundargs(1,N,T).
+    groundargs(M,N,T) :-
+       M =< N ->
+          (arg(M,T,A), ground(A), M1 is M + 1, groundargs(M1,N,T)) ;
+          true.
+@end example
+
+The second approach is likely to be more efficient than the first in SB-Prolog.
+
+If the arguments of the term do not need to be processed in ascending order, then it is
+more efficient to process them in descending order using @b{arg}/3 to access them.  For
+example, the predicate for groundness checking could be written as:@REFILL
+
+@example
+    ground(T) :- atomic(T).
+    ground(T) :- structure(T), functor(T, P, N), groundargs(N, T).
+    groundargs(M,T) :-
+       M =:= 0 ->
+          true ;
+          (arg(M,T,A), ground(A), M1 is M - 1, groundargs(M1,T)).
+@end example
+
+This is even more efficient than the earlier version, because (i) @code{groundargs} needs to have
+one less parameter to be passed to it at each iteration; and (ii) testing @code{M =:= 0} is
+simpler and more efficient than checking @code{M =< N}, and takes fewer machine
+instructions.@REFILL
+
+@node Testing Unifiability,, Processing Argument, Efficiency
+@section Testing Unifiability
+
+Often, it is necessary to check whether or not a term has a particular value.  If we know
+that the term will be bound to a number, we can use the evaluable predicates =:=/2 or
+=\=/2, as explained earlier.  For other values, it may often be cheaper, in the
+appropriate circumstances, to use the predicates ?=/2 or \=/2.  For example, consider a
+predicate @t{p}/2 that calls @t{q}/1 with its second argument if its first argument unifies with
+@code{a}, and @t{r}/1 otherwise.  A naive definition might be:@REFILL
+
+@example
+    p(a, X) :- !, q(X).
+    p(Y, X) :- r(X).
+@end example
+
+However, the call to @t{p}/2 results in the (temporary) creation of a backtrack point.  A
+solution that avoids this backtrack point creation is:@REFILL
+
+@example
+    p(Y, X) :- Y ?= a -> q(X) ; r(X).
+@end example
+
+Of course, if the argument order in p/2 could be reversed in this case, then data movement
+would be reduced even further (see above), and the code would be even more efficient:@REFILL
+
+@example
+    p(X, Y) :- Y ?= a -> q(X) ; r(X).
+@end example
+
+@node Adding Builtins,, Efficiency, Top
+@appendix Adding Builtins to SB-Prolog
+
+Adding a builtin involves writing the C code for the desired case and installing it into
+the simulator.  The files in the directory @file{sim/builtin} contain the C code for the
+builtin predicates supported by the system.  The following procedure is to be followed
+when adding a builtin to the system:@REFILL
+
+@enumerate
+@item
+Installing C Code:
+
+@alphanumerate
+@item
+Go to the directory @file{sim/builtin}.
+
+@item
+Look at the @samp{#define}s in the file @file{builtin.h}, and choose a number @code{N1} (between
+0 and 255) which is not in use to be the builtin number for the new
+builtin.@REFILL
+
+@item
+Add to the file @file{builtin.h} the line
+
+@example
+    #define NEWBUILTIN N1
+@end example
+
+@item
+The convention is that the code for builtin will be in a parameterless procedure named
+@code{b_NEWBUILTIN}.  Modify the file @file{init_branch.c} in the directory @file{sim/builtin} by
+adding these lines:@REFILL
+
+@example
+    extern int b_NEWBUILTIN();
+@r{and}
+    set_b_inst ( NEWBUILTIN, b_NEWBUILTIN );
+@end example
+
+@noindent
+in the appropriate places.
+
+@item
+The builtins are compiled together into one object file, builtin.  Update the file
+@file{Makefile} by appending the name of your object code file at the end of the line
+``@t{OBJS = @dots{}}'' and insert the appropriate commands to compile your C source file,
+e.g.:@REFILL
+
+@example
+    OBJS = [ @dots{} @i{other file names} @dots{} ] newbuiltin.o
+    @dots{}
+    newbuiltin.o: $(HS)
+        cc $(CFLAGS) newbuiltin.c
+@end example
+
+@item
+Execute the updated make file to create an updated object file
+@file{builtin}.@REFILL
+
+@item
+Go to the directory @file{sim} and execute @code{make} to install the new file
+@file{builtin}.@REFILL
+@end alphanumerate
+
+@item
+Installing Prolog Code:
+
+Assume that the builtin predicate to be added is @t{newbuiltin}/4.  The procedure for
+installing the Prolog code for this is as follows:@REFILL
+
+@alphanumerate
+@item
+Go to the SB-Prolog system directory @file{lib/src}, where the Prolog source for the
+library routines is kept.@REFILL
+
+@item
+Each builtin definition is of the form
+
+@CENTER pred@t{( @dots{} ) :- '_$builtin'(@r{N}).}
+
+@noindent
+where N is an integer, the builtin number of pred.
+
+@item
+Create a Prolog source file @file{newbuiltin.P} (notice correspondence with the name of
+the predicate being defined) containing the definition:@REFILL
+
+@CENTER @t{newbuiltin(A,B,C,D) :- '_$builtin'(N1).}
+
+where @code{N1} is the builtin number of the predicate @code{newbuiltin}, obtained when
+installing the C code for the builtin (see above).@REFILL
+
+@item
+Compile this Prolog predicate, using the simulator and the compile predicate, into a file
+@file{newbuiltin} (notice correspondence with the name of the predicate being defined) in
+the SB-Prolog directory @file{lib}.@REFILL
+@end alphanumerate
+@end enumerate
+
+@contents
+@bye
+@comment Local Variables:
+@comment fill-column: 90
+@comment End:

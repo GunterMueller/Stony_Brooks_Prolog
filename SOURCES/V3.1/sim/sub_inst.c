@@ -29,7 +29,7 @@ and this notice must be preserved on all copies.
 
 /* #define DEBUG */
 
-struct sigvec vec;
+struct sigaction vec;
 
 /******************************************************************************/
 
@@ -66,10 +66,10 @@ intercept_proc()
 arm_intercept()
 {
    /* set up interrupt routine */
-   vec.sv_handler = intercept_proc;
-   vec.sv_mask = 0;
-   vec.sv_onstack = 0;
-   sigvec(2, &vec, 0);
+   vec.sa_handler = intercept_proc;
+   sigemptyset(&vec.sa_mask);
+   vec.sa_flags = 0;
+   sigaction(2, &vec, 0);
 }
 
 /******************************************************************************/

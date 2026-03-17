@@ -1,0 +1,71 @@
+The files in this directory contain the C code for the builtin predicates
+supported by the system.
+
+To add a builtin to the system, follow the procedure outlined below:
+
+I. Installing C code:
+
+*	Go to the directory "sim/builtin".
+
+*	Look at the #define's in file builtin.h and choose a number (between
+	0 and 255) which is not in use, to be the new builtin number.  Let
+	that number be N1.  Add to builtin.h the line: 
+
+		#define   NEWBUILTIN   N1
+	
+*	The convention is that the code for the builtin will be in a 
+	parameterless procedure named b_NEWBUILTIN. Modify the file
+	sim/builtin/init_branch by adding the lines:
+
+		extern int b_NEWBUILTIN();
+
+		set_b_inst ( NEWBUILTIN, b_NEWBUILTIN);
+
+	in the appropriate places.
+
+*	The builtins are compiled together into one executable file,
+	"builtin".  Update "Makefile" by appending the name of your object
+	code file at the end of the line "OBJS = ..." and inserting the
+	appropriate commands to compile your C source file, e.g.:
+	
+	    OBJS = [ ... other file names ... ] newbuiltin.o
+	    
+	    ...
+	    
+	    newbuiltin.o: $(HS)
+	    	cc $(CFLAGS) newbuiltin.c
+
+*	Execute the updated Makefile to create an updated executable
+	file "builtin".
+
+*	Go to the directory "sim" and execute Makefile to install the new
+	file "builtin".
+
+II. Installing Prolog code:
+
+*	Assume that the builtin predicate to be added is "newbuiltin/4".
+	
+*	Go to the directory "lib/src" (where the Prolog source for the
+	builtin and library routines is kept.)
+	
+*	Each builtin definition is of the form
+
+		pred( ... ) :- '_$builtin'(N1).
+
+	where N1 is an integer, the builtin number.
+	
+*	Create a Prolog source file "newbuiltin.P" (notice correspondence
+	with the name of the predicate being defined) containing the
+	definition
+
+		newbuiltin(A,B,C,D) :- '_$builtin'(N1).
+
+*	Compile this Prolog predicate, using the simulator and the compile
+	predicate. This can be done by executing:
+
+		% procomp newbuiltin
+
+	in the directory lib/src. This will compile the file "newbuiltin.P" 
+	and install the byte-code in the file "newbuiltin" in the library 
+	directory.
+

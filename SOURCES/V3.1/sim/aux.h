@@ -153,7 +153,7 @@ struct hrec {
    LONG_PTR link;
 };
 
-struct hrec indextab[1024];
+extern struct hrec indextab[1024];
 
 /******************************************************************************/
 

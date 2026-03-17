@@ -1,0 +1,65 @@
+Differences between versions 2.4 and 2.5 of SB-Prolog
+=====================================================
+
+1. The irritating requirement of pragma files for indexing has been
+   removed.  In Version 2.5, clause indexing occurs on the principal
+   functor of the first argument by default; an index may be created
+   on other arguments by giving the declaration
+   	
+	:- index(P, N, I).
+
+   which says that an index is to be created on argument I of the predicate
+   P/N.  If I = 0 no index is created for the predicate.
+
+2.(a) The semantics of retract/1 has been changed to be the same as
+      Edinburgh Prolog (e.g. C-Prolog, Quintus, Sicstus, etc.).  See User
+      Manual for a description of its behavior.
+   
+  (b) The behavior of cuts within if-then-elses ( -> ) in compiled code
+      has been changed: cuts within the head (i.e. the conditional test)
+      of an if-then-else are limited in scope to the head, as before; but
+      cuts within the body of an if-then-else (i.e. the subgoals B and C
+      in   A -> B ; C  ) now behave as hard cuts, unless they are within
+      the scope of a limiting construct such as a negation or the head of
+      an enclosing if-then-else.  This behavior makes the behavior of cuts
+      in if-then-elses similar in both compiled and interpreted code.  This
+      behavior is compatible with Quintus Prolog version 2.2, though the
+      syntax is somewhat more liberal in that it allows cuts in the test
+      of a conditional, whereas Quintus does not allow cuts there.
+   
+  (c) The behavior of display/1 and print/1 has been changed to be
+      consistent with C-Prolog, Quintus, and Sicstus Prologs.  See User
+      Manual for details.
+
+3. A distinguished output stream 'stderr', analogous to the stream 'user',
+   has been added.  The command
+
+	?- tell(stderr), write(X).
+
+   causes (the binding of) X to be written to the standard error stream.
+   For convenience, a predicate errmsg/1 has been added that writes its
+   argument, followed by a newline, to stderr.
+
+4. Experience indicates that allowing options to "assert" is not very
+   useful.  Accordingly, this has been discontinued.  The meaning of
+   assert/2 has therefore changed, see User Manual for details.
+
+5. The following new predicates have been added:
+
+	clause/2
+	clause/3
+	current_atom/1
+	current_functor/2
+	current_predicate/2
+	erase/1
+	errmsg/1
+	instance/2
+	is_buffer/1
+	listing/0
+	listing/1
+	predicate_property/2
+	recorda/3
+	recordz/3
+	recorded/3
+	retractall/1
+

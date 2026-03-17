@@ -1,0 +1,33 @@
+SB-Prolog:
+=========
+
+Version#  Date			Notes
+-------	  ----			-----
+   2	  2/86	The "basic" version.  Differs from version 1
+   		in introducing indexing, instruction format
+		change for even length instructions.  Also,
+		numerous bug fixes.
+
+   2.1	  2/87	Bug fixes; improvements to "assert" and "trace"
+   		packages.
+
+   2.2	  3/87	Floating point numbers.
+   
+   2.3	  1/88  - changes and enhancements to arith operations
+   		- enhancements to WAM for indexed access to arguments
+
+   2.3.1  2/88	- enhancements for faster list access
+   		- faster floating point operations
+		- some overflow checking in arith instructions
+		- list notation for consult/reconsult
+		- "l" compiler option for compile-and-load (default)
+		- parser bug fix.
+
+   2.3.2  3/88  - DCGs; minor improvements to compiler
+
+   2.3.3  7/88  - faster tokenizer; fix for macro expansion bug in
+                  compiler.
+
+   2.4	  8/88  - incorporates decompiler, some bug fixes
+
+   2.5    9/88  - number of changes; see the file CHANGES

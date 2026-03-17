@@ -1,0 +1,35 @@
+#
+$HOME/sbprolog/sim/sbprolog -p 200000 -m 400000 $HOME/sbprolog/modlib/\$readloop <<ENDSIM
+compile('\$assert.P','../\$assert',[v,a,i]).
+compile('\$bio.P','../\$bio',[v]).
+compile('\$blist.P','../\$blist',[v]).
+compile('\$bmeta.P','../\$bmeta',[v]).
+compile('\$buff.P','../\$buff',[v]).
+compile('\$call.P','../\$call',[v]).
+compile('\$compare.P','../\$compare',[v]).
+compile('\$consult.P','../\$consult',[v]).
+compile('\$currsym.P','../\$currsym',[v]).
+compile('\$db.P','../\$db',[v,a,i]).
+compile('\$dbcmpl.P','../\$dbcmpl',[v,a,i]).
+compile('\$deb.P','../\$deb',[v]).
+compile('\$decompile.P','../\$decompile',[v]).
+compile('\$defint.P','../\$defint',[v]).
+compile('\$et.P','../\$et',[v]).
+compile('\$glob.P','../\$glob',[v]).
+compile('\$inlines.P','../\$inlines',[v]).
+compile('\$io.P','../\$io',[v]).
+compile('\$mac.P','../\$mac',[v]).
+compile('\$meta.P','../\$meta',[v]).
+compile('\$name.P','../\$name',[v]).
+compile('\$osys.P','../\$osys',[v]).
+compile('\$prof.P','../\$prof',[v]).
+compile('\$prorc.P','../\$prorc',[v]).
+compile('\$read_curr_op.P','../\$read_curr_op',[v]).
+compile('\$readloop.P','../\$readloop',[v]).
+compile('\$record.P','../\$record',[v]).
+compile('\$retr.P','../\$retr',[v]).
+compile('\$setof.P','../\$setof',[v]).
+compile('\$statistics.P','../\$statistics',[v]).
+compile('\$version.P','../\$version',[v]).
+ENDSIM
+yes | rm -f *.asl

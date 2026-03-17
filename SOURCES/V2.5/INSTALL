@@ -1,0 +1,29 @@
+#/bin/sh
+#  This version of INSTALL (a) does not leave unpacked versions of the
+#  .tar.Z files lying around and (b) does not care whether it runs under
+#  the Bourne shell or the C shell.
+
+echo 'Installing libraries ...'
+zcat modlib.tar.Z | tar xf -
+zcat modlib_src.tar.Z | tar xf -
+mv modlib_src src
+mv src modlib
+zcat lib.tar.Z | tar xf -
+echo 'Installing compiler ...'
+zcat cmplib.tar.Z | tar xf -
+zcat cmplib_src.tar.Z | tar xf -
+mv cmplib_src src
+mv src cmplib
+echo 'Installing simulator ...'
+zcat sim.tar.Z | tar xf -
+echo 'Extracting user manual ...'
+test -r sbprolog_doc.me.Z && uncompress sbprolog_doc.me.Z
+echo 'Extracting benchmarks ...'
+test -r bench.tar.Z && (zcat uncompress bench.tar.Z | tar xf -)
+echo 'Making builtins ...'
+(chdir sim/builtin ; make) || exit 1
+echo 'Making simulator ...'
+(chdir sim ; make) || exit 1
+echo 'Done\!'
+exit 0
+

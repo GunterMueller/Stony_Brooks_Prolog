@@ -1,0 +1,246 @@
+From mayer@hplabsz.HPL.HP.COM Thu Apr  7 18:41:13 1988
+Path: megaron!arizona!noao!ncar!ames!pasteur!ucbvax!hplabs!hplabsz!mayer
+From: mayer@hplabsz.HPL.HP.COM (Niels Mayer)
+Newsgroups: comp.lang.prolog
+Subject: Re: stonybrook prolog??? +  getrusage???
+Message-ID: <1860@hplabsz.HPL.HP.COM>
+Date: 8 Apr 88 01:41:13 GMT
+References: <1840@hplabsz.HPL.HP.COM>
+Organization: Hewlett-Packard Laboratories
+Lines: 233
+
+Thanks for all the responses! I just got it running today. I retrieved
+sbprolog version 2.3.2 via anonymous FTP from arizona.edu. I then went
+through the sources and added a few #ifdef HPUX's to cover the differences
+between the bsdism and hpuxism in the names of include files. Thanks to
+KenS. of HP, Colorado Springs for informing me of the HPUX/SysV equivalent of
+getrusage. (I've included context diffs at the end of this file for anyone
+that is interested).
+
+Now I will continue to play with this prolog and see if it fits the needs
+of my project -- i'll need to see how well it behaves when transformed into
+a prolog server to a number of clients.
+
+Benchmarking -- i'd be interested in hearing how other prolog
+implementations compare to this one in terms of efficiency. I ran the naive
+reverse benchmark (comes w/ sbprolog) on my HP9000s350 workstation (4MIPS,
+25Mhz 68020 + FPA) and got the following results:
+
+------------------------------------------------------------------------------
+| ?- load('nrev.P.out').
+yes
+| ?- bench(500).
+3133
+3200
+10233
+67
+7033
+6966
+Lips = 35601.500000
+yes
+------------------------------------------------------------------------------
+
+I also ran Fernando Pereira's benchmark suite (also came with sbprolog) and
+got the following results:
+
+------------------------------------------------------------------------------
+tail_call_atom_atom took (2767 - 633) / 2000 = 1.067000 milli-seconds/iteration
+binary_call_atom_atom took (5017 - 633) / 2000 = 2.192000 milli-seconds/iteration
+cons_list took (5133 - 634) / 2000 = 2.249500 milli-seconds/iteration
+walk_list took (4850 - 634) / 2000 = 2.108000 milli-seconds/iteration
+walk_list_rec took (2434 - 633) / 2000 = 0.900500 milli-seconds/iteration
+args(1) took (2666 - 734) / 2000 = 0.966000 milli-seconds/iteration
+args(2) took (3984 - 733) / 2000 = 1.625500 milli-seconds/iteration
+args(4) took (6533 - 733) / 2000 = 2.900000 milli-seconds/iteration
+args(8) took (11683 - 734) / 2000 = 5.474501 milli-seconds/iteration
+args(16) took (21784 - 716) / 2000 = 10.534000 milli-seconds/iteration
+cons_term took (5617 - 633) / 2000 = 2.492000 milli-seconds/iteration
+walk_term took (4983 - 633) / 2000 = 2.175000 milli-seconds/iteration
+walk_term_rec took (4450 - 617) / 2000 = 1.916500 milli-seconds/iteration
+shallow_backtracking took (4917 - 617) / 2000 = 2.150000 milli-seconds/iteration
+deep_backtracking took (8833 - 617) / 2000 = 4.108000 milli-seconds/iteration
+choice_point took (6133 - 617) / 2000 = 2.758000 milli-seconds/iteration
+trail_variables took (8583 - 617) / 2000 = 3.983000 milli-seconds/iteration
+medium_unify took (4634 - 733) / 2000 = 1.950500 milli-seconds/iteration
+deep_unify took (12766 - 50) / 100 = 127.160004 milli-seconds/iteration
+integer_add took (2917 - 333) / 1000 = 2.584000 milli-seconds/iteration
+floating_add took (25650 - 317) / 1000 = 25.333000 milli-seconds/iteration
+arg(1) took (7134 - 633) / 2000 = 3.250500 milli-seconds/iteration
+arg(2) took (7117 - 633) / 2000 = 3.242000 milli-seconds/iteration
+arg(4) took (7100 - 633) / 2000 = 3.233500 milli-seconds/iteration
+arg(8) took (7150 - 633) / 2000 = 3.258500 milli-seconds/iteration
+arg(16) took (7100 - 634) / 2000 = 3.233000 milli-seconds/iteration
+index took (12784 - 650) / 2000 = 6.066999 milli-seconds/iteration
+assert_unit took (6833 - 0) / 1 = 6833 milli-seconds/iteration
+access_unit took (23666 - 50) / 100 = 236.159973 milli-seconds/iteration
+slow_access_unit took (3517 - 0) / 10 = 351.699951 milli-seconds/iteration
+setof took (4433 - 0) / 10 = 443.300049 milli-seconds/iteration
+pair_setof took (5783 - 0) / 10 = 578.300049 milli-seconds/iteration
+double_setof took (13917 - 0) / 10 = 1391.700195 milli-seconds/iteration
+bagof took (1800 - 0) / 10 = 180 milli-seconds/iteration
+
+------------------------------------------------------------------------------
+Here are the context diffs (diff -c) between version 2.3.2 and the verison
+that works under HPUX 6.01 on my HP9000s350:
+
+*** sim/Makefile.~1~	Thu Apr  7 16:46:55 1988
+--- sim/Makefile	Thu Apr  7 16:46:46 1988
+***************
+*** 1,7 ****
+! CFLAGS = -c -O
+  OBJS = dispatch.o init.o float.o io.o sub_inst.o loader.o main.o parse_oprnd.o dis.o print_inst.o unify.o load_work.o aux.o evalexp.o
+  sbprolog: $(OBJS) builtin/builtin
+! 	cc -o sbprolog $(OBJS) builtin/builtin
+  dispatch.o: dispatch.c inst.h
+  	cc  $(CFLAGS) dispatch.c 
+  dis.o: dis.c sim.h inst.h
+--- 1,7 ----
+! CFLAGS = -c -O -DHPUX
+  OBJS = dispatch.o init.o float.o io.o sub_inst.o loader.o main.o parse_oprnd.o dis.o print_inst.o unify.o load_work.o aux.o evalexp.o
+  sbprolog: $(OBJS) builtin/builtin
+! 	cc -o sbprolog $(OBJS) builtin/builtin -lBSD
+  dispatch.o: dispatch.c inst.h
+  	cc  $(CFLAGS) dispatch.c 
+  dis.o: dis.c sim.h inst.h
+*** sim/builtin/Makefile.~1~	Thu Apr  7 16:47:40 1988
+--- sim/builtin/Makefile	Thu Apr  7 16:47:32 1988
+***************
+*** 1,5 ****
+  
+! CFLAGS = -c -O
+  OBJS = builtin.o meta.o file.o init_branch.o tio.o structure.o name.o buffer.o other.o time.o compare.o substuff.o arith.o saverest.o
+  HS = builtin.h ../sim.h ../aux.h
+  
+--- 1,5 ----
+  
+! CFLAGS = -c -O -DHPUX
+  OBJS = builtin.o meta.o file.o init_branch.o tio.o structure.o name.o buffer.o other.o time.o compare.o substuff.o arith.o saverest.o
+  HS = builtin.h ../sim.h ../aux.h
+  
+*** sim/builtin/other.c.~1~	Thu Apr  7 16:41:13 1988
+--- sim/builtin/other.c	Thu Apr  7 16:43:40 1988
+***************
+*** 30,36 ****
+--- 30,39 ----
+  #include <netdb.h>
+  #include <sys/socket.h>
+  #include <netinet/in.h>
++ 
++ #ifndef HPUX
+  #include <arpa/inet.h>
++ #endif /* HPUX */
+  
+  #define STR_LIM 256	/* limit on the length of the name of a constant */
+  #define isalpha(x)  (((x >= 'a') && (x <= 'z')) || ((x >= 'A') && (x <= 'Z')))
+*** sim/builtin/saverest.c.~1~	Thu Apr  7 16:42:09 1988
+--- sim/builtin/saverest.c	Thu Apr  7 16:44:04 1988
+***************
+*** 24,29 ****
+--- 24,34 ----
+  
+  #include <stdio.h>
+  #include <sys/file.h>
++ 
++ #ifdef HPUX
++ #include <fcntl.h>
++ #endif /* HPUX */
++ 
+  #include "../sim.h"
+  #include "../aux.h"
+  
+*** sim/builtin/time.c.~1~	Thu Apr  7 16:41:20 1988
+--- sim/builtin/time.c	Thu Apr  7 16:43:49 1988
+***************
+*** 24,40 ****
+  
+  /* time.c */
+  
+  #include <sys/time.h>
+  #include <sys/resource.h>
+  #include "builtin.h"
+  
+  b_CPUTIME()   /* R1: miliseconds */
+  {
+-     struct rusage usage;
+      int msec;
+! 
+      getrusage(0, &usage);
+      msec =  usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000;
+      if (!unify(gregc(1), makeint(msec))) {Fail0;}
+  }
+  
+--- 24,53 ----
+  
+  /* time.c */
+  
++ #ifdef HPUX
++ #include <sys/types.h>
++ #include <sys/param.h>
++ #include <sys/times.h>
++ #include <time.h>
++ #else
+  #include <sys/time.h>
+  #include <sys/resource.h>
++ #endif /* HPUX */
++ 
+  #include "builtin.h"
+  
+  b_CPUTIME()   /* R1: miliseconds */
+  {
+      int msec;
+! #ifdef HPUX
+!     struct tms t;
+!     times(&t);
+!     msec = t.tms_utime * 1000 / 60;
+! #else
+!     struct rusage usage;
+      getrusage(0, &usage);
+      msec =  usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000;
++ #endif
+      if (!unify(gregc(1), makeint(msec))) {Fail0;}
+  }
+  
+***************
+*** 43,55 ****
+--- 56,77 ----
+      register word op1;
+      register pw top;
+      int stat;
++ #ifdef HPUX
++     struct tms usage;
++ #else
+      struct rusage usage;
++ #endif
+  
+      op1 = gregc(1); deref(op1);
+      switch ((int)(intval(op1))) {
+          case 0:
++ #ifdef HPUX
++ 	    times(&usage);
++ 	    stat = usage.tms_utime * 1000 / 60;
++ #else
+  	    getrusage(0, &usage);
+  	    stat = usage.ru_utime.tv_sec*1000 + usage.ru_utime.tv_usec/1000;
++ #endif      
+  	    break;
+  	case 1: stat = maxmem; break; /* max available stack size */
+  	case 2:	stat = local_bottom -
+*** sim/init.c.~1~	Thu Apr  7 16:42:19 1988
+--- sim/init.c	Thu Apr  7 16:44:12 1988
+***************
+*** 27,33 ****
+--- 27,38 ----
+  #include "sim.h"
+  #include "inst.h"
+  #include "aux.h"
++ 
++ #ifdef HPUX
++ #include <string.h>
++ #else
+  #include <strings.h>
++ #endif
+  
+  int maxmem = 100000;  /* 100000 */
+  int maxpspace = 75000;
+
+

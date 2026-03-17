@@ -1,0 +1,41 @@
+#!/bin/csh
+# 
+#   Installation procedure for SBProlog Version 3.0
+#   Last modified: Stony Brook, August 1989
+#
+echo 'installing libraries ...'
+    uncompress modlib.tar.Z
+    uncompress modlib_src.tar.Z
+    tar -xf modlib.tar
+    tar -xf modlib_src.tar
+    mv modlib_src src
+    mv src modlib
+    uncompress lib.tar.Z
+    tar -xf lib.tar
+echo 'installing compiler ...'
+    uncompress cmplib.tar.Z
+    uncompress cmplib_src.tar.Z
+    tar -xf cmplib.tar
+    tar -xf cmplib_src.tar
+    mv cmplib_src src
+    mv src cmplib
+echo 'installing simulator ...'
+    uncompress sim.tar.Z
+    tar -xf sim.tar
+    echo 'extracting user manual ...'
+    uncompress sbprolog_doc.me.Z
+    echo 'extracting benchmarks ...'
+    uncompress bench.tar.Z
+    tar -xf bench.tar
+    set SBP_HOME = $cwd
+    chdir $SBP_HOME/sim/builtin
+    echo 'Making builtins ...'
+    make
+    echo 'Done\!'
+    chdir $SBP_HOME/sim
+echo 'Making simulator ...'
+    make
+    echo 'Done\!'
+    chdir $SBP_HOME
+echo 'Setting environment...'
+    source INIT

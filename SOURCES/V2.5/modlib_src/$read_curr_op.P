@@ -1,0 +1,51 @@
+/*  This is the file of operators for read/1 and read/2.  It really
+    belongs in the file $read.P, but is here so that the assembler won't
+    optimize away the indirect linkages to it, thereby allowing op
+    declarations to be handled correctly.  -- S. Debray, Dec 22, 1987.  */
+
+$read_curr_op(1200,xfx,(':-')).
+$read_curr_op(1200,xfx,('-->')).
+$read_curr_op(1200,fx,(':-')).
+$read_curr_op(1198,xfx,('::-')).
+$read_curr_op(1100,xfy,';').
+$read_curr_op(1050,xfy,'->').
+$read_curr_op(1000,xfy,',').
+$read_curr_op(900,fy,not).
+$read_curr_op(900,fy,'\+').
+$read_curr_op(900,fy,spy).
+$read_curr_op(900,fy,nospy).
+$read_curr_op(1150,fy,(mode)).
+$read_curr_op(1150,fy,(public)).
+$read_curr_op(1150,fy,(dynamic)).
+$read_curr_op(700,xfx,'=').
+$read_curr_op(700,xfx,is).
+$read_curr_op(700,xfx,'=..').
+$read_curr_op(700,xfx,'?=').
+$read_curr_op(700,xfx,'\=').
+$read_curr_op(700,xfx,'==').
+$read_curr_op(700,xfx,'\==').
+$read_curr_op(700,xfx,'@<').
+$read_curr_op(700,xfx,'@>').
+$read_curr_op(700,xfx,'@=<').
+$read_curr_op(700,xfx,'@>=').
+$read_curr_op(700,xfx,'=:=').
+$read_curr_op(700,xfx,'=\=').
+$read_curr_op(700,xfx,'<').
+$read_curr_op(700,xfx,'>').
+$read_curr_op(700,xfx,'=<').
+$read_curr_op(700,xfx,'>=').
+$read_curr_op(661,xfy,'.').	/* !! */
+$read_curr_op(500,yfx,'+').
+$read_curr_op(500,yfx,'-').
+$read_curr_op(500,yfx,'/\').
+$read_curr_op(500,yfx,'\/').
+$read_curr_op(500,fx,'+').
+$read_curr_op(500,fx,'-').
+$read_curr_op(500,fx,'\').
+$read_curr_op(400,yfx,'*').
+$read_curr_op(400,yfx,'/').
+$read_curr_op(400,yfx,'//').
+$read_curr_op(400,yfx,'<<').
+$read_curr_op(400,yfx,'>>').
+$read_curr_op(300,xfx,mod).
+$read_curr_op(200,xfy,'^').

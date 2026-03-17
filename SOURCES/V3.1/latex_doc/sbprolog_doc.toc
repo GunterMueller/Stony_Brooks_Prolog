@@ -1,68 +1,68 @@
-\contentsline {section}{\numberline {1}Introduction}{5}
-\contentsline {section}{\numberline {2}Getting Started}{6}
-\contentsline {subsection}{\numberline {2.1}The Dynamic Loader Search Path}{6}
-\contentsline {subsection}{\numberline {2.2}System Directories}{7}
-\contentsline {subsection}{\numberline {2.3}Invoking the Simulator}{7}
-\contentsline {subsection}{\numberline {2.4}Executing Programs}{8}
-\contentsline {subsubsection}{\numberline {2.4.1}Compiling Programs}{8}
-\contentsline {subsubsection}{\numberline {2.4.2}Loading Byte Code Files}{9}
-\contentsline {subsubsection}{\numberline {2.4.3}Consulting Programs}{10}
-\contentsline {subsection}{\numberline {2.5}Execution Directives}{11}
-\contentsline {section}{\numberline {3}Syntax}{11}
-\contentsline {subsection}{\numberline {3.1}Terms}{11}
-\contentsline {subsection}{\numberline {3.2}Operators}{14}
-\contentsline {subsection}{\numberline {3.3}Clause?}{17}
-\contentsline {subsection}{\numberline {3.4}Rule?}{18}
-\contentsline {subsection}{\numberline {3.5}Query?}{18}
-\contentsline {section}{\numberline {4}SB-Prolog: Operational Semantics}{18}
-\contentsline {subsection}{\numberline {4.1}Standard Execution Behaviour}{18}
-\contentsline {subsection}{\numberline {4.2}Cuts and If-Then-Else}{18}
-\contentsline {subsection}{\numberline {4.3}Unification of Floating Point Numbers}{19}
-\contentsline {section}{\numberline {5}Evaluable Predicates}{19}
-\contentsline {subsection}{\numberline {5.1}Input and Output}{20}
-\contentsline {subsubsection}{\numberline {5.1.1}File Handling}{21}
-\contentsline {subsubsection}{\numberline {5.1.2}Term I/O}{21}
-\contentsline {subsubsection}{\numberline {5.1.3}Character I/O}{22}
-\contentsline {subsection}{\numberline {5.2}Arithmetic}{23}
-\contentsline {subsection}{\numberline {5.3}Convenience}{25}
-\contentsline {subsection}{\numberline {5.4}Extra Control}{26}
-\contentsline {subsection}{\numberline {5.5}Meta-Logical}{27}
-\contentsline {subsection}{\numberline {5.6}Sets}{29}
-\contentsline {subsection}{\numberline {5.7}Comparison of Terms}{30}
-\contentsline {subsection}{\numberline {5.8}Buffers}{32}
-\contentsline {subsection}{\numberline {5.9}Modification of the Program}{33}
-\contentsline {subsection}{\numberline {5.10}Internal Database}{36}
-\contentsline {subsection}{\numberline {5.11}Information about the State of the Program}{36}
-\contentsline {subsection}{\numberline {5.12}Environmental}{38}
-\contentsline {subsection}{\numberline {5.13}Global Values}{42}
-\contentsline {subsection}{\numberline {5.14}Exotica}{43}
-\contentsline {section}{\numberline {6}Debugging}{45}
-\contentsline {subsection}{\numberline {6.1}High-Level Tracing}{45}
-\contentsline {subsection}{\numberline {6.2}Low-Level Tracing}{48}
-\contentsline {section}{\numberline {7}The Simulator}{48}
-\contentsline {subsection}{\numberline {7.1}Invoking the Simulator}{48}
-\contentsline {subsection}{\numberline {7.2}Simulator Options}{49}
-\contentsline {subsection}{\numberline {7.3}Interrupts}{50}
-\contentsline {section}{\numberline {8}The Compiler}{51}
-\contentsline {subsection}{\numberline {8.1}Invoking the Compiler}{51}
-\contentsline {subsection}{\numberline {8.2}Compiler Options}{53}
-\contentsline {subsection}{\numberline {8.3}Assembly}{53}
-\contentsline {subsection}{\numberline {8.4}Compiler Directives}{54}
-\contentsline {subsubsection}{\numberline {8.4.1}Mode Declarations}{54}
-\contentsline {subsubsection}{\numberline {8.4.2}Indexing Directives}{55}
-\contentsline {section}{\numberline {9}Libraries}{56}
-\contentsline {section}{\numberline {10}Macros}{57}
-\contentsline {subsection}{\numberline {10.1}Defining Macros}{57}
-\contentsline {subsection}{\numberline {10.2}Macro Expander Options}{58}
-\contentsline {section}{\numberline {11}Extension Tables: Memo Relations}{58}
-\contentsline {section}{\numberline {12}Definite Clause Grammars}{62}
-\contentsline {section}{\numberline {13}Profiling Programs}{64}
-\contentsline {section}{\numberline {14}Other Library Utilities}{67}
-\contentsline {section}{\numberline {15}CREDITS}{68}
-\contentsline {section}{\numberline {A}Evaluable Predicates of SB-Prolog}{74}
-\contentsline {section}{\numberline {B}A Note on Coding for Efficiency}{77}
-\contentsline {subsection}{\numberline {B.1}Avoiding Creation of Backtrack Points}{77}
-\contentsline {subsection}{\numberline {B.2}Minimizing Data Movement Between Registers}{79}
-\contentsline {subsection}{\numberline {B.3}Processing All Arguments of a Term}{79}
-\contentsline {subsection}{\numberline {B.4}Testing Unifiability}{80}
-\contentsline {section}{\numberline {C}Adding Builtins to SB-Prolog}{81}
+\contentsline {section}{\numberline {1}Introduction}{5}{}%
+\contentsline {section}{\numberline {2}Getting Started}{6}{}%
+\contentsline {subsection}{\numberline {2.1}The Dynamic Loader Search Path}{6}{}%
+\contentsline {subsection}{\numberline {2.2}System Directories}{7}{}%
+\contentsline {subsection}{\numberline {2.3}Invoking the Simulator}{7}{}%
+\contentsline {subsection}{\numberline {2.4}Executing Programs}{8}{}%
+\contentsline {subsubsection}{\numberline {2.4.1}Compiling Programs}{8}{}%
+\contentsline {subsubsection}{\numberline {2.4.2}Loading Byte Code Files}{9}{}%
+\contentsline {subsubsection}{\numberline {2.4.3}Consulting Programs}{10}{}%
+\contentsline {subsection}{\numberline {2.5}Execution Directives}{11}{}%
+\contentsline {section}{\numberline {3}Syntax}{11}{}%
+\contentsline {subsection}{\numberline {3.1}Terms}{11}{}%
+\contentsline {subsection}{\numberline {3.2}Operators}{14}{}%
+\contentsline {subsection}{\numberline {3.3}Clause?}{17}{}%
+\contentsline {subsection}{\numberline {3.4}Rule?}{18}{}%
+\contentsline {subsection}{\numberline {3.5}Query?}{18}{}%
+\contentsline {section}{\numberline {4}SB-Prolog: Operational Semantics}{18}{}%
+\contentsline {subsection}{\numberline {4.1}Standard Execution Behaviour}{18}{}%
+\contentsline {subsection}{\numberline {4.2}Cuts and If-Then-Else}{18}{}%
+\contentsline {subsection}{\numberline {4.3}Unification of Floating Point Numbers}{19}{}%
+\contentsline {section}{\numberline {5}Evaluable Predicates}{19}{}%
+\contentsline {subsection}{\numberline {5.1}Input and Output}{20}{}%
+\contentsline {subsubsection}{\numberline {5.1.1}File Handling}{21}{}%
+\contentsline {subsubsection}{\numberline {5.1.2}Term I/O}{21}{}%
+\contentsline {subsubsection}{\numberline {5.1.3}Character I/O}{22}{}%
+\contentsline {subsection}{\numberline {5.2}Arithmetic}{23}{}%
+\contentsline {subsection}{\numberline {5.3}Convenience}{25}{}%
+\contentsline {subsection}{\numberline {5.4}Extra Control}{26}{}%
+\contentsline {subsection}{\numberline {5.5}Meta-Logical}{26}{}%
+\contentsline {subsection}{\numberline {5.6}Sets}{29}{}%
+\contentsline {subsection}{\numberline {5.7}Comparison of Terms}{30}{}%
+\contentsline {subsection}{\numberline {5.8}Buffers}{31}{}%
+\contentsline {subsection}{\numberline {5.9}Modification of the Program}{32}{}%
+\contentsline {subsection}{\numberline {5.10}Internal Database}{35}{}%
+\contentsline {subsection}{\numberline {5.11}Information about the State of the Program}{36}{}%
+\contentsline {subsection}{\numberline {5.12}Environmental}{38}{}%
+\contentsline {subsection}{\numberline {5.13}Global Values}{41}{}%
+\contentsline {subsection}{\numberline {5.14}Exotica}{42}{}%
+\contentsline {section}{\numberline {6}Debugging}{44}{}%
+\contentsline {subsection}{\numberline {6.1}High-Level Tracing}{44}{}%
+\contentsline {subsection}{\numberline {6.2}Low-Level Tracing}{47}{}%
+\contentsline {section}{\numberline {7}The Simulator}{47}{}%
+\contentsline {subsection}{\numberline {7.1}Invoking the Simulator}{47}{}%
+\contentsline {subsection}{\numberline {7.2}Simulator Options}{48}{}%
+\contentsline {subsection}{\numberline {7.3}Interrupts}{49}{}%
+\contentsline {section}{\numberline {8}The Compiler}{50}{}%
+\contentsline {subsection}{\numberline {8.1}Invoking the Compiler}{50}{}%
+\contentsline {subsection}{\numberline {8.2}Compiler Options}{52}{}%
+\contentsline {subsection}{\numberline {8.3}Assembly}{52}{}%
+\contentsline {subsection}{\numberline {8.4}Compiler Directives}{53}{}%
+\contentsline {subsubsection}{\numberline {8.4.1}Mode Declarations}{53}{}%
+\contentsline {subsubsection}{\numberline {8.4.2}Indexing Directives}{54}{}%
+\contentsline {section}{\numberline {9}Libraries}{55}{}%
+\contentsline {section}{\numberline {10}Macros}{56}{}%
+\contentsline {subsection}{\numberline {10.1}Defining Macros}{56}{}%
+\contentsline {subsection}{\numberline {10.2}Macro Expander Options}{57}{}%
+\contentsline {section}{\numberline {11}Extension Tables: Memo Relations}{57}{}%
+\contentsline {section}{\numberline {12}Definite Clause Grammars}{61}{}%
+\contentsline {section}{\numberline {13}Profiling Programs}{63}{}%
+\contentsline {section}{\numberline {14}Other Library Utilities}{66}{}%
+\contentsline {section}{\numberline {15}CREDITS}{67}{}%
+\contentsline {section}{\numberline {A}Evaluable Predicates of SB-Prolog}{73}{}%
+\contentsline {section}{\numberline {B}A Note on Coding for Efficiency}{76}{}%
+\contentsline {subsection}{\numberline {B.1}Avoiding Creation of Backtrack Points}{76}{}%
+\contentsline {subsection}{\numberline {B.2}Minimizing Data Movement Between Registers}{78}{}%
+\contentsline {subsection}{\numberline {B.3}Processing All Arguments of a Term}{78}{}%
+\contentsline {subsection}{\numberline {B.4}Testing Unifiability}{79}{}%
+\contentsline {section}{\numberline {C}Adding Builtins to SB-Prolog}{80}{}%

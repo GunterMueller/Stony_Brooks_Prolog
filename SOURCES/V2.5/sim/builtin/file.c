@@ -1,0 +1,408 @@
+/************************************************************************
+*									*
+* The SB-Prolog System							*
+* Copyright SUNY at Stony Brook, 1986; University of Arizona, 1987	*
+*									*
+************************************************************************/
+
+/*-----------------------------------------------------------------
+SB-Prolog is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the SB-Prolog General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+SB-Prolog, but only under the conditions described in the
+SB-Prolog General Public License.   A copy of this license is
+supposed to have been given to you along with SB-Prolog so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies. 
+------------------------------------------------------------------ */
+
+
+/* file.c */
+
+#include "builtin.h"
+#include <netdb.h>
+#include <stdio.h>
+#define PMODE 0644
+
+extern double floatval();
+
+static int n, a, i;
+static int fileerrors = 0;	/* abort, or not on file errors */
+static struct psc_rec *user_psc, *stderr_psc, *ptr;
+static FILE *tempfile;
+static char s[256];
+
+static word user_word, con_word, stderr_word;
+
+struct ftab_ent {
+    int inout;		/* 1 if input, 0 if output */
+    word p_ptr;		/* tagged ptr to psc_ptr of constant */
+    FILE *fdes;		/* file descriptor for this constant */
+    };
+
+    /* table of open files; 0 is always stdin,  1 is always stdout, 
+       2 is always stderr */
+static struct ftab_ent file_table[20];
+static int file_tab_end = 0; /* last used entry in file_table */
+
+    /* index of current input (output) stream in file_table */
+static int in_file_i, out_file_i;
+extern FILE *curr_in, *curr_out;
+
+static struct hostent *hp;
+
+
+int get_file_index(cword, io)
+word cword;
+int io;
+{
+    for (i=0; i<=file_tab_end; i++) {
+	if (file_table[i].p_ptr == cword)
+	    if (io == file_table[i].inout || io >1) return(i);
+    }
+    return(-1);
+}
+
+b_FILEERRORS()
+{
+	    fileerrors = 1;
+}
+
+b_NOFILEERRORS()
+{
+	    fileerrors = 0;
+}
+
+b_PUT() /* (N) */
+{ 
+    register word op; 
+    register pw top;
+
+    op = gregc(1); deref(op);
+    if (!isinteger(op)) {Fail0;}
+    else putc(intval(op), curr_out);
+    /* fflush(file_table[out_file_i].fdes); */
+}
+
+b_GET0()  /* (N) */
+{
+    register word op;
+    register pw top;
+
+    n = getc(curr_in);
+    if (n == EOF) clearerr(curr_in);
+    op = gregc(1); deref(op);
+    if (isnonvar(op)) {if (!unify(op, makeint(n))) {Fail0;}}
+    else {follow(op) = makeint(n); pushtrail(op);}
+}
+
+b_GET()  /* (N) */
+{
+    register word op;
+    register pw top;
+
+	do n = getc(curr_in);
+ 	while (n != EOF && n < 16 && n >= 112);
+	if (n == EOF) {
+	    clearerr(curr_in);
+	    Fail0; return;
+	    }
+	op = gregc(1); deref(op);
+	if (isnonvar(op)) {if (!unify(op, makeint(n))) {Fail0;}}
+	else {follow(op) = makeint(n); pushtrail(op);}
+}
+
+b_SKIP()
+{  /* ( N) */
+    register word op;
+    register pw top;
+
+    op = gregc(1); deref(op);
+    if (!isinteger(op)) {Fail0; return;}
+    a = intval(op);
+    if (a < 16 || a >= 112) {Fail0;}
+    else {
+        do n = getc(curr_in);
+        while (n != EOF && n != a);
+        if (n = EOF) {
+	    if (fileerrors) quit("end of file encountered.\n");
+	    else {Fail0;}
+	    }
+	}
+}
+
+b_TAB()
+{ /* (N) */
+    register word op;
+    register pw top;
+
+	op = gregc(1); deref(op);
+	if (!isinteger(op)) {Fail0; return;}
+	a = intval(op);
+	if (a < 0) {Fail0; return;}
+	for ( ; a>0; a--) putc(' ', curr_out);
+	/* fflush(file_table[out_file_i].fdes); */
+}
+
+b_NL()
+{	/* () */
+
+	    putc('\n', curr_out);
+	    fflush(curr_out);
+}
+
+b_WRITENAME()
+{ 	/* (X) */
+    register word op;
+    register pw top;
+
+	op = gregc(1); 
+	wnd: switch ((int)(op&3)) {
+	    case FREE:
+		nderef(op, wnd);
+		fprintf(curr_out, "_%d", untagged(op));
+		break;
+	    case LIST:
+		fprintf(curr_out, ".");
+		break;
+	    case CS:
+		ptr = get_str_psc(op);
+	        if (get_etype(ptr) == T_BUFF) {
+		   printf("Buffer_%x", get_name(ptr));
+	        } 
+		else writepname(curr_out, get_name(ptr), get_length(ptr));
+		break;
+	    case NUM:
+		if (isinteger(op))
+		    fprintf(curr_out, "%d", intval(op));
+		else fprintf(curr_out, "%f", floatval(op));
+		break;
+	}
+	/* fflush(file_table[out_file_i].fdes); */
+}
+
+b_WRITEQNAME()
+{ 	/* (X) */
+    register word op;
+    register pw top;
+
+	op = gregc(1); 
+	wnd: switch ((int)(op&3)) {
+	    case FREE:
+		nderef(op, wnd);
+		fprintf(curr_out, "_%d", untagged(op));
+		break;
+	    case LIST:
+		fprintf(curr_out, ".");
+		break;
+	    case CS:
+		ptr = get_str_psc(op);
+	        if (get_etype(ptr) == T_BUFF) {
+		   printf("Buffer_%x", get_name(ptr));
+	        } 
+		else writeqname(curr_out, get_name(ptr), get_length(ptr));
+		break;
+	    case NUM:
+		if (isinteger(op))
+		    fprintf(curr_out, "%d", intval(op));
+		else fprintf(curr_out, "%f", floatval(op));
+		break;
+	}
+	/* fflush(file_table[out_file_i].fdes); */
+}
+
+b_RESET()  /* () */
+{
+    quit("RESET not implemented\n");
+    
+/*	fop = gregc(1);
+	get_file_psc();
+	if (p == user_psc) set_file_ptr(p, stdin);
+	else {
+	    namestring(p, s);
+	    set_file_ptr(p, fopen(s, "r"));
+	    if (get_file_ptr(p)==0) {Fail0;}
+	} */
+}
+
+b_REWRITE()
+{
+    quit("REWRITE not implemented\n");
+/*
+	fop = gregc(1);
+	get_file_psc();
+	if (p == user_psc) set_file_ptr(p, stdout);
+	else {
+	    namestring(p, s);
+	    set_file_ptr(p, fopen(s, "w"));
+	    if (get_file_ptr(p)==0) {Fail0;}
+	} */
+}
+
+b_CLOSE()
+{
+    register word fop;
+    register pw top;
+
+	fop = gregc(1); deref(fop);
+	i = get_file_index(fop, 2);
+	if (i>1) {  /* not user */
+	    fclose(file_table[i].fdes);
+	    for ( ; i<file_tab_end; i++) {
+		file_table[i] = file_table[i+1];
+	    }
+	    file_tab_end--;
+	}
+}
+
+b_SEE()  /* r1: file name */
+{
+    register word fop;
+    register pw top;
+    int temp_in_file_i;
+
+	fop = gregc(1); deref(fop);
+	temp_in_file_i = get_file_index(fop, 1);
+	if (temp_in_file_i<0) {  /* not in table */
+	    namestring(get_str_psc(fop), s);
+	    tempfile = fopen(s, "r");
+	    if (!tempfile) {Fail0; return;} /* leaving in_file_i unchanged */
+	    in_file_i = ++file_tab_end;
+	    file_table[in_file_i].inout = 1;
+	    file_table[in_file_i].p_ptr = fop;
+	    file_table[in_file_i].fdes = tempfile;
+	}
+	else in_file_i = temp_in_file_i; /* take it from table */
+	curr_in = file_table[in_file_i].fdes;
+}
+
+b_TELL()  /* r1: file name */
+	  /* r2: 0 -> open `w'-write; 1 -> open `a'-append */
+{
+    register word sop, fop;
+    register pw top;
+
+	fop = gregc(1); deref(fop);
+	sop = gregc(2); deref(sop);
+	out_file_i = get_file_index(fop, 0);
+	if (out_file_i<0) {  /* not in table */
+	    namestring(get_str_psc(fop), s);
+	    if(intval(sop)) tempfile = fopen(s, "a");
+	    else tempfile = fopen(s, "w");
+	    if (!tempfile) {Fail0; return;}
+	    out_file_i = ++file_tab_end;
+	    file_table[out_file_i].inout = 0;
+	    file_table[out_file_i].p_ptr = fop;
+	    file_table[out_file_i].fdes = tempfile;
+	};
+	curr_out = file_table[out_file_i].fdes;
+}
+
+b_SEEING()  /* r1: unified with the current input file name */
+{
+    if (!unify(gregc(1), file_table[in_file_i].p_ptr)) {Fail0;}
+}
+
+b_TELLING()  /* r1: unified with the current out put file name */
+{
+    if (!unify(gregc(1), file_table[out_file_i].p_ptr)) {Fail0;}
+}
+
+b_SEEN()
+{
+    if (in_file_i > 2) {
+	fclose(curr_in);
+	for ( ; in_file_i<file_tab_end; in_file_i++) {
+	    file_table[in_file_i] = file_table[in_file_i+1];
+	}
+	file_tab_end--;
+    }
+    in_file_i = 0; /* reset to user */
+    curr_in = file_table[in_file_i].fdes;
+}
+
+b_TOLD()
+{
+    if (out_file_i > 2) {
+	fclose(file_table[out_file_i].fdes);
+	for ( ; out_file_i<file_tab_end; out_file_i++) {
+	    file_table[out_file_i] = file_table[out_file_i+1];
+	}
+	file_tab_end--;
+    }
+    out_file_i = 1; /* reset to user */
+    curr_out = file_table[out_file_i].fdes;
+}
+
+
+b_GETHOSTBYNAME() /* 	r1 is a constant indicating the host name, 
+			r2 is a namebuffer (of length 16) returned */
+{
+    register word op1, op2;
+    register pw top;
+    
+    op1 = gregc(1); deref(op1);
+    op2 = gregc(2); deref(op2);
+    namestring(get_str_psc(op1), s);
+    hp = gethostbyname(s);
+    bcopy(hp->h_addr, get_name(get_str_psc(op2))+4, hp->h_length);
+}
+    
+
+file_init()
+{
+    word temp;
+    char perm = 1;
+    char arity = 0;
+
+    temp = insert("user", 4, arity, &perm);
+    user_psc = (struct psc_rec *)(follow(temp));
+    user_word = temp | CS_TAG;
+
+    temp = insert("stderr", 6, arity, &perm);
+    stderr_psc = (struct psc_rec *)(follow(temp));
+    stderr_word = temp | CS_TAG;
+
+    file_table[0].inout = 1;
+    file_table[0].p_ptr = user_word;
+    file_table[0].fdes = stdin;
+    in_file_i = 0;
+    curr_in = stdin;
+
+    file_table[1].inout = 0;
+    file_table[1].p_ptr = user_word;
+    file_table[1].fdes = stdout;
+    out_file_i = 1;
+    curr_out = stdout;
+
+    file_table[2].inout = 0;
+    file_table[2].p_ptr = stderr_word;
+    file_table[2].fdes = stderr;
+
+    file_tab_end = 2;
+}
+
+b_WRITE4()
+{	/* register 1 contains a bit string that is written out in 4 bytes */
+
+    register word op, wbyte;
+    register pw top;
+    int i;
+
+    op = gregc(1); deref(op);
+    for (i = 1; i <= 4; i++)
+    {	wbyte = ((op & 0xff000000)>>24);
+	op = op << 8;
+	putc(wbyte, curr_out);
+    }
+    return;
+}
+
+
+

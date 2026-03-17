@@ -1,0 +1,20 @@
+This directory contains the files for SB-Prolog V2.2, that have been
+changed to make it run on a Mac with A/UX, they should be copied
+over the original files with the same name.
+The files are :
+
+Makefile.sim		: <sbprolog-root>/sim/Makefile
+Makefile.built		: <sbprolog-root>/sim/builtin/Makefile
+init.c			: <sbprolog-root>/sim/init.c
+saverest.c		: <sbprolog-root>/sim/builtin/saverest.c
+time.c			: <sbprolog-root>/sim/builtin/time.c
+
+Once these files are put in position,
+do a 'make' in "<sbprolog-root>/sim/builtin"
+and then a make in "<sbprolog-root>/sim"
+
+This should produce the file sbprolog, which will be the prolog interpreter.
+
+Good luck
+
+:*) Gert Hulstein
