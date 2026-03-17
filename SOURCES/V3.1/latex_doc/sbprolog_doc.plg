@@ -1,0 +1,7 @@
+This is makeindex, portable version 2.4 [20-Mar-88].
+Scanning style file predindex.idxsty..done (2 attributes redefined, 0 ignored).
+Scanning input file sbprolog_doc.pdx....done (197 entries accepted, 0 rejected).
+Sorting entries.....done (1722 comparisons).
+Generating output file sbprolog_doc.pnd....done (255 lines written, 0 warnings).
+Output written in sbprolog_doc.pnd.
+Transcript written in sbprolog_doc.plg.

@@ -1,0 +1,3855 @@
+% -*-LaTeX-*-
+
+\documentstyle[11pt]{article}
+\newcommand{\bold}[1]{{\bf #1}}
+\newcommand{\see}[2]{{\em see\/} #1}
+\input{predindex.sty}
+\renewcommand{\today}{September 1988}
+\makepredindex
+\makeindex
+\begin{document}
+\title{
+The SB-Prolog System, Version 3.0 \\[3ex]
+A User Manual}
+\author{edited by \\
+{\em Saumya K. Debray} \\[2ex]
+from material by \\[2ex]
+{\em David Scott Warren} \\
+{\em Suzanne Dietrich} \\
+SUNY at Stony Brook \\[2ex]
+{\em Fernando Pereira} \\
+SRI International \\[5ex]
+Department of Computer Science \\
+University of Arizona \\
+Tucson, AZ 85721}
+\maketitle
+\newpage
+\tableofcontents
+\listoffigures
+\listoftables
+\newpage
+\begin{abstract}
+SB-Prolog is a Prolog system for Unix\footnote{
+Unix is a trademark of AT\&T.}-based systems.
+The core of the system is an emulator, written in C for portability, of a
+Prolog virtual machine that is an extension of the Warren Abstract Machine.
+The remainder of the system, including the translator from
+Prolog to the virtual machine instructions, is written in Prolog.
+Parts of this manual,
+specifically the sections on Prolog syntax and descriptions of some
+of the builtins, are based on the C-Prolog User Manual by Fernando Pereira.
+\end{abstract}
+
+\section{Introduction}
+SB-Prolog is a Prolog system based on an extension of the Warren
+Abstract Machine\footnote{
+D. H. D. Warren, ``An Abstract Prolog Instruction Set'',
+Tech. Note 309, SRI International, 1983.}.
+The WAM\index{WAM} simulator is written in C to enhance portability.
+Prolog source programs can be compiled into {\em byte code} files,
+\index{byte code!files}
+which contain encodings of WAM instructions and are
+interpreted by the simulator.
+Programs can also be interpreted via {\em consult}.
+
+SB-Prolog offers several features that are not found on most Prolog systems
+currently available.
+These include: compilation to object files;
+dynamic loading of predicates;
+provision for generating executable code on the global stack,
+which can be later be reclaimed;
+an {\em extension table} facility that permits memoization of relations.
+Other features include full integration between compiled and interpreted code,
+and a facility for the definition and expansion of macros
+that is fully compatible with the runtime system.
+
+The system incorporates tail recursion optimization,
+and performs clause indexing in both compiled and interpreted code.
+However, there is no garbage collector for the global stack.
+This may be incorporated into a later version.
+
+One of the few luxuries afforded to a person giving software away for free is
+the ability to take philosophical stances without hurting his wallet.
+Based on our faith in the ``declarative ideal'', viz.\ that pure
+programs with declarative readings are Good, we have attempted to encourage,
+where possible, a more declarative style of programming.
+To this end, we have deliberately chosen to not reward programs containing cuts
+in some situations where more declarative code is possible
+(see Appendix~\ref{coding_for_efficiency}).
+We have also resisted the temptation to make {\em assert} less expensive.
+We hope this will help promote a better programming style.
+
+\section{Getting Started}\index{getting started}\index{starting}
+
+This section is intended to give a broad overview of the SB-Prolog system,
+so as to enable the new user to begin using the system with a minimum of delay.
+Many of the topics touched on here are covered in greater depth
+in later sections.
+
+\subsection{The Dynamic Loader Search Path}\label{search_path}
+\index{dynamic loader search path} \index{loader, dynamic search path}
+\index{linking, dynamic search path}
+\index{search path} \index{path, search}
+In SB-Prolog, it is not necessary for the user to load all the
+predicates necessary to execute a program.
+Instead, if an undefined predicate {\em foo} is encountered during execution,
+the system searches the user's directories in the order specified by
+the environment variable {\tt SIMPATH}\index{SIMPATH}
+until it finds a directory containing
+a file {\em foo} whose name is that of the undefined predicate.
+It then dynamically loads and links the file {\em foo}
+(which is expected to be a byte code file\index{byte code!files}
+defining the predicate {\em foo}),
+and continues with execution; if no such file can be found, an error message is
+given and execution fails.
+This feature makes it unnecessary for the user to have to explicitly
+link in all the predicates that might be necessary in a program:
+instead, only those files are loaded which are necessary to have the
+program execute.
+This can significantly reduce the memory requirements of programs.
+
+The key to this dynamic search-and-load behaviour is the SIMPATH environment
+variable, which specifies the order in which directories are to be searched.
+It may be set by adding the following line to the user's {\em .cshrc} file:
+\begin{center}
+{\verb|setenv SIMPATH| {\em path}}
+\end{center}
+where {\em path} is a sequence of directory names separated by colons:
+\begin{center}
+{\tt {\em dir}$_1${:}{\em dir}$_2$: $\ldots$ : {\em dir}$_n$}
+\end{center}
+and {\em dir}$_i$ are {\em full path names}
+to the respective directories.
+For example, executing the command
+\begin{center}
+{\tt setenv SIMPATH .:\$HOME/prolog/modlib:\$HOME/prolog/lib}
+\end{center}
+sets the search order for undefined predicates to the following: first, the
+directory in which the program is executing is searched;
+if the appropriate file is not found in this directory,
+the directories searched are, in order, {\tt \~/prolog/modlib} and
+{\tt \~{}/prolog/lib}.
+If the appropriate file is not found in any
+of these directories, the system gives an error message and execution fails.
+
+The beginning user is advised to include the system directories (listed in
+the next section) in his {\tt SIMPATH}, in order to be able to access the system
+libraries (see below).
+
+\subsection{System Directories} \label{system_directories}
+\index{system directories} \index{directories, system}
+There are four basic system directories:
+{\tt cmplib}, {\tt lib}, {\tt modlib} and {\tt sim}.
+{\tt cmplib} contains the Prolog to byte code translator%
+\index{byte code!translator}\index{cmplib@{\tt cmplib}};
+{\tt lib} and {\tt modlib} contain library routines.
+The {\tt src} subdirectory in each of these contains the corresponding Prolog
+source programs.
+The directory {\tt sim} contains the simulator,
+the subdirectory {\em builtin}
+contains code for the builtin predicates of the system.
+
+It is recommended that the beginning user include the system directories in
+his SIMPATH, by setting {\tt SIMPATH} to
+\begin{center}
+{\tt .:{\em SBP}/modlib:{\em SBP}/lib:{\em SBP}/cmplib}
+\end{center}
+where {\em SBP} denotes the path to the root of the
+SB-Prolog system directories.
+
+\subsection{Invoking the Simulator}
+\index{invoking the simulator} \index{simulator, invoking}
+The simulator is invoked by the command
+\begin{center}
+{\tt sbprolog {\em bc\_file}} where {\em bc\_file}
+\end{center}
+is a byte code file\index{byte code!files}
+resulting from the compilation of a Prolog program.
+In almost all cases, the user will wish to interact with the SB-Prolog
+{\em query evaluator}\index{query evaluator},
+in which case {\em bc\_file} will be {\em \$readloop}, and the command will be
+\begin{center}
+{\tt sbprolog {\em Path}/\$readloop}
+\end{center}
+where {\em Path} is the path to the directory containing the
+command interpreter {\em \$readloop}.
+This directory, typically, is {\tt modlib}
+(see Section~\ref{system_directories} above).
+
+The command interpreter reads in a query typed in by the user, evaluates it and
+prints the answer(s), repeating this until it encounters an end-of-file
+(the standard end-of-file character on the system, e.g.\ ctrl-D), or the user types
+in {\em end\_of\_file} or {\em halt}.
+
+The user should ensure that the the directory containing the executable file
+{\tt sim}
+(typically, the system directory {\tt sim}:
+see Section~\ref{system_directories} above).
+is included in the shell variable {\em path};
+if not, the full path to the simulator will have to be specified.
+
+In general, the simulator may be invoked with a variety of options, as
+follows:
+\begin{center}
+{\tt sbprolog -{\em options} {\em bc\_file}}
+\end{center}
+or
+\begin{center}
+{\tt sbprolog -{\em option}$_1$~-{\em option}$_2$~$\ldots$ -{\em option}$_n$ {\em bc\_file}}
+\end{center}
+The options recognized by the simulator are described in
+Section~\ref{cuts_and_if-then-else}.
+
+When called with a byte code file {\em bc\_file}, the simulator begins
+execution with the first clause in that file.
+The first clause in such a file, therefore,
+should be a clause without any arguments in the head
+(otherwise, the simulator will attempt to dereference argument pointers
+in the head that are really pointing into deep space,
+and usually come to a sad end).
+If the user is executing a file in this manner rather than using the
+command interpreter, he should also be careful to include the undefined
+predicate handler, consisting of the predicates `{\em \_\$interrupt}/2 and
+`{\em \_\$undefined\_pred}'/1, which is normally defined in the files
+{\tt modlib/src/\$init\_sys.P} and {\tt modlib/src/\$readloop}.
+\predindex{undefined\_pred/1~(L)}\index{undefined\_pred/1|bold}
+
+\subsection{Executing Programs}\index{executing programs}
+
+There are two ways of executing a program: a source file may be compiled
+into a byte-code file, which can then be loaded and executed;
+or, the source file may be interpreted via {\em consult}\index{consult}.
+The system supports full integration of compiled and interpreted code,
+so that some predicates of a program may be compiled,
+while others may be interpreted.
+However, the unit of compilation or consulting remains the file.
+The remainder of this section describes each of these procedures in more detail.
+
+\subsubsection{Compiling Programs}\index{compiling programs}
+
+The compiler is invoked through the Prolog predicate {\em compile}.
+It translates Prolog source programs into byte code\index{byte code!files}
+that can then be executed on the simulator.
+\predindex{compile/1~(L)}\index{compile!/1|bold}
+\predindex{compile/2~(L)}\index{compile!/2|bold}
+\predindex{compile/3~(L)}\index{compile!/3|bold}
+\predindex{compile/4~(L)}\index{compile!/4|bold}
+The compiler may be invoked as follows:
+\begin{center}
+{\tt | ?- compile({\em InFile} [, {\em OutFile} ] [, {\em OptionsList} ]).}
+\end{center}
+or
+\begin{center}
+{\tt | ?- compile({\em InFile}, {\em OutFile}, {\em OptionsList}, {\em PredList}).}
+\end{center}
+
+where optional parameters are enclosed in brackets.
+{\em InFile} is the name of the input (i.e.\ source) file;
+{\em OutFile} is the name of the output file (i.e.\ byte code) file;
+{\em OptionsList} is a list of compiler options,
+and {\em PredList} is a list of terms $P/N$ denoting the
+predicates defined in {\em InFile},
+where $P$ is a predicate name and $N$ its arity.
+
+The input and output file names must be Prolog atoms,
+i.e.\ either begin with a lower case letter and consist only of letters, digits,
+dollar signs and underscores; or, be enclosed within single quotes.
+If the output file name is not specified, it defaults to {\em InFile}{\tt .out}.
+The list of options, if specified, is a Prolog list, i.e.\ a term of the form
+\begin{center}
+{\tt [{\em option}$_1$, {\em option}$_2$, $\ldots$, {\em option}$_n$ ].}
+\end{center}
+
+If left unspecified, it defaults to the empty list {\tt [\,]}.
+{\em PredList}, if specified, is usually given as an uninstantiated variable;
+its principal use is for setting trace points on the predicates in the file
+(see Sections~\ref{debugging} and~\ref{the_compiler}).
+Notice that {\em PredList} can only appear in {\em compile}/4.
+
+A list of compiler options appears in Section~\ref{compiler_options}.
+
+\subsubsection{Loading Byte Code Files}\index{loading byte code files}
+\index{byte code!files!loading}
+Byte code files may be loaded into the simulator using the
+predicate {\em load}:
+\begin{center}
+{\tt | ?- load({\em ByteCode\_File}).}
+\end{center}
+
+where {\em ByteCode\_File} is a Prolog atom (see Section~\ref{terms})
+that is the name of a byte code file.
+\predindex{load/1~(B)}\index{load/1|bold}
+
+The {\em load} predicate invokes the dynamic loader,
+which carries out a search according to
+the sequence specified by the environment variable {\tt SIMPATH}\index{SIMPATH}
+(see Section~\ref{search_path}).
+It is therefore not necessary to always specify the full path name to the file
+to be loaded.
+
+\index{byte code!files!concatenating}
+Byte code files may be concatenated together to produce other byte code files.
+Thus, for example, if {\em foo1} and {\em foo2} are byte code files resulting
+from the compilation of two Prolog source programs, then the file {\em foo},
+obtained by executing the shell command
+\begin{center}
+{\tt cat foo1 foo2 $>$ foo}
+\end{center}
+is a byte code file as well, and may be loaded and executed.
+In this case,
+loading and executing the file {\em foo} would give the same result as
+loading {\em foo1} and {\em foo2} separately,
+which in turn would be the same as
+concatenating the original source files and compiling this larger file.
+This makes it easier to compile large programs:
+one need only break them into smaller pieces, compile the individual pieces,
+and concatenate the resulting byte code files together.
+
+\subsubsection{Consulting Programs}\index{consulting programs}\index{consult|(}
+
+Instead of compiling a file to generate a byte code file
+which then has to be loaded,
+a program may be executed interpretively by ``consulting'' the corresponding
+source file:
+\predindex{consult/1~(L)}\index{consult!/1|bold}
+\predindex{consult/2~(L)}\index{consult!/2|bold}
+\begin{center}
+{\tt | ?- consult({\em SourceFile} [, {\em OptionList} ] ).}
+\end{center}
+or
+\begin{center}
+{\tt | ?- consult({\em SourceFile}, {\em OptionList}, {\em PredList}).}
+\end{center}
+where {\em SourceFile} is a Prolog atom which is the name of a file
+containing a Prolog source program;
+{\em OptionList} is a list of options
+to consult; and {\em PredList} is a list of terms $P$/$N$,
+where $P$ is a predicate name and $N$ its arity,
+specifying which predicates have been consulted from {\em SourceFile};
+its principal use is for setting trace points
+on the predicates in the file (see Section~\ref{debugging}).
+Notice that {\em PredList} can only appear in {\em consult}/3.
+
+At this point, the options recognized for {\em consult} are the following:
+\index{consult!options}
+\begin{description}
+\item[t] ``trace''.
+    Causes a trace point to be set on any predicate in the current
+    file that does not already have a trace point set.
+\item[v] ``verbose''.
+    Causes information regarding which predicates have been
+    consulted to be printed out. Default: off.
+\end{description}
+
+In addition to the above, options for the macro expander
+are also recognized (see Section~\ref{macros})).
+
+{\em consult} will create an index on the principal functor of the
+first argument of the predicates being consulted,
+unless this is changed using the {\em index}/3 directive.
+In particular, note that if no index is desired on a predicate {\em foo}/$n$,
+then the directive
+\begin{center}
+{\tt :- index(\/{\em foo}, $n$, 0).}
+\end{center}
+should be given.
+
+It is important to note that SB-Prolog's {\em consult}
+predicate is similar to that of Quintus Prolog,
+and behaves like C-Prolog's {\em reconsult}\index{reconsult}.
+This means that if a predicate is defined across two or more files,
+consulting them will result in only the clauses in the file consulted last
+being used.
+\index{consult|)}
+\subsection{Execution Directives}\index{execution directives}
+
+Execution directives may be specified to {\em compile} and {\em consult}
+through :--/1.
+If, in the read phase of {\em compile} or {\em consult},
+a term with principal functor :--/1 is read in,
+this term is executed directly via {\em call}/1.
+This enables the user to dynamically modify the environment, e.g.\ via
+{\em op} declarations (see Section~\ref{operators}), {\em assert}s etc.
+\predindex{:--/1~(P)}\index{:--/1}
+
+A point to note is that if the environment is modified as a result of an
+execution directive, the modifications are visible only in that environment.
+This means that consulted code, which runs in the environment in which
+the source program is read
+(and which is modified by such execution directives) feel the effects of such
+execution directives.
+However, byte code resulting from compilation, which, in general,
+\index{byte code!files}
+executes in an environment different from that in which the source was compiled,
+does not inherit the effects of such directives.
+Thus, an {\em op} declaration can be used in a source file to change the syntax
+and allow the remainder of the program to be parsed according to the modified
+syntax; however, these modifications will not, in general, manifest themselves
+if the byte code is executed in another environment.
+Of course, if the byte code is loaded into the same environment as that in
+which the source program was compiled, e.g.\ through
+\begin{center}
+{\tt | ?- compile(foo, bar), load(bar).}
+\end{center}
+the effects of execution directives will continue to be felt.
+
+\section{Syntax}\index{syntax}
+
+\subsection{Terms}\index{terms}\label{terms}
+The syntax of SB-Prolog is by and large compatible with that of C-Prolog.
+The data objects of the language are called {\em term}s.
+A term is either a {\em constant}, a {\em variable} or a {\em compound term}.
+Constants\index{constants} can be {\em integers}\index{integers}
+or {\em atoms}\index{atoms}.
+The symbol for an atom must begin with a lower case letter or the dollar
+sign \$, and consist of any number of letters, digits, underscores
+and dollar signs; if it contains any character other than these, it must be
+enclosed within single quotes.\footnote{
+    Users are advised against using symbols beginning with `\$' or `\_\$',
+    however, in order to minimize the possibility of conflicts with symbols
+    internal to the system.}
+As in other programming languages, constants are definite elementary objects.
+
+Variables are distinguished by an initial capital letter or by
+the initial character ``\_'' for example
+\begin{center}
+{\tt X   Value   A   A1   \_3   \_RESULT   \_result}
+\end{center}
+If a variable is only referred to once, it does not need to be named
+and may be written as an {\em anonymous} variable, indicated by the
+underline character \_.
+
+A variable should be thought of as standing for some definite but
+unidentified object.
+A variable is not simply a writable
+storage location as in most programming languages; rather it is a
+local name for some data object, cf.\ the variable of pure LISP and
+constant declarations in Pascal.
+
+The structured data objects of the language are the compound terms.
+A compound term comprises a {\em functor} (called the {\em principal} functor of
+the term) and a sequence of one or more terms called {\em arguments}.
+A functor is characterized by its {\em name}, which is an atom, and its
+{\em arity} or number of arguments.
+For example the compound term whose functor is
+named `point' of arity 3, with arguments X, Y and Z, is written
+\begin{center}
+{point(X,Y,Z)}
+\end{center}
+An atom is considered to be a functor of arity 0.
+
+A functor or predicate symbol is uniquely identified by its name and arity
+(in other words, it is possible for different symbols having different
+arities to share the same name).
+A functor or predicate symbol~$p$ with arity~$n$ is usually written~$p$/$n$.
+
+One may think of a functor as a record type and the
+arguments of a compound term as the fields of a record.
+Compound terms are usefully pictured as trees.
+For example, the term
+\begin{center}
+{s(np(john),vp(v(likes),np(mary)))}
+\end{center}
+would be pictured as the structure
+\begin{center}
+\begin{minipage}{1in}
+\begin{verbatim}
+      s
+    /   \
+  np      vp
+  |      /  \
+john    v     np
+        |     |
+      likes  mary
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+Sometimes it is convenient to write certain functors as {\em operators}
+--- 2-ary functors may be declared as {\em infix} operators
+and 1-ary functors as {\em prefix} or {\em postfix} operators.
+Thus it is possible to write
+\begin{center}
+{\tt X+Y     (P;Q)     X<Y      +X     P;}
+\end{center}
+as optional alternatives to
+\begin{center}
+{\tt +(X,Y)   ;(P,Q)   <(X,Y)   +(X)   ;(P)}
+\end{center}
+Operators are described fully in the next section.
+
+{\em List}s form an important class of data structures in Prolog.
+They are essentially the same as the lists of LISP:
+a list either is the atom~[\,],
+representing the empty list, or is a compound term with functor `.'/2
+and two arguments which are respectively the head and tail of the list.
+Thus a list of the first three natural numbers is the structure
+(shown in Figure~\ref{list}) which could be written,
+using the standard syntax, as {\tt .(1,.(2,.(3,[\,])))},
+\begin{figure}[htbp]
+\begin{center}
+\begin{minipage}{1in}
+\begin{verbatim}
+  .
+ / \
+1    .
+    / \
+   2    .
+       / \
+      3   []
+\end{verbatim}
+\end{minipage}
+\end{center}
+\caption{Structure for the Function {\tt .(1,.(2,.(3,[\,])))}}\label{list}
+\end{figure}
+but which is normally written, in a special list notation, as {\tt [1,2,3]}.
+The special list notation in the case when the tail of a list is a
+variable is exemplified by
+\begin{center}
+\begin{minipage}{1.30in}
+\begin{verbatim}
+[X|L]     [a,b|L]
+\end{verbatim}
+\end{minipage}
+\end{center}
+representing the structures shown in Figure~\ref{structures}
+\begin{figure}[htbp]
+\begin{center}
+\begin{minipage}{2.00in}
+\begin{verbatim}
+  .              .
+ / \            / \
+X   L          a   .
+                  / \
+                 b   L
+\end{verbatim}
+\end{minipage}
+\end{center}
+\caption{Structures for the Functions {\tt [X|L]} and {\tt [a,b|L}}
+\label{structures}
+\end{figure}
+respectively.
+
+Note that this list syntax is only syntactic sugar for terms of the form
+`.'(\_, \_) and does not provide any new facilities that were not
+available otherwise.
+
+For convenience, a further notational variant is allowed for
+lists of integers which correspond to ASCII character codes.
+Lists written in this notation are called {\em string}s\index{strings}.
+For example, {\tt "Prolog"} represents exactly the same list as
+{\tt [80,114,111,108,111,103]}.
+
+\subsection{Operators}\index{operators}\label{operators}
+
+Operators in Prolog are simply a notational convenience.
+For example, the expression
+\begin{center}
+{\tt 2 + 1}
+\end{center}
+could also be written {\tt +(2,1)}.
+It should be noticed that this expression represents the structure
+\begin{center}
+\begin{minipage}{.75in}
+\begin{verbatim}
+   +
+ /   \
+2     1
+\end{verbatim}
+\end{minipage}
+\end{center}
+and not the number~3.
+The addition would only be performed if the structure was passed as an
+argument to an appropriate procedure (such as {\bf eval}/2 --- see Section~\ref{arithmetic}).
+
+The Prolog syntax caters for operators of three main kinds ---
+{\em infix}, {\em prefix} and {\em postfix}.
+An infix operator appears between its two arguments, while a prefix operator
+precedes its single argument and a postfix operator is written after its
+single argument.
+
+Each operator has a {\em precedence}, which is a number from 1 to 1200.
+The precedence is used to disambiguate
+expressions where the structure of the term denoted is not made
+explicit through parenthesization.
+The general rule is that the operator with the
+{\em highest} precedence is the principal functor.
+Thus if `+' has a higher precedence than `/', then {\tt a+b/c} and {\tt a+(b/c)}
+are equivalent and denote the term {\tt +(a,/(b,c))}.
+Note that the infix form of the term {\tt /(+(a,b),c)}
+must be written with explicit parentheses, {\tt (a+b)/c}.
+
+If there are two operators in the subexpression having the same
+highest precedence, the ambiguity must be resolved from the {\em types} of
+the operators.
+The possible types for an infix operator are
+\begin{center}
+{xfx     xfy     yfx}
+\end{center}
+With an operator of type `xfx', it is a requirement that both of the
+two subexpressions which are the arguments of the operator must be of
+{\em lower} precedence than the operator itself, i.e.\ their principal
+functors must be of lower precedence, unless the subexpression is
+explicitly bracketed (which gives it zero precedence).
+With  an operator of type `xfy', only the first or left-hand subexpression must
+be of lower precedence; the second can be of the {\em same} precedence as
+the main operator; and vice versa for an operator of type `yfx'.
+
+For example, if the operators `+' and `--' both have type `yfx'
+and are of the same precedence, then the expression
+``a--b+c'' is valid, and means ``(a--b)+c'', i.e.\ ``+(--(a,b),c)''.
+Note that the expression would be invalid if the operators had type
+`xfx', and would mean ``a--(b+c)'', i.e.\ ``--(a,+(b,c))'',
+if the types were both `xfy'.
+
+The possible types for a prefix operator are
+\begin{center}
+{\tt fx        fy}
+\end{center}
+and for a postfix operator they are
+\begin{center}
+{\tt xf        yf}
+\end{center}
+The meaning of the types should be clear by analogy with those for
+infix operators.
+As an example, if `not' were declared as a prefix
+operator of type `fy', then
+\begin{center}
+{\tt not not P}
+\end{center}
+would be a permissible way to write not(not(P)).
+If the type were `fx', the preceding expression would not be legal, although
+\begin{center}
+{\tt not P}
+\end{center}
+would still be a permissible form for not(P).
+
+In SB-Prolog, a functor named {\em name} is declared as an
+operator of type {\em type} and precedence {\em precedence} by calling
+the evaluable predicate {\bf op}:
+\begin{center}
+{\tt | ?- op({\em precedence}, {\em type}, {\em name}).}
+\end{center}
+\predindex{op/3~(L)}\index{op/3|bold}
+The argument {\em name} can also be a list of names of operators of the same
+type and precedence.
+
+It is possible to have more than one operator of the same name,
+so long as they are of different kinds, i.e.\ infix, prefix or postfix.
+An operator of any kind may be redefined by a new declaration of the same kind.
+This applies equally to operators which are provided as
+{\em standard} in SB-Prolog, namely the ones shown in Table~\ref{operator_priorities}.
+\begin{table}[htbp]
+\centering
+\begin{tabular}{rrrl}
+:-- op( & 1200, & xfx, & [ :--, --$>$ ]).\\
+:-- op( & 1200, & fx,  & [ :-- ]).\\
+:-- op( & 1198, & xfx, & [ ::-- ]).\\
+:-- op( & 1150, & fy,  & [ mode, public, dynamic ]).\\
+:-- op( & 1100,	& xfy, & [ ; ]).\\
+:-- op( & 1050, & xfy, & [ --$>$ ]).\\
+:-- op( & 1000, & xfy, & [ ',' ]).   /* See note below */\\
+:-- op( & 900, & fy,   & [ not, $\backslash\,+$, spy, nospy ]).\\
+:-- op( & 700, & xfx,  & [ =, is, =.., ==, $\backslash\,==$, @$<$, @$>$, @$=<$, @$>=$,\\
+ &  &  &   =:=, $=\backslash\,=$, $<$, $>$, $=<$, $>=$, ?=, $\backslash\,=$ ]).\\
+:-- op( & 661, & xfy,  & [ `.' ]).\\
+:-- op( & 500, & yfx,  & [ +, --, /$\backslash$, $\backslash$/ ]).\\
+:-- op( & 500, & fx,   & [ +, -- ]).\\
+:-- op( & 400, & yfx,  & [ *, /, //, $<$$<$, $>$$>$ ]).\\
+:-- op( & 300, & xfx,  & [ mod ]).\\
+:-- op( & 200, & xfy,  & [ \^{} ]).
+\end{tabular}
+\caption{Operator Priorities}\label{operator_priorities}
+\end{table}
+
+Operator declarations are most usefully placed in directives at the top
+of your program files.
+In this case the directive should be a command as shown above.
+Another common method of organization is to have one file
+just containing commands to declare all the necessary operators.
+This file is then always consulted first.
+
+Note that a comma written literally as a punctuation character
+can be used as though it were an infix operator of precedence~1000 and
+type~`xfy':
+\begin{center}
+{\tt X,Y    ','(X,Y)}
+\end{center}
+represent the same compound term.
+But note that a comma written as a quoted atom is {\em not} a standard operator.
+
+Note also that the arguments of a compound term written in
+standard syntax must be expressions of precedence {\em below}~1000.
+Thus it is necessary to parenthesize the expression P :-- Q\index{:--/1} in
+\begin{center}
+{\tt assert((P :- Q))}
+\end{center}
+The following syntax restrictions serve to remove
+potential ambiguity associated with prefix operators.
+\begin{itemize}
+\item
+    In a term written in standard syntax, the principal functor and
+    its following (must {\em not} be separated by any whitespace.
+    Thus
+    \begin{center}
+    {\tt point (X,Y,Z)}
+    \end{center}
+    is invalid syntax (unless {\tt point} were declared as a prefix operator).
+
+\item
+    If the argument of a prefix operator starts with a {\tt (}, this {\tt(}
+    must be separated from the operator by at least one space or other
+    non-printable character.
+    Thus
+    \begin{center}
+    {\tt :-(p;q),r.}
+    \end{center}
+    (where {\tt :--} is the prefix operator) is invalid syntax,
+    and must be written as
+    \begin{center}
+    {\tt :- (p;q),r.}
+    \end{center}
+
+\item
+    If a prefix operator is written without an argument, as an ordinary atom,
+    the atom is treated as an expression of the same precedence
+    as the prefix operator, and must therefore be bracketed where necessary.
+    Thus the brackets are necessary in\\
+\begin{center}
+{\tt X = (?-)}
+\end{center}
+\end{itemize}
+
+\subsection{Clause?}\index{clause}\label{clause}
+The syntax of a clause is as follows.
+{\em What the hell IS the syntax for a clause?}
+
+\subsection{Rule?}\index{rule}\label{rule}
+The syntax of a rule is as follows.
+{\em What the hell IS the syntax for a rule?}
+
+\subsection{Query?}\index{query}\label{query}
+The syntax of a query is as follows.
+{\em What the hell IS the syntax for a query?}
+
+\section{SB-Prolog: Operational Semantics}
+\index{operational semantics}\index{semantics, operational}
+
+\subsection{Standard Execution Behaviour}
+\index{standard execution behaviour}\index{execution behaviour, standard}
+\index{behaviour, standard execution}
+
+The normal execution behaviour of SB-Prolog follows the usual left to right
+order of literals within a clause, and the textual top to bottom order of
+clauses for a predicate.
+This corresponds to a depth first search of the
+leftmost SLD-tree for the program and the given query.
+Unification without occurs check\index{occurs check!unification without}
+\index{unification!without occurs check} is used,
+and execution backtracks to the most recent choice point when unification fails.
+
+\subsection{Cuts and If-Then-Else}\label{cuts_and_if-then-else}
+\index{cuts and If-Then-Else}\index{If-Then-Else and cuts}
+This standard execution behaviour of SB-Prolog can be changed using
+constructs like {\em cut} ({\tt !})\index{"!/0}\index{cut}
+and {\em if-then-else} ({\tt ->}).
+In SB-Prolog, cuts are usually treated as {\em hard},
+i.e.\ discard choice points
+of all the literals to the left of the cut in the clause containing the cut
+being executed, and also the choice point for the parent predicate,
+i.e.\ any remaining clauses for the predicate containing the cut being executed.
+There are some situations, however, where the scope of a cut is restricted
+to be smaller than this.
+Restrictions apply under the following conditions:
+\begin{enumerate}
+\item
+    The cut occurs in a term which has been constructed at runtime and called
+    through {\em call}/1, e.g.\ in
+    \begin{center}
+    {\tt $\ldots$, X = (p(Y), !, q(Y)), $\ldots$, call(X), $\ldots$}
+    \end{center}
+    In this case, the scope of the cut is restricted to be within the
+    {\em call}, unless one of the following cases also apply and serve to
+    restrict its scope further.
+\item
+    The cut occurs in a negated goal, or within the scope of the test of an
+    if-then-else (in an if-then-else of the form
+    {\tt {\em Test} -> {\em TruePart}; {\em FalsePart}},
+    the test is the goal {\em Test}).
+    In these cases, the scope of the cut is restricted to be within the negation
+    or the test of the if-then-else, respectively.
+\end{enumerate}
+
+In cases involving nested occurrences of these situations, the scope of the
+cut is restricted to that for the deepest such nested construct, i.e.\ most
+restricted.
+For example, in the construct
+\begin{center}
+{\tt $\ldots$, not((p(X) -> not((q(X), (r(X) -> s(X) ;
+    (t(X), !, u(X))))))), $\ldots$}
+\end{center}
+the scope of the cut is restricted to the inner negation, and does not
+affect any choice point that may have been set up for p(X).
+
+\subsection{Unification of Floating Point Numbers}
+\index{unification!floating point numbers}
+\index{floating point numbers, unification of}
+
+As far as unification is concerned, no type distinction is made between integers
+and floating point numbers, and no explicit type conversion is necessary
+when unifying an integer with a float.
+However, due to the finite precision
+representation of floating point numbers and cumulative round-off errors in
+floating point arithmetic, comparisons involving floating point numbers may
+not always give the expected results.
+An effort is made to minimize surprises by considering two numbers $x$ and $y$
+(at least one of which is a float) to be unifiable
+if $(\|x\| -\|y\|)/\min(\|x\|,\|y\|)$ to be less than $10^{-5}$.
+However, this does not guarantee immunity against round-off errors.
+For the same reason, users are warned that
+indexing\index{indexing!on floating point} on predicate arguments
+(see Section~\ref{indexing_directives}) may not give the
+expected results if floating point numbers are involved.
+
+\section{Evaluable Predicates}
+\index{evaluable predicates}\index{predicates, evaluable}
+
+This section describes (most of) the evaluable predicates provided by SB-Prolog.
+These can be divided into three classes:
+{\em inline} predicates,
+{\em builtin} predicates
+and {\em library} predicates.
+
+Inline predicates represent ``primitive'' operations in the WAM\index{WAM}.
+Calls to inline predicates are compiled into a sequence of WAM
+instructions in-line, i.e.\ without actually making a call to the predicate.
+Thus, for example, relational predicates ($>/2$, $>=/2$, etc.) compile to,
+essentially, a subtraction and a conditional branch.
+Inline predicates cannot be redefined by the user.
+Table~\ref{inlinepredicatetable} lists the SB-Prolog inline predicates.
+\begin{table}[htbp]\centering{\tt
+\begin{tabular}{llll}
+arg/3	&=/2	&$</2$	&$=</2$ \\
+$>=/2$	&$>/2$	&/$\backslash\,/2$&`$\backslash\,/'/2$ \\
+$<<$/2  &$>>$/2 &=:=/2  &$=\backslash\,=/2$ \\
+is/2	&?=/2	&$\backslash\,=$&$\backslash\,/1$ \\
+`\_\$builtin'/1&`\_\$call'/1&nonvar/1&var/1 \\
+integer/1&real/1&halt/0&true/0 \\
+fail/0
+\end{tabular}}
+\caption{Inline Predicates of SB-Prolog}\label{inlinepredicatetable}
+\end{table}
+
+Unlike inline predicates, builtin predicates are implemented by C
+functions in the simulator, and accessed via the inline predicate
+`{\em \_\$builtin}'/1.
+Thus, if a builtin predicate {\em foo}/3 was defined
+as builtin number~38, there would be a definition in the system
+of the form
+\begin{center}
+{\tt foo(X,Y,Z) :- '\_\$builtin'(38).}
+\end{center}
+
+In effect, a builtin is simply a segment of code in a large case
+(i.e.\ {\em switch}) statement.
+Each builtin is identified internally by an integer,
+referred to as its ``builtin number'', associated with it.
+The code for a builtin with
+buitin number~$k$ corresponds to the $k^{\em th}$ case in the switch statement.
+SB-Prolog limits the total number of builtins to~256.
+
+Builtins, unlike inline predicates, can be redefined by the user.
+For example, the predicate {\em foo}/3 above can be redefined simply
+by compiling the new definition into a
+directory such that during dynamic loading, the new definition would be
+encountered first and loaded.
+
+A list of the builtins currently provided is listed in Appendix~\ref{builtins}.
+Appendix~\ref{adding_builtins} describes the procedure to be followed
+in order to define new builtin predicates.
+
+Like builtin predicates, library predicates may also be redefined by the user.
+The essential difference between builtin and library predicates is
+that whereas the former are coded into the simulator in C,
+the latter are written in Prolog.
+
+\subsection{Input and Output} \index{input}\index{output}
+
+Input and output are done with respect to the current input and output streams.
+These can be set, reset or checked using the file handling
+predicates described below.
+The default input and output streams are denoted by {\bf user},
+and refer to the user's terminal.
+
+\subsubsection{File Handling}
+\index{file handling}
+
+\begin{description}
+\item[see($F$)] \predindex{see/1~(B)}\index{see/1|bold}
+$F$ becomes the current input stream.
+$F$ must be instantiated to an atom at the time of the call.
+
+\item[seeing($F$)] \predindex{seeing/1~(B)}\index{seeing/1|bold}
+$F$ is unified with the name of the current input file.
+
+\item[seen] \predindex{seen/0~(B)}\index{seen/0|bold}
+Closes the current input stream.
+
+\item[tell($F$)] \predindex{tell/1~(B)}\index{tell/1|bold}
+$F$ becomes the current output stream.
+$F$ must be instantiated to an atom at the time of the call.
+
+\item[telling($F$)] \predindex{telling/1~(B)}\index{telling/1|bold}
+$F$ is unified with the name of the current output file.
+
+\item[told] \predindex{told/0~(B)}\index{told/0|bold}
+Closes the current output stream.
+
+\item[\$exists($F$)] \predindex{\$exists/1~(B)}\index{\$exists/1|bold}
+Succeeds if file $F$ exists.
+\end{description}
+
+\subsubsection{Term I/O}
+\index{term I/O} \index{I/O!term}
+\begin{description}
+\item[read($X$)] \predindex{read/1~(B)}\index{read/1|bold}
+    The next term, delimited by a full stop (i.e.\ a {\tt.}
+    followed by a carriage-return
+    or a space), is read from the current input stream and unified with~$X$.
+    The syntax of the term must accord with current operator declarations.
+    If a call {\bf read}($X$) causes the end of the
+    current input stream to be reached, $X$ is unified with the atom
+    `end\_of\_file'.
+    Further calls to {\bf read} for the same stream will then
+    cause an error failure.
+
+\item[{\bf write}({\em X})] \predindex{write/1~(L)}\index{write/1|bold}
+    The term $X$ is written to the current output stream according to
+    operator declarations in force.
+
+\item[{\bf display}({\em X})] \predindex{display/1~(L)}\index{display/1|bold}
+    The term~$X$ is displayed on the terminal.
+
+\item[{\bf writeq}({\em Term})] \predindex{writeq/1~(L)}\index{writeq/1|bold}
+    Similar to {\bf write}({\em Term}), but the names of atoms and functors
+    are quoted where necessary to make the result acceptable as input to
+    {\bf read}.
+
+\item[{\bf print}({\em Term})] \predindex{print/1~(L)}\index{print/1|bold}
+    Prints out the term {\em Term} onto the current output stream.
+    This predicate provides a handle for user-defined pretty-printing.
+    If {\em Term} is a variable then it is written using {\bf write}/1;
+    otherwise, if a user-defined predicate {\bf portray}/1 is defined,
+    then a call is made to {\bf portray}(Term);
+    otherwise, {\bf print}/1 is equivalent to {\bf write}/1.
+
+\item[{\bf writename}({\em Term})] \predindex{writename/1~(B)}\index{writename/1|bold}
+    If {\em Term} is an uninstantiated variable, its name, which
+    looks a lot like an address in memory, is written out; otherwise, the
+    principal functor of {\em Term} is written out.
+
+\item[{\bf writeqname}({\em Term})]
+\predindex{writeqname/1~(B)}\index{writeqname/1|bold}
+    As for {\bf writename}, but the names are quoted where necessary.
+
+\item[{\bf print\_al}($N$, $A$)]
+\predindex{print\_al/2~(L)}\index{print\_al/2|bold}
+    Prints~$A$ (which must be an atom or a number) left-aligned in a field
+    of width~$N$, with blanks padded to the right.
+    If $A$'s print name is longer than the field width~$N$,
+    then $A$ is printed but with no right padding.
+
+\item[{\bf print\_ar}($N$, $A$)]
+\predindex{print\_ar/2~(L)}\index{print\_ar/2|bold}
+    Prints $A$ (which must be an atom or a number) right-aligned in a field
+    of width~$N$, with blanks padded to the left.
+    If $A$'s print name is longer than the field width~$N$,
+    then $A$ is printed but with no left padding.
+
+\item[{\bf portray\_term}({\em Term})]
+\predindex{portray\_term/2~(L)}\index{portray\_term/2|bold}
+    Writes out the term {\em Term} on the current output stream.
+    Variables are treated specially:
+    an uninstantiated variable is printed out as V\/$n$, where $n$ is a number.
+
+\item[{\bf portray\_clause}({\em Term})]
+\predindex{portray\_clause/2~(L)}\index{portray\_clause/2|bold}
+    Writes out the term {\em Term}, interpreted as a clause, on the current
+    output stream.
+    Variables are treated as in {\em portray\_term}/1.
+\end{description}
+
+\subsubsection{Character I/O}\index{character I/O}
+
+\begin{description}
+\item[{\bf nl}] \predindex{nl/0~(B)}\index{nl/0|bold}
+    A new line is started on the current output stream.
+
+\item[{\bf get0}({\em N})] \predindex{get0/1~(B)}\index{get0/1|bold}
+    $N$is the ASCII code of the next character from the current input stream.
+    If the current input stream reaches its end of file,
+    a $-1$ is returned (however, unlike in C-Prolog,
+    the input stream is not closed on encountering end-of-file).
+
+\item[{\bf get}({\em N})] \predindex{get/1~(B)}\index{get/1|bold}
+    $N$ is the ASCII code of the next non-blank printable character
+    from the current input stream. It has the same behaviour as {\bf get0}
+    on end of file.
+
+\item[{\bf put}({\em N})] \predindex{put/1~(B)}\index{put/1|bold}
+    ASCII character code $N$ is output to the current output stream.
+    $N$ must be an integer.
+
+\item[{\bf tab}({\em N})] \predindex{tab/1~(B)}\index{tab/1|bold}
+    $N$~spaces are output to the current output stream.
+    $N$ must be an integer.
+\end{description}
+
+\subsection{Arithmetic}\index{arithmetic}\label{arithmetic}
+Arithmetic is performed by evaluable predicates which take as arguments
+{\em arithmetic expressions} and {\em evaluate} them.
+An arithmetic expression is a term built from {\em evaluable functors},
+numbers and variables.
+At the time of evaluation, each variable in an arithmetic
+expression must be bound to a number or to an arithmetic expression.
+Each evaluable functor stands for an arithmetic operation.
+
+The evaluable functors are as follows,
+where $X$ and $Y$ are arithmetic expressions.
+
+\begin{description}
+\item[$X+Y$] addition.
+
+\item[$X-Y$] subtraction.
+
+\item[$X*Y$] multiplication.
+
+\item[$X/Y$] division.
+
+\item[$X//Y$] integer division.
+
+\item[$X\pmod Y$] $X$ (integer) modulo $Y$.
+
+\item[$-X$] unary minus.
+
+\item[$X$\ /$\backslash$\ $Y$] integer bitwise conjunction.
+
+\item[$X$\ $\backslash$/\ $Y$] integer bitwise disjunction.
+
+\item[$X\ll Y$] integer bitwise left shift of~$X$ by~$Y$ places.
+
+\item[$X\gg Y$] integer bitwise right shift of $X$ by $Y$ places.
+
+\item[$\backslash X$] integer bitwise negation.
+\end{description}
+
+As far as unification is concerned, no type distinction is made between
+integers and floating point numbers,
+and no explicit type conversion is necessary
+when unifying an integer with a float.
+However, due to the finite precision representation of floating point numbers
+and cumulative round-off errors in floating point arithmetic,
+comparisons involving floating point numbers may
+not always give the expected results.
+An effort is made to minimize surprises by considering two numbers
+$x$ and $y$ (at least one of which is a float)
+to be unifiable if $(\|x\|-\|y\|)/\min(\|x\|,\|y\|)$
+to be less than $10^{-5}$.
+The user should note, however, that this does
+not guarantee immunity against round-off errors.
+\index{rounding}
+
+The arithmetic evaluable predicates are as follows,
+where~$X$ and~$Y$ stand for arithmetic expressions, and~$Z$ for some term.
+Note that this means that {\bf is} only evaluates one of its arguments
+as an arithmetic expression (the right-hand side one),
+whereas all the comparison
+predicates evaluate both their arguments.
+
+\begin{description}
+\item[$Z~{\bf is}~X$] \predindex{is/2~(L)}\index{is/2|bold}
+    Arithmetic expression~$X$ is evaluated and the result, is unified with~$Z$.
+    Fails if $X$ is not an arithmetic expression.
+    Unlike many other Prolog systems, variables in the expression~$X$ may be
+    bound to other arithmetic expressions as well as to numbers.
+
+\item[{\bf eval}($E$, $X$)] \predindex{eval/2~(L)}\index{eval/2|bold}
+    Evaluates the arithmetic expression~$E$ and unifies the result
+    with the term~$X$.
+    Fails if $E$ is not an arithmetic expression.
+    (Thus, {\bf eval}/2 is, except for the switched argument order, the
+    same as~{\bf is}/2.
+    It's around mainly for historical reasons.)
+
+\item[$X {\bf =:=} Y$] \predindex{=:=/2~(I)}\index{=:=/2|bold}
+    The values of~$X$ and~$Y$ are equal.
+    If either~$X$ or~$Y$ involve compound subexpressions
+    that are created at runtime,
+    they should first be evaluated using {\bf eval}/2.
+
+\item[$X {\bf =\backslash\,=} Y$]
+\predindex{$=\backslash\,=/2$~(I)}\index{$=\backslash\,=/2$}
+    The values of~$X$ and~$Y$ are not equal.
+    If either~$X$ or~$Y$
+    involve compound subexpressions that are created at runtime,
+    they should first be evaluated using {\bf eval}/2.
+
+\item[$X {\bf <} Y$] \predindex{$</2$~(I)}\index{$</2$|bold}
+    The value of $X$ is less than the value of $Y$.
+    If either~$X$ or $Y$
+    involve compound subexpressions that are created at runtime,
+    they should first be evaluated using {\bf eval}/2.
+
+\item[$X {\bf >} Y$] \predindex{$>/2$~(I)}\index{$>/2$|bold}
+    The value of $X$ is greater than the value of $Y$.
+    If either~$X$ or $Y$ involve compound subexpressions that are created
+    at runtime, they should first be evaluated using {\bf eval}/2.
+
+\item[$X {\bf =<} Y$] \predindex{$=</2$~(I)}\index{$=</2$|bold}
+    The value of~$X$ is less than or equal to the value of $Y$.
+    If either~$X$ or~$Y$ involve compound subexpressions
+    that are created at runtime,
+    they should first be evaluated using~{\bf eval}/2.
+
+\item[$X {\bf >=} Y$] \predindex{$>=$/2~(I)}\index{$>=$/2|bold}
+    The value of $X$ is greater than or equal to the value of~$Y$.
+    If either~$X$ or~$Y$
+    involve compound subexpressions that are created at runtime,
+    they should first be evaluated using {\bf eval}/2.
+
+\item[{\bf floor}($X$, $Y$)] \predindex{floor/2~(B)}\index{floor/2|bold}
+    If~$X$ is a floating point number in the call and~$Y$ is free,
+    then~$Y$ is instantiated to the largest integer whose absolute value
+    is not greater than the absolute value of~$X$;
+    if $X$ is uninstantiated in the call and $Y$ is an integer,
+    then $X$ is instantiated to the smallest float not less than~$Y$.
+
+\item[{\bf floatc}($F$, $M$, $E$)] \predindex{floatc/3~(B)}\index{floatc/3|bold}
+    If $F$ is a number while~$M$ and~$E$ are uninstantiated in the call,
+    then~$M$ is instantiated to a float~$m$ (of magnitude less than~1),
+    and~$E$ to an integer~$n$, such that
+    $$F = m \times 2^n$$
+    If~$F$ is uninstantiated in the call while~$M$ is a float and~$E$
+    an integer, then~$F$ becomes instantiated to~$M \times 2^E$.
+
+\item[{\bf exp}($X$, $Y$)] \predindex{exp/2~(B)}\index{exp/2|bold}
+    If~$X$ is instantiated to a number and~$Y$ is uninstantiated in the call,
+    then~$Y$ is instantiated to $e^X$ (where $e$ = 2.71828...);
+    if $X$ is uninstantiated in the call while~$Y$ is instantiated to a positive
+    number, then $X$ is instantiated to $\log_e(Y)$.
+
+\item[{\bf square}($X$, $Y$)] \predindex{square/2~(B)}\index{square/2|bold}
+    If $X$ is instantiated to a number while~$Y$ is uninstantiated in the call,
+    then~$Y$ becomes instantiated to $X^2$;
+    if $X$ is uninstantiated in the call while $Y$ is instantiated
+    to a positive number,
+    then~$X$ becomes instantiated to the positive square root of~$Y$
+    (if~$Y$ is negative in the call, $X$ becomes instantiated to~0.0).
+
+\item[{\bf sin}($X$, $Y$)] \predindex{sin/2~(B)}\index{sin/2|bold}
+    If $X$ is instantiated to a number (representing an angle in radians)
+    and~$Y$ is uninstantiated in the call,
+    then~$Y$ becomes instantiated to $\sin(X)$
+    (the user should check the magnitude of~$X$ to make sure that the result
+    is meaningful).
+    If $Y$ is instantiated to a number between $-\pi/2$ and $\pi/2$
+    and~$X$ is uninstantiated in the call,
+    then $X$ becomes instantiated to $\sin^{-1}(Y)$.
+\end{description}
+
+\subsection{Convenience}
+
+\begin{description}
+\item[$P {\bf ,} Q$] \predindex{,/2~(I)}\index{,/2|bold}
+    $P$ and then $Q$.
+
+\item[$P {\bf ;} Q$] \predindex{;/2~(I)}\index{;/2|bold}
+    $P$ or $Q$.
+
+\item[{\bf true}] \predindex{true/0~(I)}\index{true/0|bold}
+    Always succeeds.
+
+\item[$X {\bf =} Y$] \predindex{=/2~(I)}\index{=/2|bold}
+    Defined as if by the clause ``Z=Z'', i.e.~$X$ and~$Y$ are unified.
+
+\item[$X {\bf \backslash\,=} Y$]
+    \predindex{$\backslash$ =/2~(I)}\index{$\backslash$=/2|bold}
+    \index{not unifiable|see{$\backslash$=/2}}
+    Succeeds if~$X$ and~$Y$ are not unifiable,
+    fails if~$X$ and~$Y$ are unifiable.
+    It is thus equivalent to {\em not}\/($X = Y$),
+    but is significantly more efficient.
+
+\item[$X {\bf ?=} Y$] \predindex{?=/2~(I)}\index{?=/2|bold}
+    Succeeds if $X$ and $Y$ are unifiable and fails if they are not,
+    but does not instantiate any variables.
+    Thus, it tests whether~$X$ and~$Y$ are unifiable.
+    Equivalent to ${\em not}({\em not}\/(X = Y))$,
+    but is significantly more efficient.
+\end{description}
+
+\subsection{Extra Control}\index{control, extra}
+
+\begin{description}
+\item[{\bf !}] \predindex{"!/0~(P)}\index{"!/0|bold}\index{cut|bold}
+    Cut (discard) all choice points made since the parent goal
+    started execution.
+    (The scope of cut in different contexts is discussed
+    in Section~\ref{cuts_and_if-then-else}).
+
+\item[{\bf not} $P$] \predindex{not/1~(P)}\index{not/1|bold}
+    If the goal $P$ has a solution, fail, otherwise succeed.
+    It is defined as if by
+\begin{center}
+\begin{minipage}{1.75in}
+\begin{verbatim}
+not(P) :- P, !, fail.
+not(_).
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+\item[$P {\tt->}\ Q {\bf ;}$] \predindex{-$>/2$~(P)}\index{-$>/2$|bold}
+    Analogous to if $P$ then $Q$ else $R$,
+    i.e.\ defined as if by
+\begin{center}
+\begin{minipage}{2.00in}
+\begin{verbatim}
+P -> Q ; R :- P, !, Q.
+P -> Q ; R :- R.
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+\item[$P {\tt ->} Q$] \predindex{-$>/2$~(P)}\index{-$>/2$|bold}
+    When occurring other than as one of the alternatives of a disjunction,
+    is equivalent to
+\begin{center}
+{\tt $P$ -> $Q$ ; fail.}
+\end{center}
+
+\item[{\bf repeat}] \predindex{repeat/0~(L)}\index{repeat/0|bold}
+    Generates an infinite sequence of backtracking choices.
+    It is defined by the clauses:
+\begin{center}
+\begin{minipage}{.75in}
+\begin{verbatim}
+repeat.
+repeat :- repeat.
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+\item[{\bf fail}] \predindex{fail/0~(I)}\index{fail/0|bold}
+    Always fails.
+\end{description}
+
+\subsection{Meta-Logical}
+\index{meta-logical predicates}
+\index{predicates, meta-logical}
+
+\begin{description}
+
+\item[{\bf var}($X$)] \predindex{var/1~(I)}\index{var/1|bold}
+    Tests whether $X$ is currently instantiated to a variable.
+
+\item[{\bf nonvar}({\em X})] \predindex{nonvar/1~(I)}\index{nonvar/1|bold}
+    Tests whether $X$ is currently instantiated to a non-variable term.
+
+\item[{\bf atom}({\em X})] \predindex{atom/1~(B)}\index{atom/1|bold}
+    Checks that $X$ is currently instantiated to an atom
+    (i.e.\ a non-variable term of arity~0, other than a number).
+
+\item[{\bf integer}({\em X})] \predindex{integer/1~(I)}\index{integer/1|bold}
+    Checks that $X$ is currently instantiated to an integer.
+
+\item[{\bf real}($X$)] \predindex{real/1~(I)}\index{real/1|bold}
+    Checks that $X$ is currently instantiated to a floating point number.
+
+\item[{\bf float}($X$)] \predindex{float/1~(I)}\index{float/1|bold}
+    Same as {\bf real}/1,
+    checks that $X$ is currently instantiated to a floating point number.
+
+\item[{\bf number}({\em X})] \predindex{number/1~(B)}\index{number/1|bold}
+    Checks that $X$ is currently instantiated to a number,
+    i.e.\ that it is either an integer or a real.
+
+\item[{\bf atomic}({\em X})] \predindex{atomic/1~(B)}\index{atomic/1|bold}
+    Checks that $X$ is currently instantiated to an atom or number.
+
+\item[{\bf structure}($X$)] \predindex{structure/1~(B)}\index{structure/1|bold}
+    Checks that $X$ is currently instantiated to a compound term,
+    i.e.\ to a nonvariable term that is not atomic.
+
+\item[{\bf is\_buffer}($X$)]
+\predindex{is\_buffer/1~(B)}\index{is\_buffer/1|bold}
+    Succeeds if $X$ is instantiated to a buffer.
+
+\item[{\bf functor}($T$, $F$, $N$)]
+\predindex{functor/3~(L)}\index{functor/3|bold}
+    The principal functor of term~$T$ has name~$F$ and arity~$N$,
+    where~$F$ is either an atom or, provided $N$ is 0, a number.
+    Initially, either~$T$ must be instantiated to a non-variable,
+    or~$F$ and~$N$ must be instantiated to, respectively,
+    either an atom and a non-negative integer or an integer and~0.
+    If these conditions are not satisfied, an error message is given.
+    In the case where~$T$ is initially instantiated to a variable,
+    the result of the call is to instantiate~$T$ to the most general term
+    having the principal functor indicated.
+
+\item[{\bf arg}($I$, $T$, $X$)] \predindex{arg/3~(I)}\index{arg/3|bold}
+    Initially, $I$ must be instantiated to a positive integer and~$T$ to
+    a compound term.
+    The result of the call is to unify~$X$ with the~$I$th argument of term $T$.
+    The arguments are numbered from~1 upwards.)
+    If the initial conditions are not satisfied or~$I$ is out of range,
+    the call merely fails.
+
+\item[$X {\bf =..} Y$] \predindex{=../2~(L)}\index{=../2|bold}
+    $Y$ is a list whose head is the atom corresponding to the principal
+    functor of~$X$ and whose tail is the argument list of that functor in~$X$.
+    E.g.\
+\begin{center}
+\begin{minipage}{2.75in}
+\begin{verbatim}
+product(0,N,N-1) =.. [product,0,N,N-1]
+
+N-1 =.. [-,N,1]
+
+product =.. [product]
+\end{verbatim}
+\end{minipage}
+\end{center}
+    If $X$ is instantiated to a variable,
+    then $Y$ must be instantiated
+    either to a list of determinate length whose head is an atom,
+    or to a list of length~1 whose head is a number.
+
+\item[{\bf name}($X, L$)] \predindex{name/2~(B)}\index{name/2|bold}
+    If $X$ is an atom or a number then~$L$ is a list of the
+    ASCII codes of the characters comprising the name of $X$.
+    E.g.
+\begin{center}
+\begin{minipage}{3.75in}
+\begin{verbatim}
+name(product,[112,114,111,100,117,99,116])
+\end{verbatim}
+\end{minipage}
+\end{center}
+    i.e.\ \verb|name(product,"product")|.
+
+    If $X$ is instantiated to a variable,
+    $L$ must be instantiated to a list of ASCII character codes.
+    E.g.
+\begin{center}
+\begin{minipage}{3in}
+\begin{verbatim}
+| ?- name(X,[104,101,108,108,111])).
+X = hello
+
+| ?- name(X,"hello").
+X = hello
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+\item[{\bf call}({\em X})] \predindex{call/1~(P)}\index{call/1|bold}
+    If $X$ is a nonvariable term in the program text,
+    then it is executed exactly as if $X$ appeared in the program text
+    instead of {\em call}($X$\/),
+    e.g.
+\begin{center}
+{\tt $\ldots$, p(a), call( (q(X), r(Y)) ), s(X), $\ldots$}
+\end{center}
+is equivalent to
+\begin{center}
+{\tt $\ldots$, p(a), q(X), r(Y), s(X), $\ldots$}
+\end{center}
+    However, if X is a variable in the program text,
+    then if at runtime $X$ is instantiated to a term which would be acceptable
+    as the body of a clause, the goal {\bf call}($X$) is executed as if that
+    term appeared textually in place of the {\bf call}($X$),
+    {\em except that} any cut (`!')\index{"!/0}\index{cut}
+    occurring in $X$ will remove only those choice points in~$X$.
+    If~$X$ is not instantiated as described above,
+    an error message is printed and {\bf call} fails.
+
+\item[{\em X}]
+    (where $X$ is a variable) Exactly the same as {\bf call}($X$).
+    However, we prefer the explicit usage of {\em call}/1
+    as good programming practice,
+    and the use of a top level variable subgoal elicits
+    a warning from the compiler.
+
+\item[{\bf conlength}($C$, $L$)]
+\predindex{conlength/2~(B)}\index{conlength/2|bold}
+    Succeeds if the length of the print name of the constant~$C$
+    (which can be an atom, buffer or integer), in bytes, is~$L$.
+    If~$C$ is a buffer (see Section~\ref{buffers}),
+    it is the length of the buffer; if~$C$ is an integer,
+    it is the length of the decimal representation of that integer,
+    i.e., the number of bytes that a \${\em writename} will use.
+\end{description}
+
+\subsection{Sets}\index{sets}
+
+When there are many solutions to a problem, and when all those solutions are
+required to be collected together, this can be achieved by repeatedly
+backtracking and gradually building up a list of the solutions.
+The following evaluable predicates are provided to automate this process.
+
+\begin{description}
+\item[{\bf setof}($X$, $P$, $S$)] \predindex{setof/3~(L)}\index{setof/3|bold}
+    Read this as $S$ is the set of all instances of $X$ such that $P$
+    is provable''.
+    If~$P$ is not provable, {\bf setof}($X$,$P$,$S$) succeeds with~$S$
+    instantiated to the empty list [\/].
+    The term~$P$ specifies a goal or goals as in {\bf call}($P$).
+    $S$ is a set of terms represented as a list of those terms,
+    without duplicates, in the standard order for terms
+    (see Section~\ref{comparison_of_terms}).
+    If there are uninstantiated variables in $P$
+    which do not also appear in $X$,
+    then a call to this evaluable predicate may backtrack,
+    generating alternative values for~$S$ corresponding to different
+    instantiations of the free variables of~$P$.
+    Variables occurring in $P$ will not be treated as free if they are
+    explicitly bound within~$P$ by an existential quantifier.
+    An existential quantification is written:
+    \begin{center}
+    {$Y\wedge Q$}\index{$\wedge$}
+    \end{center}
+    meaning there exists a~$Y$ such that~$Q$ is true,
+    where $Y$ is some Prolog term
+    (usually, a variable, or tuple or list of variables).
+
+\item[{\bf bagof}($X$, $P$, {\em Bag})]
+\predindex{bagof/3~(L)}\index{bagof/3|bold}
+    This is the same as {\bf setof} except that the list
+    (or alternative lists) returned will not be ordered,
+    and may contain duplicates.
+    If~$P$ is unsatisfiable, {\em bagof} succeeds binding {\em Bag}
+    to the empty list.
+    The effect of this relaxation is to save considerable
+    time and space in execution.
+
+\item[{\bf findall}($X$, $P$, $L$)]
+\predindex{findall/3~(L)}\index{findall/3|bold}
+    Similar to {\em bagof}/3,
+    except that variables in $P$ that do not occur in $X$ are treated as local,
+    and alternative lists are not returned for different bindings
+    of such variables.
+    The list~$L$ is, in general, unordered, and may contain duplicates.
+    If $P$ is unsatisfiable,
+    {\em findall} succeeds binding $S$ to the empty list.
+
+\item[$X\wedge P$]\predindex{$\wedge/2$~(L)}\index{$\wedge/2$|bold}
+    The system recognises this as meaning there exists an $X$ such
+    that $P$ is true, and treats it as equivalent to {\bf call}($P$).
+    The use of this explicit existential quantifier outside the {\bf setof}
+    and {\bf bagof} constructs is superfluous.
+\end{description}
+
+\subsection{Comparison of Terms}\label{comparison_of_terms}
+\index{comparison of terms}
+\index{terms!comparison of}
+These evaluable predicates are meta-logical.
+They treat uninstantiated
+variables as objects with values which may be compared, and they never
+instantiate those variables.
+They should {\em not} be used when what you really want
+is arithmetic comparison (Section~\ref{arithmetic}) or unification.
+The predicates make reference to a standard total ordering of terms, which is
+as follows:
+\begin{itemize}
+\item variables, in a standard order (roughly, oldest first --- the order is
+    {\em not} related to the names of variables);
+\item numbers, from $-\infty$ to $+\infty$;
+\item atoms, in alphabetical (i.e.\ ASCII) order;
+\item complex terms, ordered first by arity, then by the name of principal
+    functor, then by the arguments (in left-to-right order).
+\end{itemize}
+
+For example, here is a list of terms in the standard order:
+\begin{center}
+{\tt [ X, -9, 1, fie, foe, fum, X = Y, fie(0,2), fie(1,1) ]}
+\end{center}
+
+The basic predicates for comparison of arbitrary terms are:
+\begin{description}
+\item[$X == Y$] \predindex{==/2~(B)}\index{==/2|bold}
+    Tests if the terms currently instantiating $X$ and $Y$
+    are literally identical
+    (in particular, variables in equivalent positions in the
+    two terms must be identical).
+    For example, the question
+    \begin{center}
+    {\tt | ?- X == Y.}
+    \end{center}
+    fails (answers no) because $X$ and $Y$ are distinct uninstantiated
+    variables.
+    However, the question
+    \begin{center}
+    {\tt | ?- X = Y, X == Y.}
+    \end{center}
+    succeeds because the first goal unifies the two variables (see page~?).
+
+\item[$X {\bf \backslash\,==} Y$]
+\predindex{$\backslash\,==/2$~(B)}\index{$\backslash\,==/2$|bold}
+    Tests if the terms currently instantiating $X$ and $Y$
+    are not literally identical.
+
+\item[{\em T1} {\bf @$<$} {\em T2}]
+\predindex{\@$</2$~(B)}\index{\@$</2$|bold}
+    Term {\em T1} is before term {\em T2} in the standard order.
+
+\item[{\em T1} {\bf @$>$} {\em T2}]
+\predindex{\@$>/2$~(B)}\index{\@$>/2$|bold}
+    Term {\em T1} is after term {\em T2} in the standard order.
+
+\item[{\em T1} {\bf @$=<$} {\em T2}]
+\predindex{\@$=</2$~(B)}\index{\@$=</2$|bold}
+    Term {\em T1} is not after term {\em T2} in the standard order.
+
+\item[{\em T1} {\bf @$>=$} {\em T2}]
+\predindex{\@$>=/2$~(B)}\index{\@$>=/2$|bold}
+    Term {\em T1} is not before term {\em T2} in the standard order.
+\end{description}
+
+Some further predicates involving comparison of terms are:
+
+\begin{description}
+\item[{\bf compare}({\em Op}, {\em T1}, {\em T2})]
+\predindex{compare/3~(B)}\index{compare/3|bold}
+    The result of comparing terms {\em T1} and {\em T2} is {\em Op},
+    where the possible values for {\em Op} are:
+    \begin{description}
+    \item[`='] if {\em IT1} is identical to {\em T2},
+
+    \item[`$<$'] if {\em T1} is before {\em T2} in the standard order,
+
+    \item[`$>$'] if {\em T1} is after {\em T2} in the standard order.
+    \end{description}
+    Thus {\bf compare}(=, {\em T1},{\em T2}) is equivalent to
+    {\em T1}~{\bf ==}~{\em T2}.
+
+\item[{\bf sort}({\em L1}, {\em L2})] \predindex{sort/2~(L)}\index{sort/2|bold}
+    The elements of the list {\em L1} are sorted into the standard order,
+    and any identical (i.e.\ `==') elements are merged,
+    yielding the list~{\em L2}.
+
+\item[{\bf keysort}({\em L1}, {\em L2})]
+\predindex{keysort/2~(L)}\index{keysort/2|bold}
+    The list {\em L1} must consist of items of the form {\em Key}--{\em Value}.
+    These items are sorted into order according to the value of {\em Key},
+    yielding the list {\em L2}.
+    No merging takes place.
+\end{description}
+
+\subsection{Buffers}\index{buffers}\label{buffers}
+
+SB-Prolog supports the concept of buffers.
+A buffer is actually a
+constant and the characters that make up the buffer is the name of the constant.
+However, the symbol table entry for a buffer is not hashed
+and thus is not added to the obj-list,
+so two different buffers will never unify.
+Buffers can be allocated either in permanent space or on the heap.
+Buffers in permanent space stay there forever; buffers on the heap
+are deallocated when the ``allocate buffer'' goal is backtracked over.
+
+A buffer allocated on the heap can either be a simple buffer,
+or it can be allocated as a subbuffer of another buffer already on the heap.
+A subbuffer will be deallocated when its superbuffer is deallocated.
+
+There are occasions when it is not known, in advance, exactly how much
+space will be required and so how big a buffer should be allocated.
+Sometimes this problem can be overcome by allocating a large buffer and then,
+after using as much as is needed,
+returning the rest of the buffer to the system.
+This can be done, but only under {\em very} limited circumstances:
+a buffer is allocated from the end of the permanent space,
+the top of the heap,
+or from the next available space in the superbuffer;
+if no more space has been used beyond the end of the buffer,
+a tail portion of the buffer can be returned to the system.
+This operation is called ``trimming'' the buffer.
+
+The following is a list of library predicates for buffer management:
+
+\begin{description}
+\item[{\bf alloc\_perm}({\em Size}, {\em Buff})]
+\predindex{alloc\_perm/2~(L)}\index{alloc\_perm/2|bold}
+    Allocates a buffer with a length~{\em Size} in the permanent (i.e.\ program)
+    area.
+    {\em Size} must be bound to a number.
+    On successful return, {\em Buff} will be bound to the allocated buffer.
+    The buffer, being in the permanent area, is never de-allocated.
+
+\item[{\bf alloc\_heap}({\em Size}, {\em Buff})]
+\predindex{alloc\_heap/2~(L)}\index{alloc\_heap/2|bold}
+    Allocates a buffer of size {\em Size} on the heap and binds {\em Buff}
+    to it.
+    Since it is on the heap, it will be deallocated on backtracking.
+
+\item[{\bf trimbuff}({\em Type}, {\em Buff}, {\em Newlen})]
+\predindex{trimbuff/3~(L)}\index{trimbuff/3|bold}
+    This allows (in some very restricted circumstances) the changing of
+    the size of a buffer.
+    {\em Type} is 0 if the buffer is permanent, 1 if the buffer
+    is on the heap.
+    {\em Buff} is the buffer.
+    {\em Newlen} is an integer: the size
+    (which should be smaller than the original length of the buffer) to make
+    the buffer.
+    If the buffer is at the top of the heap (if heap buffer) or the
+    end of the program area (if permanent) then the heap-top
+    (or program area top) will be readjusted down.
+    The length of the buffer will be modified to {\em Newlen}.
+    This is (obviously) a very low-level
+    primitive and is for hackers only to implement grungy stuff.
+
+\item[{\bf conlength}({\em Constant},{\em Length})]
+\predindex{conlength/2~(L)}\index{conlength/2|bold}
+    Succeeds if the length of the print name of the constant~{\em Constant}
+    (which can be an atom, buffer or integer), in bytes, is~{\em Length}.
+    If {\em Constant} is a buffer, it is the length of the buffer;
+    if {\em Constant} is an integer,
+    it is the length of the decimal representation of that integer,
+    i.e., the number of bytes that a \${\em writename} will use.
+\end{description}
+
+\subsection{Modification of the Program}
+\index{modification of the program}
+
+The predicates defined in this section allow modification of the program
+as it is actually running.
+Clauses can be added to the program ({\em asserted})
+or removed from the program ({\em retracted}).
+At the lowest level, the system supports the asserting of clauses with upto
+one literal in the body.
+It does this by allocating a buffer and compiling code for the clause into
+that buffer.
+Such a buffer is called a ``clause reference'' ({\em clref}).
+The clref is then added to a chain of clrefs.
+The chain of clrefs has a header,
+which is a small buffer called a ``predicate reference'' ({\em prref}),
+which contains pointers to the beginning and end of its chain of clrefs.
+Clause references are quite similar to ``database references'' of C-Prolog,
+and can be called.
+
+When clauses are added to the program through {\em assert}\index{assert},
+an index is normally created on the principal functor of the first argument
+in the head of the clause.
+The argument on which the index is being created may be changed via the
+{\em index}/3\index{index/3} directive.
+In particular, if no index is desired on a predicate,
+this should be specified using the {\em index}/3
+directive with the argument number set to zero,
+e.g.\ if no index is desired on a predicate {\em foo}/3, then the directive
+\begin{center}
+{\tt :- index({\em foo}, 3, 0).}
+\end{center}
+should be specified.
+
+The predicates that can be used to modify the program are the following:
+
+\begin{description}
+\item[{\bf assert}($C$)] \predindex{assert/1~(L)}\index{assert!/1|bold}
+    The current instance of $C$ is interpreted as a clause and is added
+    to the program (with new private variables
+    replacing any uninstantiated variables),
+    at the end of the list of clauses for that predicate.
+    $C$ must be instantiated to a non-variable.
+
+\item[{\bf assert}($C$, {\em Ref})]
+\predindex{assert/2~(L)}\index{assert!/2|bold}
+    As for {\em assert}/1, but also unifies {\em Ref} with the clause reference
+    of the clause asserted.
+
+\item[{\bf asserti}($C$,$N$)] \predindex{asserti/2~(L)}\index{asserti/2|bold}
+    The current instance of $C$, interpreted as a clause, is asserted to
+    the program with an index on its $N^{\em th}$ argument.
+    If $N$ is zero, no index is created.
+
+\item[{\bf asserta}($C$)] \predindex{asserta/1~(L)}\index{asserta!/1|bold}
+    Similar to {\bf assert}($C$), except that the new clause becomes the
+    {\em first} clause of the procedure concerned.
+
+\item[{\bf asserta}($C$, {\em Ref})]
+\predindex{asserta/2~(L)}\index{asserta!/2|bold}
+    Similar to {\bf asserta}($C$), but also unifies {\em Ref} with the
+    clause reference of the clause asserted.
+
+\item[{\bf assertz}($C$)] \predindex{assertz/1~(L)}\index{assertz!/1|bold}
+    Similar to {\bf assert}($C$), except that the new clause becomes the
+    {\em last} clause of the procedure concerned.
+
+\item[{\bf assertz}($C$, {\em Ref})]
+\predindex{assertz/2~(L)}\index{assertz!/2|bold}
+    Similar to {\bf assertz}($C$), but also unifies {\em Ref} with the
+    clause reference of the clause asserted.
+
+\item[{\bf assert\_union}($P$, $Q$)]
+\predindex{assert\_union/2~(L)}\index{assert\_union/2|bold}
+    The clauses for $Q$ are added to the clauses for $P$.
+    For example, the call
+    \begin{center}
+    {\tt | ?- assert\_union(p(X,Y),q(X,Y)).}
+    \end{center}
+    has the effect of adding the rule
+    \begin{center}
+    {\tt p(X,Y) :- q(X,Y).}
+    \end{center}
+    as the last rule defining $p$/2.
+    If $P$ is not defined, it results in the call to $Q$ being the only clause
+    for $P$.
+
+    The variables in the arguments to {\em assert\_\/union}/2
+    are not significant, e.g.\ the above would have been equivalent to
+    \begin{center}
+    {\tt | ?- assert\_union(p(Y,X),q(X,Y)).}
+    \end{center}
+    or
+    \begin{center}
+    {\tt | ?- assert\_union(p(\_,\_),q(\_,\_)).}
+    \end{center}
+    However, the arities of the two predicates involved must match,
+    e.g.\ even though the goal
+\begin{center}
+\begin{minipage}{3in}
+\begin{verbatim}
+| ?- assert_union(p(X,Y), r(X,Y,Z)).
+\end{verbatim}
+\end{minipage}
+\end{center}
+    will succeed, the predicate $p$/2 will not in any way depend on the
+    clauses for $r$/3.
+
+\item[{\bf assert}({\em Clause}, {\em AZ}, {\em Index},{\em Clref})]
+\predindex{assert/4~(L)}\index{assert!/4|bold}
+    Asserts a clause to a predicate.
+    {\em Clause} is the clause to assert.
+    {\em AZ} is~0 for insertion as the first clause,
+    1~for insertion as the last clause.
+    {\em Index} is the number of the argument on which to index
+    (0~for no indexing).\index{indexing}
+    {\em Clref} is returned as the clause reference of the fact newly asserted.
+    If the main functor symbol of {\em Clause} has been declared
+    (by {\em \$assertf\_alloc\_t}/2, see below) to have its clauses on the heap,
+    the clref will be allocated there.
+    If the predicate symbol of {\em Clause} is undefined,
+    it will be initialized and {\em Clause} added.
+    If the predicate symbol has compiled clauses, it is first
+    converted to be dynamic (see {\em symtype}/2,
+    Section~\ref{internal_database})
+    by adding a special clref that calls the compiled clauses.
+    {\em Fact}, {\em AZ} and {\em Index} are input arguments,
+    and should be instantiated at the time of call;
+    {\em Clref} is an output argument,
+    and should be uninstantiated at the time of call.
+
+\item[{\bf clause}($P$,$Q$)] \predindex{clause/2~(L)}\index{clause!/2|bold}
+    $P$must be bound to a non-variable term, and the
+    program is searched for a clause {\em Cl} whose head matches~$P$.
+    The head and body of the clause {\em Cl} is unified with $P$ and $Q$,
+    respectively.
+    If {\em Cl} is a unit clause, $Q$ will be unified with `true'.
+    Only interpreted clauses, i.e.\ those created through {\em assert},
+    can be accessed via clause/2.
+
+\item[{\bf clause}({\em Head}, {\em Body}, {\em Ref})]
+\predindex{clause/3~(L)}\index{clause!/3|bold}
+    Similar to {\bf clause}({\em Head},{\em Body}) but also unifies {\em Ref}
+    with the database reference of the clause concerned.
+    {\em clause}/3 can be executed in one of two modes:
+    either {\em Head} must be instantiated to a non-variable
+    term at the time of the call,
+    or {\em Ref} must be instantiated to a database reference.
+    As in the case of clause/2, only interpreted clauses,
+    i.e.\ those created through {\em assert}, can be accessed via clause/3.
+
+\item[{\bf retract}({\em Clause})]
+\predindex{retract/1~(L)}\index{retract/1|bold}
+    The first clause in the program that unifies with {\em Clause} is deleted
+    from the program.
+    This predicate may be used in a non-deterministic fashion,
+    i.e.\ it will successively backtrack to retract clauses
+    whose heads match {\em Head}.
+    {\em Head} must be initially instantiated to a non-variable.
+    In the current implementation,
+    {\em retract} works only for asserted (e.g.\ consulted) clauses.
+
+\item[{\bf abolish}($P$)] \predindex{abolish/1~(L)}\index{abolish!/1|bold}
+    Completely remove all clauses for the procedure with head~$P$
+    (which should be a term).
+    For example, the goal
+    \begin{center}
+    {\tt | ?- abolish( p(\_, \_, \_) ).}
+    \end{center}
+    removes all clauses for the predicate $p$/3.
+
+\item[{\bf abolish}($P$, $N$)] \predindex{abolish/2~(L)}\index{abolish!/2|bold}
+    Completely remove all clauses for the predicate~$P$
+    (which should be an atom) with arity~$N$ (which should be an integer).
+\end{description}
+
+\subsection{Internal Database}\label{internal_database}
+\index{internal database} \index{database, internal}
+\begin{description}
+\item[{\bf recorded}({\em Key}, {\em Term}, {\em Ref})]
+\predindex{recorded/3~(L)}\index{recorded/3|bold}
+    The internal database is searched for terms recorded under the key
+    {\em Key}.
+    These terms are successively unified with {\em Term} in the
+    order they occur in the database; at the same time, {\em Ref} is unified
+    with the database reference of the recorded item.
+    The key must be given, and may be an atom or complex term.
+    If it is a complex term, only the principal functor is significant.
+
+\item[{\bf recorda}({\em Key}, {\em Term}, {\em Ref})]
+\predindex{recorda/3~(L)}\index{recorda/3|bold}
+    The term {\em Term} is recorded in the internal database as the first item
+    for the key {\em Key}, where {\em Ref} is its database reference.
+    The key must be given, and only its principal functor is significant.
+
+\item[{\bf recordz}({\em Key}, {\em ITerm}, {\em Ref})]
+\predindex{recordz/3~(L)}\index{recordz/3|bold}
+    The term {\em Term} is recorded in the internal database as the last item
+    for the key {\em Key}, where {\em Ref} is its database reference.
+    The key must be given, and only its principal functor is significant.
+
+\item[{\bf erase}({\em Clref})] \predindex{erase/1~(L)}\index{erase/1|bold}
+    The recorded item or clause whose database reference is {\em Clref} is
+    deleted from the internal database or program.
+    {\em Clref} should be instantiated at the time of call.
+
+\item[{\bf instance}({\em Ref}, {\em Term})] \predindex{instance/2~(L)}\index{instance/2|bold}
+    A (most general) instance of the recorded term whose database reference is
+    {\em Ref} is unified with {\em Term}.
+    {\em Ref} must be instantiated to a database reference.
+    Note that {\em instance}/2 will not be able to access
+    terms that have been erased.
+\end{description}
+
+\subsection{Information about the State of the Program}
+\index{state of the program} \index{program, state of}
+
+\begin{description}
+\item[{\bf listing}] \predindex{listing/0~(L)}\index{listing!/0|bold}
+    Lists in the current output stream the clauses for all the interpreted
+    predicates in the program, except predicates that are ``internal'',
+    i.e.\ whose names begin with `\$' or `\_\$',
+    or which are provided as predefined (builtin or library) predicates.
+    A bug in the current system is that even though the
+    user is allowed to redefine such predicates,
+    {\em listing}/0 does not know about such redefinitions,
+    and will not list such predicates (they may, however,
+    be accessed through {\em listing}/1 if they are interpreted).
+
+\item[{\bf listing}($A$)] \predindex{listing/1~(L)}\index{listing!/1|bold}
+    The argument $A$ may be a predicate specification of
+    the form {\em Name}/{\em Arity} in which case only the clauses for the
+    specified predicate are listed.
+    Alternatively, it is possible for~$A$ to be a list
+    of predicate specifications, e.g.
+    \begin{center}
+    {\tt | ?- listing([concatenate/3, reverse/2, go/0]).}
+    \end{center}
+    Only {\em interpreted} clauses, i.e.\ clauses created via {\em assert},
+    can be accessed through listing/1.
+
+\item[{\bf current\_atom}({\em Atom})]
+\predindex{current\_atom/1~(L)}\index{current\_atom/1|bold}
+\predindex{\$current\_atom/2~(L)}\index{\$current\_atom/2|bold}
+    Generates (through backtracking) all currently known atoms, and unifies
+    each in turn with {\em Atom}.
+    However, atoms considered ``internal'' symbols,
+    i.e.\ those whose names begin with {\bf \$} or {\bf \_\$} are not returned.
+    The intrepid user who wishes to access such internal atoms as
+    well can use the goal
+    \begin{center}
+    {\tt ?- \$current\_atom({\em Atom}, 1).}
+    \end{center}
+
+\item[{\bf current\_functor}({\em Name}, {\em Term})]
+\predindex{current\_functor/2~(L)}\index{current\_functor/2|bold}
+\predindex{\$current\_functor/3~(L)}\index{\$current\_functor/3|bold}
+    Generates (through backtracking) all currently known functors (which
+    includes function and predicate symbols), and for each one returns its name
+    and most general term as {\em Name} and {\em Term} respectively.
+    However, functors considered ``internal'' symbols, i.e.\ those whose names
+    begin with {\bf \$} or {\bf \_\$}, or which are provided as predefined
+    predicates, are not returned if both arguments to {\em current\_functor}/2
+    are variables.
+    Internal symbols (of which there are a {\em great} many)
+    as well as external ones may be accessed via
+    \begin{center}
+    {\tt ?- \$current\_functor({\em Name}, {\em Term}, 1).}
+    \end{center}
+    A bug in the current implementation is that even though the user is allowed
+    to redefine ``internal'' (builtin or library) predicates,
+    {\em current\_functor}/2 does not know whether they have been redefined,
+    and hence will not return such predicates if both arguments to
+    {\em current\_functor}/2 are variables.
+
+\item[{\bf current\_predicate}({\em Name}, {\em Term})]
+\predindex{current\_predicate/2~(L)}\index{current\_predicate/2|bold}
+\predindex{\$current\_predicate/3~(L)}\index{\$current\_predicate/3|bold}
+    Generates (through backtracking) all currently known predicates, and for
+    each one returns its name and most general term as {\em Name} and {\em Term}
+    respectively.
+    However, predicates considered ``internal'',
+    i.e.\ those whose names begin with {\tt \$} or {\tt \_\$},
+    or which are provided as predefined predicates,
+    are not returned if both arguments to {\em current\_predicate}/2
+    are variables.
+    Internal symbols (of which there are a {\em great} many)
+    as well as external ones may be accessed via
+    \begin{center}
+    {\tt ?- \$current\_predicate({\em Name}, {\em Term}, 1).}
+    \end{center}
+    A bug in the current implementation is that even though the user is allowed
+    to redefine ``internal'' (builtin or library) predicates,
+    {\em current\_predicate}/2 does not know whether they have been redefined,
+    and hence will not return such predicates if both arguments to
+    {\em current\_predicate}/2 are variables.
+
+\item[{\bf predicate\_property}({\em Term}, {\em Property})]
+\predindex{predicate\_property/2~(L)}\index{predicate\_property/2|bold}
+    If {\em Term} is a term whose principal functor is a predicate,
+    {\em Property} is unified with the currently known properties of the
+    corresponding predicate.
+    If {\em Term} is a variable, then it is unified (successively,
+    through backtracking) with the most general term for a
+    predicate whose known properties are unified with {\em Property}.
+    For example, all the interpreted predicates in the program may be enumerated
+    using
+    \begin{center}
+    {\tt ?- predicate\_property(X, interpreted).}
+    \end{center}
+    If the first argument to {\em predicate\_property}/2
+    is uninstantiated at the time of the call,
+    ``internal'' predicates will not be returned.
+    A bug in the current implementation is that even though the user is allowed
+    to redefine such ``internal'' predicates,
+    {\em predicate\_property}/2 does not know about such redefinitions,
+    and will not return such predicates if its first argument is uninstantiated.
+    Currently, the only properties that are considered are
+    {\bf interpreted} and {\bf compiled}.
+\end{description}
+
+\subsection{Environmental}
+\index{environmental predicates} \index{predicates, environmental}
+\begin{description}
+\item[{\bf op}({\em priority}, {\em type}, {\em name})]
+\predindex{op/3~(L)}\index{op/3|bold}
+    Treat {\em name} as an operator of the stated {\em type} and {\em priority}
+    (see Section~\ref{operators}).
+    {\em name} may also be a list of names, in which all are to
+    be treated as operators of the stated {\em type} and {\em priority}.
+
+\item[{\bf break}] \predindex{break/0~(L)}\index{break/0|bold}
+    Causes the current execution to be suspended at the next procedure call.
+    Then the message {\tt [ Break (level 1) ]} is displayed.
+    The interpreter is then ready to accept input as though
+    it was at the top level
+    (except that at break level~$n > 0$, the prompt is {\tt $n$: ?-}).
+    If another call of {\bf break} is encountered, it moves up to level 2,
+    and so on.
+    To close the break and resume the execution which was suspended, type the
+    END-OF-INPUT character.
+    Execution will be resumed at the procedure call where it had been suspended.
+    Alternatively,
+    the suspended execution can be aborted by calling the evaluable
+    predicate {\bf abort}\index{abort/0},
+    which causes a return to the top level.
+
+\item[{\bf abort}] \predindex{abort/0~(B)}\index{abort/0|bold}
+    Aborts the current execution, taking you back to top level.
+
+\item[{\bf save}($F$)] \predindex{save/1~(B)}\index{save/1|bold}
+    The system saves the current state of the system into file $F$.
+
+\item[{\bf restore}($F$)] \predindex{restore/1~(B)}\index{restore/1|bold}
+    The system restores the saved state in file~$F$ to be the current state.
+    One restriction imposed by the current system is that various system
+    parameters
+    (e.g.\ stack sizes, permanent space, heap space, etc.) of the saved state
+    have to be the same as that of the current invocation.
+    Thus, it is not possible to save a state from an invocation
+    where 50000~words of permanent space had been allocated,
+    and then restore the same state in an invocation
+    with 100000~words of permanent space.
+
+\item[{\bf cputime}($X$)] \predindex{cputime/1~(B)}\index{cputime/1|bold}
+    Unifies $X$ with the time elapsed, in milliseconds,
+    since the system was started up.
+
+\item[{\bf \$getenv}({\em Var},{\em Val})]
+\predindex{\$getenv/2~(L)}\index{\$getenv/2|bold}
+    {\em Val} is unified with the value of the Unix environment variable
+    {\em Var}.
+    Fails is {\em Var} is undefined.
+
+\item[{\bf statistics}] \predindex{statistics/0~(B)}\index{statistics!/0|bold}
+    Prints out the current allocations and amounts of space used for each of
+    the four main areas: the permanent area, the local stack, the global stack
+    and the trail stack.
+    Does not work well unless the simulator has been called
+    with the {\tt -s} option (see Section~\ref{simulator_options}).
+
+\item[{\bf statistics}({\em Keyword}, {\em List})]
+\predindex{statistics/2~(L)}\index{statistics!/2|bold}
+    Usually used with {\em Keyword} instantiated to a keyword,
+    e.g.\ `runtime', and {\em List} unbound.
+    It unifies {\em List} with a list of statistics determined by {\em Keyword}.
+    The keys and values are summarized in Table~\ref{statistics}.
+    Times are given in milliseconds and sizes are given in bytes.
+\begin{table}[htbp]{\centering
+\begin{tabular}{|l|l|}
+\hline
+{\em Keyword}&\multicolumn{1}{c|}{List}\\ \hline\hline
+runtime & {[cpu time used by Prolog, cpu time since}\\
+ & 	 last call to statistics/2]\\
+memory & {[total virtual memory, 0]}\\
+core & ({\em same as for the keyword} memory)\\
+program & {[program space in use, program space free]}\\
+heap &	 ({\em same as for the keyword} program)\\
+global\_stack & {[global stack in use, global stack free]}\\
+local\_stack & {[local stack in use, local stack free]}\\
+trail &	 {[trail stack in use, trail stack free]}\\
+garbage\_collection & {[0, 0]}\\
+stack\_shifts & {[0, 0]} \\
+\hline
+\end{tabular}
+\caption{Run Time Statistics Predicates}}\label{statistics}
+{\bf Note:}
+\begin{enumerate}
+\item For the keyword `memory' the second element of the returned list
+    is always~0.
+\item For the keyword `trail', the second element of the returned list is the
+    amount of trail stack free.
+    This is similar to Sicstus Prolog (version~0.5),
+    but different from Quintus Prolog (version 1.6).
+\item Currently, SB-Prolog does not have garbage collection or stack shifting,
+    hence the list values returned for these are [0, 0].
+\end{enumerate}
+\end{table}
+
+\item[{\bf nodynload}($P$, $N$)]
+\predindex{nodynload/2~(L)}\index{nodynload/2|bold}
+    Flags the predicate $P$ with arity $N$ as one that should not be
+    attempted to be dynamically loaded if it is undefined.
+    If a predicate so flagged is undefined when a call to it is encountered,
+    the call fails quietly without trying to invoke the dynamic loader
+    or giving an error message.
+    $P$ and $N$ should be instantiated to an atom and an
+    integer, respectively, at the time of call to {\em nodynload}/2.
+
+\item[{\bf symtype}($T$, $N$)] \predindex{symtype/2~(B)}\index{symtype/2|bold}
+    Unifies $N$ with the ``internal type'' of the principal functor of the term
+    $T$, which must be instantiated at the time of the call.
+    $N$ is bound to~0 if~$T$ does not have an entry point defined
+    (i.e.\ cannot be executed);
+    to~1 if the principal functor of $T$ is ``dynamic'',
+    i.e.\ has asserted code;
+    to~2 if the principal functor for~$T$ is a compiled predicate;
+    and~3 if $T$ denotes a buffer.
+    Thus, for example, if the predicate $p$/2
+    is a compiled predicate which has been loaded into the system, the goal
+    \begin{center}
+    {\tt | ?- symtype(p(\_,\_), X).}
+    \end{center}
+    will succeed binding X to~2; on the other hand, the goal
+    \begin{center}
+    {\tt | ?- assert(q(a,b,c)), symtype(q(\_,\_,\_), X).}
+    \end{center}
+    will succeed binding X to~1.
+
+\item[{\bf system}({\em Call})] \predindex{system/1~(B)}\index{system/1|bold}
+    Calls the operating system with the atom {\em Call} as argument.
+    For example, the call
+    \begin{center}
+    {\tt | ?- system('ls').}
+    \end{center}
+    will produce a directory listing.
+    Since {\em system}/1 is executed by forking off a shell process,
+    it cannot be used, for example, to change the working
+    directory of the simulator.
+
+\item[{\bf syscall}($N$, {\em Args}, {\em Res})]
+\predindex{syscall/3~(B)}\index{syscall/3|bold}\index{Unix!system calls|bold}
+    Executes the Unix system call number $N$ with arguments {\em Args},
+    and returns the result in {\em Res}.
+    $N$ is an integer, and {\em Args} a Prolog list of the arguments
+    to the system call.
+    For example, to execute the system call {\tt creat({\em File},{\em Mode})},
+    knowing that the syscall number for the Unix command {\em creat}(2) is~8,
+    we execute the goal
+    \begin{center}
+    {\verb;| ?- syscall(8, [;{\em File}{\tt , {\em Mode}], {\em Des}).}}
+    \end{center}
+    where {\em Des} is the file descriptor returned by {\em creat}.
+    The syscall numbers for some Unix system calls are given
+    in Table~\ref{unixsystemcalls}.
+\begin{table}[htbp]\centering
+\begin{tabular}{|lr|lr|}\hline
+exit & 1 & fork & 2\\
+read & 3 & write & 4\\
+open & 5 & close & 6\\
+creat & 8 & link & 9\\
+unlink & 10 & chdir & 12\\
+chmod & 15 & lseek & 19\\
+access & 33 & kill & 37\\
+wait & 84 & socket & 97\\
+connect & 98 & accept & 99\\
+send & 101 & recv & 102\\
+bind & 104 & setsockopt & 105\\
+listen & 106 & recvmsg & 113\\
+sendmsg & 114 & getsockopt & 118\\
+recvfrom & 125 & sendto & 133\\
+socketpair & 135 & mkdir & 136\\
+rmdir & 137 & getsockname & 150\\
+\hline
+\end{tabular}
+\caption{Syscall Numbers for Some Unix Systems Calls}\label{unixsystemcalls}
+\end{table}
+\end{description}
+
+\subsection{Global Values}\index{global values}
+
+SB-Prolog has some primitives that permit the programmer to manipulate global
+values.
+These are provided primarily as an efficiency hack, and needless to say,
+should be used with a great deal of care.
+
+\begin{description}
+\item[{\bf globalset}({\em Term})]
+\predindex{globalset/1~(L)}\index{globalset/1|bold}
+    Allows the user to save a global value.
+    {\em Term} must be bound to a compound term, say $p$($V$).
+    $V$ must be a number or a constant or a variable.
+    If $V$ is a number or a constant,
+    the effect of {\em globalset}($p$($V$)) can be described as:
+    \begin{center}
+    {\tt retract(p(\_)), assert(p(V)).}
+    \end{center}
+    I.e., $p$ is a predicate that when called will,
+    from now on (until some other change by {\em globalset}/1),
+    deterministically return $V$.
+    If $V$ is a variable,
+    the effect is to make $V$ a global variable whose value is
+    accessible by calling $p$.
+    For example, executing {\tt globalset($p$($X$))} makes $X$
+    a global variable.
+    $X$ can be set by unification with some other term.
+    On backtracking, $X$ will be restored to its earlier value.
+
+\item[{\bf gennum}({\em Newnum})] \predindex{gennum/1~(L)}\index{gennum/1|bold}
+    gennum/1 sets its argument to a new integer every time it is invoked.
+
+\item[{\bf gensym}($C$, {\em Newsym})] \predindex{gensym/2~(L)}\index{gensym/2|bold}
+    gensym/2 sets its second argument to an atom whose name is made by
+    concatenating the name of the atom~$C$ to the current gennum number.
+    This new constant is bound to {\em Newsym}.
+    For example, if the current {\em gennum} number is~37, then the call
+    \begin{center}
+    {\tt | ?- gensym(aaa,X)}
+    \end{center}
+    will succeed binding $X$ to the atom `aaa37'.
+\end{description}
+
+\subsection{Exotica}\index{exotica}
+\index{low-level predicates}\index{predicates, low-level}
+This section describes some low-level routines that are sometimes useful in
+mucking around with buffers.
+These are for serious hackers only.
+
+\begin{description}
+\item[{\bf \$alloc\_buff}({\em Size},{\em Buff},{\em Type},{\em Supbuff},{\em Retcode})]
+\predindex{\$alloc\_buff/5~(L)}\index{\$alloc\_buff/5|bold}
+    Allocates a buffer.
+    {\em Size} is the length (in bytes) of the buffer to allocate;
+    {\em Buff} is the buffer allocated, and should be unbound
+	at the time of the call;
+    {\em Type} indicates where to allocate the buffer:
+	a value of~0 indicates that the buffer is to be allocated
+	in permanent space, 1~that it should be on the heap, and 2~indicates
+	that it should be allocated from a larger heap buffer;
+    {\em Supbuff} is the larger buffer to allocate a subbuffer out of,
+	and is only looked at if the value of {\em Type} is~2;
+    {\em Retcode} is the return code:
+	a value of~0 indicates that the buffer has been allocated,
+	while a value of~1 indicates that the buffer could not be allocated
+	due to lack of space.
+    The arguments {\em Size}, {\em Type}, and {\em Supbuff}
+    (if ${\em Type} = 2$) are input arguments,
+    and should be bound at the time of the call;
+    {\em Buff} and {\em Retcode} are output arguments,
+    and should be unbound at the time of the call.
+
+\item[{\bf call\_\/ref}({\em Call}, {\em Ref})]
+\predindex{call\_ref/2~(L)}\index{call\_ref!/2|bold}
+    Calls the predicate whose database reference (prref) is {\em Ref},
+    using the literal {\em Call} as the call.
+    This is similar to {\bf call\_ref}({\em Call}, {\em Ref}, 0).
+
+\item[{\bf call\_\/ref}({\em Call}, {\em Ref}, {\em Tr})]
+\predindex{call\_ref/3~(L)}\index{call\_ref!/3|bold}
+    Calls the predicate whose database reference (prref) is {\em Ref},
+    using the literal {\em Call} as the call.
+    {\em Tr} must be either~0 or~1:
+    if {\em Tr} is 0 then the call {\em Call} is made assuming the ``trust''
+    optimization will be made;
+    if {\em Tr} is 1 then the ``trust'' optimization is not used,
+    so that any new fact added before final failure will be seen by {\em Call}.
+    (Also, this currently
+    does not take advantage of any indexing that might have been constructed.)
+    {\em Call}, {\em Ref} and {\em Tr} are all input arguments,
+    and should be instantiated at the time of call.
+
+\item[{\bf \$assertf\_alloc\_t}({\em Palist},{\em Size})]
+\predindex{\$assertf\_alloc\_t~(L)}\index{\$assertf\_alloc\_t|bold}
+    Declares that each predicate in the list {\em Palist} of predicate/arity
+    pairs (terms of the form `/'($P$,$N$) where~$P$ is a predicate symbol and
+    $N$ the arity of $P$) is to have any
+    facts asserted to them stored in a buffer on the heap, to be allocated here.
+    This allocates a superbuffer of size {\em Size} on the heap.
+    Future assertions to these predicates will have their clauses put in this
+    buffer.
+    When this call is backtracked over, any clauses asserted to
+    these predicates are deallocated, and a subsequent call to any of those
+    predicates will cause the simulator to report an error and fail.
+    Both {\em Palist} and {\em Size} are input arguments,
+    and should be instantiated at the time of call.
+
+\item[{\bf \$db\_new\_prref}({\em Prref},{\em Where},{\em Supbuff})]
+\predindex{\$db\_new\_prref/3~(L)}\index{\$db\_new\_prref/3|bold}
+    Creates an empty Prref, i.e.\ one with no facts in it.
+    If called, it will simply fail.
+    {\em Where} indicates where the prref should be allocated:
+    a value of~0 indicates the permanent area,
+    while a value of~2 indicates that it is to be allocated as a subbuffer.
+    {\em Supbuff} is the superbuffer from which to allocate {\em Prref}
+    if {\em Where} is~2.
+    {\em Where} should be instantiated at the time of call,
+    while {\em Prref} should be uninstantiated; in addition,
+    if {\em Where} is~2,
+    {\em Supbuff} should be instantiated at the time of call.
+
+\item[{\bf \$db\_assert\_fact}({\em Fact},{\em Prref},{\em AZ},{\em Index},{\em Clref},{\em Where},{\em Supbuff})]
+\predindex{\$db\_assert\_fact/5~(L)}\index{\$db\_assert\_fact/5|bold}
+    {\em Fact} is a fact to be asserted;
+    {\em Prref} is a predicate reference to which to add the asserted fact;
+    {\em AZ} is either~0,
+    indicating the fact should be inserted as the first clause in {\em Prref},
+    or~1, indicating it should be inserted as the last;
+    {\em Index} is~0 if no index is to be built,
+    or~$n$ if an index on the $n^{\em th}$ argument of the fact is to be used.
+    (Asserting at the beginning of the chain with indexing
+    is not yet supported.)
+    {\em Where} indicates where the clref is to be allocated:
+    a value of~0 indicates that it should be in the permanent area,
+    while a value of~2 indicates that it should be allocated
+    as a subbuffer of {\em Supbuff}.
+    {\em Clref} is returned and it is the clause reference of the asserted fact.
+    {\em Fact}, {\em Prref}, {\em AZ},
+    {\em Index}, and {\em Where} are input arguments,
+    and should be instantiated at the time of call;
+    in addition, if {\em Where} is~2,
+    then {\em Supbuff} should also be instantiated.
+    {\em Clref} is an output argument, and should be uninstantiated at the
+    time of call.
+
+\item[{\bf \$db\_add\_clref}({\em Fact},{\em Prref},{\em AZ},{\em Index},{\em Clref},{\em Where},{\em Supbuff})]
+\predindex{\$db\_add\_clref/7~(L)}\index{\$db\_add\_clref/7|bold}
+    Adds the clref {\em Clref} to the prref {\em Prref}.
+    {\em Fact} is the fact that has been compiled into {\em Clref}
+    (used only to get the arity and for indexing).
+    The other parameters are as for {\em \$db\_assert\_fact}/7.
+
+\item[{\bf \$db\_call\_prref}({\em Call},{\em Prref})]
+\predindex{\$db\_call\_prref/2~(L)}\index{\$db\_call\_prref/2|bold}
+    Calls the prref {\em Prref} using the literal {\em Call} as the call.
+    The call is done by simply branching to the first clause.
+    New facts added to {\em Prref} after the last fact has been retrieved
+    by {\em Call}, but before {\em Call} is failed through, will {\em not}
+    be used.
+    Both {\em Call} and {\em Prref} are input arguments,
+    and should be instantiated at the time of call.
+
+\item[{\bf \$db\_call\_prref\_s}({\em Call},{\em Prref})]
+\predindex{\$db\_call\_prref\_s/2~(L)}\index{\$db\_call\_prref\_s/2|bold}
+    This also calls the prref {\em Prref} using {\em Call} as the call.
+    The difference from {\em \$db\_call\_prref} is that this does not use
+    the ``trust'' optimization, so that any new fact added
+    before final failure will be seen by {\em Call}.
+    (Also, this currently does not take advantage of any indexing
+    that might have been constructed,
+    while {\em \$db\_call\_prref} does.)
+    Both {\em Call} and {\em Prref} are input arguments,
+    and should be instantiated at the time of call.
+
+\item[{\bf \$db\_get\_clauses}({\em Prref},{\em Clref},{\em Dir})]
+\predindex{\$db\_get\_clauses/3~(L)}\index{\$db\_get\_clauses/3|bold}
+    This returns, nondeterministically, all the clause references {\em Clref}
+    for clauses asserted to prref {\em Prref}.
+    If {\em Dir} is~0, then the first clref on the list is returned first;
+    if {\em Dir} is~1, then they are returned in reverse order.
+    {\em Prref} and {\em Dir} are input arguments,
+    and should be instantiated at the time of call;
+    {\em Clref} is an output argument,
+    and should be uninstantiated at the time of call.
+\end{description}
+
+\section{Debugging}\index{debugging}\label{debugging}
+\subsection{High-Level Tracing}
+\index{high-level tracing}
+\index{tracing!high-level}
+
+The preferred method of tracing execution is through the predicate
+{\em trace}/1.
+\predindex{trace/1~(L)}\index{trace/1|bold}
+This predicate takes as argument a term $P$/$N$,
+where $P$ is a predicate name and $N$ its arity, and sets a ``trace point''
+on the corresponding predicate; it can also be given a list of such terms,
+in which case a trace point is set on each member of the list.
+For example, executing
+\begin{center}
+{\tt | ?- trace(pred1/2), trace([pred2/3, pred3/2]).}
+\end{center}
+sets trace points on predicates {\em pred1}/2, {\em pred2}/3 and {\em pred3}/2.
+Only those predicates are traced that have trace points set on them.
+
+If all the predicates in a file are to be traced,
+it is usually convenient to use the {\em PredList} parameter of {\em compile}/4
+or {\em consult}/3, e.g.:
+\begin{center}
+{\tt 
+| ?- compile(foo, 'foo.out', [t,v], Preds), load('foo.out'), trace(Preds).}
+\end{center}
+or
+\begin{center}
+{\tt 
+| ?- consult(foo, [v], Preds), trace(Preds).}
+\end{center}
+Notice that in the first case, the {\bf t} compiler option (see Section~\ref{compiler_options})
+should be specified in order to turn off certain assembler optimizations
+and facilitate tracing.
+In the second case, the same effect may be achieved by specifying the {\bf t}
+option to {\em consult}.
+
+The trace points set on predicates may be overwritten by loading byte code
+\index{byte code!files!overwriting trace points}
+files via {\em load}/1, and in this case it may be necessary to explicitly
+set trace points again on the loaded predicates.
+This does not happen with {\em consult}:
+predicates that were being traced continue to have trace points set
+after consulting.
+
+The tracing facilities of SB-Prolog are in many ways very similar to those of
+C-Prolog.
+However, leashing is not supported, and only those predicates
+can be traced which have had trace points
+set on them through {\em trace}/1.
+This makes {\em trace}/1 and {\em spy}/1 very similar:
+essentially, trace amounts to two levels of spy points.
+In SB-Prolog, tracing occurs at {\em Call} (i.e.\ entry to a predicate),
+successful {\em Exit} from a clause, and {\em Failure} of the entire call.
+The tracing options available during debugging are the following:
+\index{trace!options}
+\begin{description}
+\item[{\bf c}, {\sc newline}: Creep]
+    Causes the system to single-step to the next port
+    (i.e.\ either the entry to a traced predicate called by the executed clause,
+    or the success or failure exit from that clause).
+\item[{\bf a}: Abort]\index{abort!trace facility}
+    Causes execution to abort and control to return
+    to the top level interpreter.
+\item[{\bf b}: Break]
+    Calls the evaluable predicate {\em break}, thus invoking recursively
+    a new incarnation of the system interpreter.
+    The command prompt at break level $n$ is
+    \begin{center}
+    {\tt $n$: \tt ?-}
+    \end{center}
+    The user may return to the previous break level by entering the system
+    end-of-file character (e.g.\ ctrl-D), or
+    typing in the atom {\em end\_\/of\_\/file};
+    or to the top level interpreter by typing in {\em abort}.
+
+\item[{\bf f}: Fail] Causes execution to fail,
+    thus transferring control to the Fail port of the current execution.
+\item[{\bf h}: Help] Displays the table of debugging options.
+\item[{\bf l}: Leap] Causes the system to resume running the program,
+    only stopping when a spy-point is reached or the program terminates.
+    This allows the user to follow the execution at a higher level than
+    exhaustive tracing.
+\item[{\bf n}: Nodebug] Turns off debug mode.
+\item[{\bf q}: Quasi-skip] This is like Skip
+    except that it does not mask out spy points.
+\item[{\bf r}: Retry (fail)] Transfers to the Call port of the current goal.
+    Note, however, that side effects, such as database modifications etc.,
+    are not undone.
+\item[{\bf s}: Skip] Causes tracing to be turned off
+    for the entire execution of the procedure.
+    Thus, nothing is seen until control comes back to that procedure,
+    either at the Success or the Failure port.
+\end{description}
+
+Other predicates that are useful in debugging are:
+
+\begin{description}
+\item[{\bf untrace}({\em Preds})]
+\predindex{untrace/1~(L)}\index{untrace/1|bold}
+    where Preds is a term $P$/$N$, where $P$ is a predicate name and $N$
+    its arity, or a list of such terms.
+    Turns off tracing on the specified predicates.
+    {\em Preds} must be instantiated at the time of the call.
+
+\item[{\bf spy}({\em Preds})] \predindex{spy/1~(L)}\index{spy/1|bold}
+    where Preds is a term $P$/$N$, where $P$ is a predicate name and $N$
+    its arity, or a list of such terms.
+    Sets spy points on the specified predicates.
+    {\em Preds} must be instantiated at the time of the call.
+
+\item[{\bf nospy}({\bf Preds})] \predindex{nospy/1~(L)}\index{nospy/1|bold}
+    where Preds is a term $P$/$N$, where $P$ is a predicate name and $N$
+    its arity, or a list of such terms.
+    Removes spy points on the specified predicates.
+    {\em Preds} must be instantiated at the time of the call.
+
+\item[{\bf debug}] \predindex{debug/0~(L)}\index{debug/0|bold}
+    Turns on debugging mode.
+    This causes subsequent execution of predicates with trace or spy
+    points to be traced, and is a no-op if there are no such predicates.
+    The predicates {\em trace}/1 and {\em spy}/1 cause debugging mode
+    to be turned on automatically.
+
+\item[{\bf nodebug}] \predindex{nodebug/0~(L)}\index{nodebug/0|bold}
+    Turns off debugging mode.
+    This causes trace and spy points to be ignored.
+
+\item[{\bf debugging}] \predindex{debugging/0~(L)}\index{debugging!/0|bold}
+    Displays information about whether debug mode is on or not, and lists
+    predicates that have trace points or spy points set on them.
+
+\item[{\bf tracepreds}({\em L})]
+\predindex{tracepreds/1~(L)}\index{tracepreds/1|bold}
+    Binds $L$ to a list of terms $P$/$N$ where the predicate $P$ of arity $N$
+    has a trace point set on it.
+
+\item[{\bf spypreds}({\em L})] \predindex{spypreds/1~(L)}\index{spypreds/1|bold}
+    Binds $L$ to a list of terms $P$/$N$ where the predicate $P$ of arity $N$
+    has a spy point set on it.
+\end{description}
+
+There is one known bug in the package: attempts to set trace points,
+via {\em trace}/1, on system and library predicates that are used by the trace
+package can cause bizarre behaviour.
+
+\subsection{Low-Level Tracing}
+\index{low-level tracing} \index{tracing!low-level}
+
+SB-Prolog also provides a facility for low-level tracing of execution.
+This can be activated by invoking the simulator with the {\tt -T} option,
+or through the predicate {\em \$trace}/0.
+\predindex{\$trace/0~(L)}\index{\$trace/0}
+It causes trace information to be printed out at every
+call (including those to system trap handlers).
+The volume of such trace information can very become large very quickly,
+so this method of tracing is not recommended in general.
+
+Low-level tracing may be turned off using the predicate {\em untrace}/0.
+\predindex{\$untrace/0~(L)}\index{\$untrace/0}
+
+\section{The Simulator}\index{Simulator}
+
+The simulator resides in the SB-Prolog system directory {\tt sim}.
+The following sections describe various aspects of the simulator.
+
+\subsection{Invoking the Simulator}
+\index{invoking the simulator}
+\index{simulator, invoking}
+
+The simulator is invoked by the command
+\begin{center}
+{\tt sbprolog {\em bc\_\/file}}
+\end{center}
+where {\em bc\_\/file} is a byte code file\index{byte code!files}
+resulting from the compilation of a Prolog program.
+In almost all cases, the user will wish to interact with the SB-Prolog
+{\em query evaluator}\index{query evaluator},
+in which case {\em bc\_file} will be {\em \$readloop}, and the command will be
+\begin{center}
+{\tt sbprolog {\em Path}/\$readloop}
+\end{center}
+where {\em Path} is the path to the directory containing the
+command interpreter {\em \$readloop}.
+This directory, typically, is the system directory {\tt modlib}.
+
+The command interpreter reads in a query typed in by the user,
+evaluates it and prints the answer(s),
+repeating this until it encounters an end-of-file
+(the standard end-of-file character on the system, e.g.\ ctrl-D),
+or the user types {\em end\_of\_file} or {\em halt}.
+
+The user should ensure that the the directory containing the executable file
+{\tt sim} (typically, the system directory {\tt sim})
+is included in the shell variable {\tt path};
+if not, the full path to the simulator will have to be specified.
+
+In general, the simulator may be invoked with a variety of options,
+as follows:
+\begin{center}
+{\tt sbprolog -{\em options} {\em bc\_\/file}}
+\end{center}
+or
+\begin{tabbing}\tt
+	sbprolog -{\em option}$_1$~-{\em option}$_2$~$\ldots$
+	-{\em option$_n$} {\em bc\_file}
+\end{tabbing}
+
+The options recognized by the simulator are described below.
+
+When called with a byte code file {\em bc\_\/file}, the simulator begins
+execution with the first clause in that file.
+The first clause in such a file,
+therefore, should be a clause without any arguments in the head
+(otherwise, the simulator will attempt to dereference argument pointers
+in the head that are really pointing into deep space,
+and usually come to a sad end).
+If the user is executing a file in this manner rather than using the
+command interpreter, he should also be careful to include the undefined
+predicate handler `\_{\em \$undefined\_pred}'/1, which is normally defined
+in the file {\tt modlib/\$init\_sys.P}.
+
+\subsection{Simulator Options}\label{simulator_options}
+\index{Simulator!options} \index{options!Simulator}
+
+The following is a list of options recognized by the simulator.
+\begin{description}
+\item[{\bf T}] Generates a trace at entry to each called routine.
+\item[{\bf d}] Produces a disassembled dump of {\em bc\_file} into a file named
+    `dump.pil' and exits.
+\item[{\bf n}] Adds machine addresses when producing trace and dump.
+\item[{\bf s}] Maintains information for the builtin {\em statistics}/0.
+    Default: off.
+\item[{\bf m} {\em size}] Allocates {\em size} words (4 bytes)
+    of space to the local stack and heap together.
+    Default: 100000.
+\item[{\bf p} {\em size}] Allocates {\em size} words of space
+    to the program area.  Default: 100000.
+\item[{\bf b} {\em size}] Allocates {\em size} words of space
+    to the trail stack.
+    Default: $m$/5, where $m$ is the amount of space allocated to the
+    local stack and heap together.
+    This parameter, if specified, must follow the -m parameter.
+\end{description}
+
+As an example, the command
+\begin{center}
+{\verb|sbprolog -s -p 60000 -m 150000 \$readloop|}
+\end{center}
+starts the simulator executing the command interpreter with 60000 bytes of
+program space, 150000 bytes of local and global stack space and (by default)
+30000 bytes of trail stack space; the $s$ option also results in
+statistics information being maintained.
+
+\subsection{Interrupts}\index{interrupts}
+
+SB-Prolog provides a facility for exception
+handling using user-definable interrupt handlers.
+This can be used both for external interrupts,
+e.g.\ those generated from the keyboard by the user or from signals
+other processes; or internal traps, e.g.\ those caused by stack overflows,
+encountering undefined predicates, etc.
+For example, the ``undefined predicate'' interrupt is handled, by default,
+by the predicate `{\em \_\$undefined\_pred}'/1, which is defined in the files
+{\tt modlib/src/\$init\_sys.P} and {\tt modlib/src/\$readloop.P}.
+The default action on encountering an undefined predicate is to attempt to
+dynamically load a file whose name matches that of the undefined predicate.
+However, the user may easily alter this behaviour by
+redefining the undefined predicate handler.
+
+In general, interrupts are handled by the predicate `\_\${\em interrupt}'/2:
+\predindex{\_\$interrupt/2~(L)}\index{\_\$interrupt/2}
+a call to this predicate is of the form
+`\_\${\em interrupt}'({\em Call}, Code),
+where {\em Call} is the call that generated the interrupt,
+and {\em Code} is an integer indicating the nature of the interrupt.
+For each interrupt code, the interrupt handler then calls a handler that is
+designed to handle that particular kind of interrupt.
+At this point, the following interrupt codes have predefined meanings:
+\begin{description}
+\item[{\bf 0}] undefined predicate;
+\item[{\bf 1}] keyboard interrupt (\verb|^C|);
+\item[{\bf 2}] stack overflow.
+\end{description}
+
+Other interrupt codes may be incorporated by modifying the definition of
+the predicate `\_\$ {\em interrupt}'/2
+in the file {\tt modlib/src/\$readloop.P}.
+
+Interrupts during execution are signalled from within the WAM\index{WAM} simulator.
+The general method for raising an interrupt is using the function
+{\em set\_intercode} in the file {\tt sim/sub\_inst.c}: to raise an interrupt
+whose code is $n$, the line
+\begin{center}
+{\tt lpcreg = set\_intercode($n$);}
+\end{center}
+is added to the appropriate place in the main loop of the interpreter,
+defined in {\tt sim/main.c}.
+
+\section{The Compiler}\label{the_compiler} \index{Compiler}
+
+The compiler translates Prolog source files into byte-code object files.
+It is written entirely in Prolog.
+The byte code\index{byte code!files!compiler} for the compiler
+can be found in the SB-Prolog system directory
+{\tt cmplib}\index{cmplib@{\tt cmplib}},
+with the source code resident in {\tt cmplib/src}.
+
+Byte code files may be concatenated together to produce other byte code files.
+\index{byte code!files!concatenating}
+Thus, for example, if {\em foo1} and {\em foo2} are byte code files resulting
+from the compilation of two Prolog source programs,
+then the file {\em foo},
+obtained by executing the shell command
+\begin{center}
+{\tt cat foo1 foo2 > foo}
+\end{center}
+is a byte code file as well, and may be loaded and executed.
+In this case, loading and executing the file {\tt foo}
+would give the same result as loading {\em foo1} and {\em foo2} separately,
+which in turn would be the same as
+concatenating the original source files and compiling this larger file.
+This makes it easier to compile large programs:
+one need only break them into smaller pieces, compile the individual pieces,
+and concatenate the byte files together.
+
+The following sections describe the various aspects
+of the compiler in more detail.
+
+\subsection{Invoking the Compiler}
+\index{invoking the Compiler}\index{Compiler!invoking}
+
+The compiler is invoked through the Prolog predicate {\em compile}:
+\begin{center}
+{\tt | ?- compile({\em InFile} [, {\em OutFile} ] [, {\em OptionsList} ]).}
+\end{center}
+where optional parameters are enclosed in brackets.
+{\em InFile} is the name of the input (i.e.\ source) file;
+{\em OutFile} is the name of the output file (i.e.\ byte code) file;
+{\em OptionsList} is a list of compiler options (see below).
+
+The input and output file names must be Prolog atoms,
+i.e.\ either begin with a lower case letter or dollar sign `\$',
+and consist only of letters, digits,
+and underscores; or, be enclosed within single quotes.
+If the output file name is not specified, it defaults to {\em InFile\bf .out}.
+The list of options, if specified, is a Prolog list,
+i.e.\ a term of the form
+\begin{center}
+{\tt [ {\em option}$_1$, {\em option}$_2$, $\ldots$, {\em option$_n$} ].}
+\end{center}
+If left unspecified, it defaults to the empty list [\/].
+
+In fact, the output file name and the options list may be specified
+in any order.
+Thus, for example, the queries
+\begin{center}
+{\tt | ?- compile('/usr/debray/foo', foo\_out, [v]).}
+\end{center}
+and
+\begin{center}
+{\tt | ?- compile('/usr/debray/foo', [v], foo\_out).}
+\end{center}
+are equivalent, and specify that the Prolog source file
+`{\tt /usr/debray/foo}' is to be compiled in verbose mode (see ``Compiler
+Options'' below), and that the byte code is to be generated into the file
+{\tt foo\_out}.
+
+The {\em compile} predicate may also be called with a fourth parameter:
+\begin{center}
+{\tt | ?- compile({\em InFile}, {\em OutFile}, {\em OptionsList}, {\em PredList}).}
+\end{center}
+where {\em InFile}, {\em OutFile} and {\em OptionsList} are as before;
+{\em compile}/4 unifies {\em PredList} with a list of terms $P/N$ denoting the
+predicates defined in {\em InFile},
+where $P$ is a predicate name and $N$ its arity.
+{\em PredList}, if specified, is usually given as an uninstantiated variable;
+its principal use is for setting trace points on the predicates in the file
+(see Section~\ref{debugging}),
+e.g.\ by executing
+\begin{center}
+{\tt | ?- compile('/usr/debray/foo', foo\_out, [v], L), load(foo\_out), trace(L).}
+\end{center}
+Notice that {\em PredList} can only appear in {\em compile}/4.
+
+\subsection{Compiler Options}\label{compiler_options}
+\index{Compiler!options}\index{options!Compiler}
+The following options are currently recognized by the compiler:
+\begin{description}
+\item[{\bf a}] Specifies that an ``assembler'' file is to be created.
+    The name of the assembler file is obtained by appending {\tt .asl}
+    to the source file name.
+    While the writing out of assembly code slows down the compilation process
+    to some extent, it allows the assembler to do a better job of optimizing
+    away indirect subroutine linkages (since in this case the assembler has
+    assembly code for the entire program to work with at once, not just a single
+    predicate).
+    This results in code that is faster and more compact.
+\item[{\bf d}] Dumps expanded macros to the user (see Section~\ref{macros}).
+\item[{\bf e}] Expand macros (see Section~\ref{macros}).
+\item[{\bf t}] If specified, turns off assembler optimizations that eliminate
+    indirect branches through the symbol table in favour of direct branches.
+    This is useful in debugging compiled code.
+    It is {\em necessary} if the extension table feature is to be used.
+\item[{\bf v}] If specified, compiles in ``verbose'' mode,
+    which causes messages regarding progress of compilation to be printed out.
+\end{description}
+
+\subsection{Assembly}\index{assembly}
+The SB-Prolog assembler can be invoked by loading the compiler and using the
+predicate {\em \$asm}/3:\predindex{\$asm/3}\index{\$asm/3|bold}
+\begin{center}
+{\tt | ?- \$asm({\em InFile}, {\em OutFile}, {\em OptionsList}).}
+\end{center}
+where {\em InFile} is a Prolog atom which is the name of a WAM\index{WAM}
+assembly source file
+(e.g.\ the ``.asl'' file generated when a Prolog program is compiled
+with the ``a'' option),
+{\em OutFile} is an atom which is the name of the intended byte code file,
+\index{byte code!files}
+and {\em OptionsList} is a list of options.
+The options recognized by the assembler are:
+\index{assembler!options}
+\begin{description}
+\item[{\bf v}] ``Verbose'' mode.
+    Prints out information regarding progress of assembly.
+\item[{\bf t}] ``Trace''.
+    If specified, the assembler generates code to force procedure calls
+    to branch indirectly via the symbol table, instead of using a direct branch.
+    This is useful for tracing compiled code.
+    It is {\em necessary} if the extension table feature is to be used.
+\end{description}
+
+The assembler is intended primarily to support the compiler,
+so the assembly language syntax is quirky in places.
+The interested reader is advised to look at the assembly files resulting
+from compilation with the ``a'' option for more on SB-Prolog assembler syntax.
+
+\subsection{Compiler Directives}
+\index{Compiler!directives}\index{directives!Compiler}
+
+\subsubsection{Mode Declarations}
+\index{mode!declarations}\index{declarations!mode}
+
+The user may declare input and output arguments of predicates
+using mode declarations.
+These declarations, for an $n$-ary predicate $p$, are of the form
+\begin{center}
+{\tt :- mode $p$( {\em Mode} ).}
+\end{center}
+\predindex{mode/3~(D)}\index{mode/3|bold}
+where {\em Mode} consists of $n$ mode values; or
+\begin{center}
+{\tt :- mode($p$, $n$, {\em ModeList})}
+\end{center}
+where {\em ModeList} is a list of mode values of length $n$.
+Mode values may be the following:
+\index{mode!values}
+\begin{description}
+\item[{\bf c}, {\bf ++}]
+Indicates that the corresponding argument position is always a ground term
+in any call to the predicate.
+The argument is therefore an input argument.
+
+\item[{\bf nv}, {\bf +}]
+Indicates that the corresponding argument position is always a nonvariable
+term (i.e.\ is instantiated) in any call in any call to the predicate.
+The argument is therefore an input argument.
+
+\item[{\bf f}, {\bf --}]
+Indicates that the corresponding argument position is always an
+uninstantiated variable in any call to the predicate.
+The argument is therefore an output argument.
+
+\item[{\bf d}, {\bf ?}]
+Indicates that the corresponding argument may be any term in calls to the
+predicate.
+\end{description}
+
+For example, a 3-ary predicate~$p$ whose first argument is always a
+ground term in a call, whose second argument is always uninstantiated,
+and whose third argument can be any term, may have its mode declared as
+\begin{center}
+{\tt :- mode $p$(++, --, d)}
+\end{center}
+or as
+\begin{center}
+{\tt :- mode(p, 3, [c, f, d]).}
+\end{center}
+Currently, mode information is used by the compiler in two ways.
+First, it often allows more compact code to be generated.
+The second use is in guiding program transformations that allow faster code
+to be generated.
+For example, the predicate
+\begin{center}
+\begin{minipage}{4in}
+\begin{verbatim}
+part([], _, [], []).
+part([E|L], M, [E|U1], U2) :- E =< M, part(L, M, U1, U2).
+part([E|L], M, U1, [E|U2]) :- E  > M, part(L, M, U1, U2).
+\end{verbatim}
+\end{minipage}
+\end{center}
+executes about 30\% faster with the mode declaration
+\begin{center}
+{\tt :- mode part(++, ++, -, -).}
+\end{center}
+than without.
+
+\subsubsection{Indexing Directives}\label{indexing_directives}
+\index{indexing!directives}\index{directives!indexing}
+
+The compiler usually generates an index on the principal functor of the first
+argument of a predicate.
+The user may direct the compiler to generate an
+index on any other argument by means of an indexing directive.
+This is of the form
+\begin{center}
+{\tt :- index({\em Pred}, {\em Arity}, {\em IndexArg})}
+\end{center}
+\predindex{index/3~(D)}\index{index/3|bold}
+indicating that an index should be created on the ${\em IndexArg}^{\rm th}$
+argument of the predicate {\em Pred}/{\em Arity}.
+All of the values {\em Pred}, {\em Arity} and {\em IndexArg}
+should be bound in the directive:
+{\em Pred} should be an atom, {\em Arity} a nonnegative integer, and
+{\em IndexArg} an integer between 0 and {\em Arity}.
+If {\em IndexArg} is~0, then no index is created for that predicate.
+As an example, if we wished to create an index on the third argument of a 5-ary
+predicate {\em foo}, the compiler directive would be
+\begin{center}
+{\tt :- index({\em foo}, 5, 3).}
+\end{center}
+An index directive may be placed anywhere in the file containing the
+predicate it refers to.
+
+\section{Libraries}\index{libraries}
+
+To describe how libraries are currently supported in our system,
+we must describe the interrupt handler {\em \_\$undefined\_pred}/1.
+The system keeps a table of libraries and routines that are needed from each.
+When a predicate is found to be undefined, the table
+is searched to see if it is defined by some library file.
+If so, that file is loaded (if it hasn't been previously loaded) and the
+association is made between the routine name as defined in the library file,
+and the routine name as used by the invoker.
+
+The table of libraries and needed routines is:
+\begin{center}
+{defined\_mods({\em Modname},
+[${\em pred}_1/{\em arity}_1, \ldots, {\em pred}_n/{\em arity}_n$]).}
+\end{center}
+where {\em Modname} is the name of the library.
+It exports~$n$ predicate definitions.
+The first exported pred is of arity ${\em arity}_1$,
+and needs to be invoked by the name of ${\em pred}_1$.
+
+The table of libraries that have already been loaded is given by
+\begin{center}
+{\tt loaded\_mods({\em Modname}).}
+\end{center}
+A library file is a file of predicate definitions,
+together with a fact defining a list of predicates exported by it;
+and a set of facts, each of which specifies, for some other library file,
+the predicates imported from that library file.
+For example, consider a library name `$p$'.
+It contains a single fact, named {\em p\_export},
+that is true of the list of predicate/arities that are exported.
+E.g.
+\begin{center}
+{\tt p\_export([p1/2, p2/4])}
+\end{center}
+indicates that the module~$p$ exports the predicates {\em p1}/2 and {\em p2}/4.
+For each library~$m$ which contains predicates needed by the library $p$,
+there is a fact for {\em p\_use},
+describing what library is needed and the names of the
+predicates defined there that are needed.
+For example, if library $p$ needs to import predicates {\em ip1}/2
+and {\em ip2}/3 from library~$q$, there would be a fact
+\begin{center}
+{\tt p\_use(q,[ip1/2, ip2/3])}
+\end{center}
+where $q$ is a module that exports two predicates: one 2-ary and one 3-ary.
+This list corresponds to the export list of library~$q$.
+
+The correspondence between the predicates in the export list of an exporting
+library,
+and those in the import or {\em use} list of a library which imports one or
+more of them, is by position, i.e.\ the predicate names at the exporting and importing names may be different, and
+the association between names in the two lists is by the position in the list.
+If the importing library does not wish to import one or more of the predicates
+exported by the exporting module,
+it may put an anonymous variable in the corresponding position in its {\em use}
+list.
+Thus, for example, if library $p$ above had wished to import only the predicate
+{\em ip2}/3 from library $q$, the corresponding use fact would be
+\begin{center}
+{\tt p\_use(q, [\_, ip2/3]).}
+\end{center}
+
+The initial set of predicates and the libraries from which they are to be
+loaded is set up by an initial call to {\em \$prorc}/0
+(see the SB-Prolog system file {\tt modlib/src/\$prorc.P}).
+This predicate makes initial calls to the predicate \$define\_mod which set up
+the tables described above so that the use of standard predicates will cause
+the correct libraries to be loaded in the {\em \_\$undefined\_pred} routine,
+and the correct names to be used.
+
+\section{Macros}\index{macros}\label{macros}
+SB-Prolog features a facility for the definition and expansion of macros that
+is fully compatible with the runtime system.
+Its basic mechanism is a simple partial evaluator.
+It is called by both {\em consult} and {\em compile},
+so that macro expansion occurs independently of whether the code is interpreted
+or compiled (but not when asserted).
+Moreover, the macro definitions are retained as clauses at runtime, so
+that invocation of macros via {\em call}/1 at runtime (or from asserted clauses)
+does not pose a problem.
+This means, however, that if the same macro is used in many different files,
+it will be loaded more than once, thus leading to wasted space.
+This ought to be thought about and fixed.
+
+The source for the macro expander is in the SB-Prolog system file\linebreak[3]
+{\tt modlib/src/\$mac.P}.
+
+\subsection{Defining Macros}
+\index{definitions!macros}\index{macros!definition of}
+
+`Macros', or predicates to be evaluated at compile-time, are defined
+by clauses of the form
+\begin{center}
+{\tt Head ::- Body}
+\end{center}
+where facts have `true' as their body.
+\predindex{::--/2~(P)}\index{::--/2|bold}
+The partial evaluator will expand any call to a predicate defined by ::--/2 that
+unifies with the head of only one clause in ::--/2.
+If a call unifies with the head of more than one clause in ::--/2,
+it will not be expanded
+Notice that this is not a fundamental restriction, since `;' is permitted
+in the body of a clause.
+The partial evaluator also converts each definition of the form
+\begin{center}
+{\tt Head ::- Body.}
+\end{center}
+to a clause of the form
+\begin{center}
+{\tt Head :- Body.}
+\end{center}
+and adds this second clause to the other ``normal'' clauses that were read from
+the file.
+This ensures that calls to the macro at runtime,
+e.g.\ through {\em call}/1 or from unexpanded calls in the program
+do not cause any problems.
+
+The partial evaluator is actually a Prolog interpreter written
+`purely' in Prolog, i.e., variable assignments are explicitly handled.
+This is necessary to be able to handle impure constructs such as
+{\tt var(X),~X=a}.
+As a result this is a {\em very slow} Prolog evaluator.
+
+Since na\"{\i}ve partial evaluation can go into an infinite loop,
+SB-Prolog's partial evaluator
+maintains a depth-bound and will not expand recursive calls deeper than that.
+The depth is determined by the globalset predicate {\em \$mac\_depth}.
+The default value for {\em \$mac\_depth} is~50.
+This can be changed to some other value $n$ by executing
+\begin{center}
+{\tt | ?- globalset(\$mac\_depth($n$)).}
+\end{center}
+
+\subsection{Macro Expander Options}
+\index{Macro Expander options}\index{options!Macro Expander}
+
+The following options are recognized by the macro expander:
+\begin{description}
+\item[{\bf d}] Dumps all clauses to the user after expansion.
+    Useful for debugging.
+\item[{\bf e}] Expand macros.
+    If omitted, the expander simply converts each ::--/2 clause
+    to a normal :--/2 clause\index{:--/1}.
+\item[{\bf v}] ``Verbose'' mode.
+    Prints macros that are/are not being expanded.
+\end{description}
+
+\section{Extension Tables: Memo Relations}
+\index{extension tables!memo relations}\index{memo relations!extension tables}
+
+Extension tables store the calls and answers for a predicate.
+If a call has been made before, answers are retrieved from the extension
+table instead of being recomputed.
+Extension tables provide a caching mechanism for Prolog.
+In addition, extension tables affect the termination characteristics
+of recursive programs.
+Some Prolog programs, which are logically correct,
+enter an infinite loop due to recursive predicates.
+An extension table saved on recursive predicates can find all answers
+(provided the set of such answers is finite) and terminate
+for some logic programs for which Prolog's evaluation strategy
+enters an infinite loop.
+Iterations over the extension table execution strategy provides
+complete evaluation of queries over function-free Horn clause programs.
+
+To be able to use the simple extension table evaluation on a set of
+predicates, the source file should either be consulted, or
+compiled with the {\bf t} option (the {\bf t} option
+keeps the assembler from optimizing subroutine linkage and allows
+the extension table facility to intercept calls to predicates).
+
+To use extension table execution, all predicates that are to be
+saved in the extension table must be passed to {\em et}/1.
+For example,
+\begin{center}
+{\tt | ?- et([pred1/1, pred2/2]), et(pred3/2)}
+\end{center}
+will set up ``ET-points'' for the for predicates {\em pred1}/1,
+{\em pred2}/2 and {\em pred3}/2,
+which will cause extension tables for these predicates to be
+maintained during execution.
+At the time of the call to {\em et}/1, these predicates must be defined,
+either by having been loaded, or through {\em consult}.
+
+The predicate {\em noet}/1 takes a list of predicate/arity pairs for
+which ET-points should be deleted.
+Notice that once an ET-point has been set up for a predicate,
+it will be maintained unless explicitly deleted via {\em noet}/1.
+If the definition of a predicate which has an ET-point defined is to be updated,
+the ET-point must first be deleted via {\em noet}/1.
+The predicate can then be reloaded and a new ET-point established.
+This is enforced by the failure of the goal ``et(P/N)''
+if an ET-point already exists for the argument predicate.
+In this case, the following error message will be displayed:
+\begin{center}
+{\tt *et* already defined for: P/N}
+\end{center}
+
+There are, in fact, two extension table algorithms: a simple one,
+which simply caches calls to predicates which have ET-points defined;
+and a complete ET algorithm,
+which iterates the simple extension table algorithm until
+no more answers can be found.
+The simple algorithm is more efficient than the complete one;
+however, the simple algorithm is not complete for certain
+especially nasty forms of mutual recursion, while the complete algorithm is.
+To use the simple extension table algorithm,
+predicates can simply be called as usual.
+The complete extension table algorithm may be used via the query
+\begin{center}
+{\tt | ?- et\_star(Query).}
+\end{center}
+
+The extension table algorithm is intended for predicates that are ``essentially
+pure'', and results are not guaranteed for code using impure code.
+The extension table algorithm saves only those answers which are
+not instances of what is already in the
+table, and uses these answers if the current call is an instance of a call
+already made.
+For example, if a call $p$($X$, $Y$), with $X$ and $Y$ uninstantiated,
+is encountered and inserted into the extension table,
+then a subsequent call $p$($X$, $b$) will be computed using the answers for
+$p$($X$, $Y$) already in the extension table.
+Notice that this might not work if var/nonvar tests are used
+on the second argument in the evaluation of $p$.
+
+Another problem with using impure code is that if an ET predicate is cut over,
+\index{cut}
+then the saved call implies that all answers for that predicate were computed,
+but there are only partial results in the ET because of the cut.
+So on a subsequent call the incomplete extension table answers are used
+when all answers are expected.
+An example is shown in Figure~\ref{impure_code}
+\begin{figure}[htbp]
+{\centering
+\begin{tabbing}\tt
+	r(X,Y) :- p(X,Y),q(Y,Z),!,fail. \\
+	\tt | ?-  r(X,Y) ; p(X,Y).
+\end{tabbing}
+\caption{Extension Table Example}}\label{impure_code}\index{"!/0}\index{cut}
+\end{figure}
+
+Let p be an ET predicate whose evaluation yields many tuples.
+In the evaluation of the query, r(X,Y) makes a call to p(X,Y).
+Assuming that there is a tuple such that q(Y,Z) succeeds with the
+first p tuple then the evaluation of p is cut over.
+The call to p(X,Y) in the query uses the extension table because
+of the previous call in the evaluation of r(X,Y).
+Only one answer is found, whereas the relation p contains many tuples,
+so the computation is not complete.
+Note that ``cuts'' used within the evaluation of an ET predicate are ok,
+as long as they don't cut over the evaluation of another ET predicate.
+The evaluation of the predicate that uses cuts does not cut over any ET
+processing (such as storing or retrieving answers) so that the tuples that
+are computed are saved.
+In the following example, the ET is used to generate prime numbers
+where an ET point is put on prime/1.
+Example:
+
+{\tt
+\begin{tabbing}
+prime(I) :- globalset(globalgenint(2)),fail.	/* Generating Primes */ \\
+prime(I) :- genint(I), not(div(I)). \\
+div(I) :- prime(X), 0 is I mod X. \\
+ \\
+genint(N) :- \\
+    repeat, \\
+	globalgenint(N), \\
+	N1 is N+1, \\
+	globalset(globalgenint(N1)). \\
+\end{tabbing}
+}
+
+The following summarizes the library predicates supporting the extension
+table facility:
+
+\begin{description}
+\item[{\bf et}($L$)] \predindex{et/1~(L)}\index{et/1|bold}
+    Sets up an ET-point on the predicates $L$, which causes calls and
+    answers to these predicates to be saved in an ``extension table''.
+    $L$ is either a term {\em Pred}/{\em Arity}, where {\em Pred} is a predicate
+    symbol and {\em Arity} its arity,
+    or a set of such terms represented as a list.
+    $L$ must be instantiated, and the predicates specified in it defined,
+    at the time of the call to {\em et}/1.
+    Gives error messages and fails if any of the predicates in $L$ is undefined,
+    or if an ET-point already exists on any of them; in this case, no ET-point
+    is set up on any of the predicates in $L$.
+
+\item[{\bf et\_star}(Goal)] \predindex{et\_star/1~(L)}\index{et\_star/1|bold}
+    Invokes the complete extension table algorithm on the goal {\em Goal}.
+
+\item[{\bf et\_points}($L$)]
+\predindex{et\_points/1~(L)}\index{et\_points/1|bold}
+    Unifies $L$ with a list of predicates for which an ET-point is defined.
+    $L$ is the empty list [\,] if there are no ET-points defined.
+
+\item[{\bf noet}($L$)] \predindex{noet/1~(L)}\index{noet/1|bold}
+    Deletes ET-points on the predicates specified in $L$.
+    $L$ is either a term $P$/$N$, where $P$ is the name of a predicate and
+    $N$ its arity, or a set of such terms represented as a list.
+    Gives error messages and fails if there is no ET-point on any
+    of the predicates specified in $L$.
+    Deleting an ET-point for a predicate also removes the calls and
+    answers stored in the extension table for that predicate.
+    The extension tables for all predicates for which ET-points are defined
+    may be deleted using {\em et\_\/points}/1 in conjunction with {\em noet}/1.
+
+    $L$ must be instantiated at the time of the call to {\em noet}/1.
+
+\item[{\bf et\_remove}($L$)]
+\predindex{et\_remove/1~(L)}\index{et\_remove/1|bold}
+    Removes both calls and answers for the predicates specified in $L$.
+    In effect, this results in the extension table for these predicates
+    to be set to empty.
+    $L$ must be instantiated at the time of the call to either a term $P$/$N$,
+    where $P$ is a predicate with arity $N$, or a list of such terms.
+    An error occurs if any of the predicates in $L$
+    does not have an ET-point set.
+
+    All extension tables can be emptied by using {\em et\_\/points}/1
+    in conjunction with {\em et\_\/remove}/1.
+
+\item[{\bf et\_answers}($P/N$, {\em Term})]
+\predindex{et\_answers/2~(L)}\index{et\_answers/2|bold}
+    Retrieves the answers stored in the extension table for the predicate
+    $P$/$N$ in {\em Term} one at a time.
+    {\em Term} is of the form $P(t_1, \ldots, t_N)$.
+    An error results and {\em et\_\/answers}/2 fails if $P/N$ is not fully
+    specified (ground),
+    or if $P/N$ does not have an ET-point set.
+
+\item[{\bf et\_calls}({\em P/N}, {\em Term})]
+\predindex{et\_calls/2~(L)}\index{et\_calls/2|bold}
+    Retrieves the calls stored in the extension table for the predicate $P/N$
+    in {\em Term} one at a time.
+    {\em Term} is of the form $P(t_1, \ldots, t_N)$.
+    An error results and {\em et\_\/calls}/2 fails if $P/N$ is not fully
+    specified (ground),
+    or if $P$/$N$ does not have an ET-point set.
+\end{description}
+
+\section{Definite Clause Grammars}
+\index{definite clause grammars}\index{grammars!definite clause}
+
+Definite clause grammars are an extension of context free grammars, and may
+be conveniently expressed in Prolog.
+A grammar rule in Prolog has the form
+\begin{center}
+{\tt {\em Head} --> {\em Body}.}
+\end{center}
+with the interpretation ``a possible form for {\em Head} is {\em Body}''.
+Extra conditions, in the form of explicit Prolog literals or control
+constructs such as {\em if-then-else} ({\tt->})
+or {\em cut}\index{cut} ({\tt!})\index{"!/0}, may be included in {\em Body}.
+
+The syntax of DCGs supported by SB-Prolog is as follows:
+\begin{enumerate}
+\item A non-terminal symbol may be any Prolog term other than a variable.
+\item A terminal symbol may be any Prolog term.
+    To distinguish terminals from nonterminals, a sequence of terminal symbols
+    \begin{center}
+    {\tt $a, b, c, d, \ldots$}
+    \end{center}
+    is written as a Prolog list $[ a, b, c, d, \ldots ]$,
+    with the empty sequence written as the empty list {\tt [\,]}.
+    If the terminal symbols are ASCII character codes,
+    they can be written (as elsewhere) as strings.
+\item Extra conditions, in the form of Prolog literals, can be included in
+    the right-hand side of a rule by enclosing such conditions in curly braces,
+    {\tt \{} and {\tt \}}.
+    E.g., one can write
+    \begin{center}
+    {\tt natnum(X) --> \{integer(X), X >= 0\}.}
+    \end{center}
+\item The left hand side of a rule consists of a single nonterminal.
+    Notice that ``push-back lists'' are thus not supported.
+\item The right hand side of a rule may contain alternatives (written using the
+    disjunction operator `{\bf ;}' or \verb`|`), and control primitives such as
+    if-then-else ({\tt ->}),
+    {\em not}/1 and {\em cut}\index{cut} (`!')\index{"!/0}.
+    The use of {\em not}/1 on the right hand side of grammar rules is not
+    recommended, however,
+    because their semantics in this context is murky at best.
+    All other control primitives, e.g.\ {\em repeat}/0, must explicitly
+    be enclosed within curly braces if they are not to be interpreted as
+    nonterminals.
+\end{enumerate}
+
+Except for the restriction of lists of terminals in the left hand sides of
+rules, the translation of DCGs in SB-Prolog is very similar to that in
+Quintus Prolog.
+
+Library predicates supporting DCGs are the following:
+
+\begin{description}
+\item[{\bf dcg}({\em Rule}, {\em Clause})]
+\predindex{dcg/2~(L)}\index{dcg/2|bold}
+    Succeeds if the DCG rule {\em Rule} corresponds to the Prolog clause
+    {\em Clause}.
+    At the time of call, {\em Rule} must be bound to a term
+    whose principal functor is {\tt ->}/2.
+
+\item[{\bf phrase}({\em Phrase}, {\em List})]
+\predindex{phrase/2~(L)}\index{phrase/2|bold}
+    The usual way to commence execution of grammar rules.
+    The list {\em List} is a phrase (i.e., sequence of terminals) generated by
+    {\em Phrase} according to the current grammar rules.
+    {\em Phrase} is a nonterminal
+    (in general, the right hand side of a grammar rule),
+    and must be instantiated to a nonvariable term in the call.
+    If {\em List} is bound to a list of terminals in the call,
+    then the goal corresponds to parsing {\em List};
+    if {\em List} is unbound in the call,
+    then the grammar is being used for generation.
+
+\item[{\bf expand\_term}({\em T1}, {\em T2})]
+\predindex{expand\_term/2~(L)}\index{expand\_term/2|bold}
+    This predicate is used to transform terms that are read in,
+    when a file is consulted or compiled.
+    The usual use is to transform grammar rules into Prolog clauses:
+    if {\em T1} is a grammar rule,
+    then {\em T2} is the corresponding Prolog clause.
+    Users may define their own transformations by defining the predicate
+    \predindex{term\_expansion/2~(U)}\index{term\_expansion/2}
+    {\em term\_expansion}/2.
+    When a term {\em T1} is read in when a file is being compiled or consulted,
+    {\em expand\_term}/2 first calls {\em term\_expansion}/2:
+    if the expansion succeeds, the transformed term so obtained is used;
+    otherwise, if {\em T1} is a grammar rule,
+    then it is expanded using {\em dcg}/2; otherwise, {\em T1} is used as is.
+
+\item[`{\bf C}'({\em S1}, {\em Terminal}, {\em S2})]
+\predindex{`C'/3~(L)}\index{`C'/3|bold}
+    Used to handle terminal symbols in the expansion of grammar rules.
+    Not usually of direct use to the user.
+    This is defined as
+    \begin{center}
+    {\tt `C'([X|S], X, S).}
+    \end{center}
+\end{description}
+
+\section{Profiling Programs}\index{profiling programs}
+
+There is an experimental utility for profiling programs interactively.
+Two kinds of profiling are supported:
+one may count the number of calls to a predicate,
+or compute the time spent in a predicate.
+It is important that the predicates being profiled are either consulted,
+or compiled with the {\bf t}~option,
+so that calls to the relevant predicates can be intercepted by the profiler.
+
+To use the profiler, predicates whose calls are to be counted must be
+passed to {\em count}/1, e.g.
+\begin{center}
+{\tt | ?-- count([$p$/1, $q$/2]), count($r$/3).}
+\end{center}
+will set up ``count-points'' on the predicates $p$/1, $q$/2 and $r$/3.
+Predicates whose calls are to be timed have to be passed to {\em time}/1, e.g.
+\begin{center}
+{\tt | ?-- time([$s$/1, $t$/2]), time($u$/3).}
+\end{center}
+will set up ``time-points'' on the predicates $s$/1, $t$/2 and $u$/3.
+It is possible to set both count-points and time-points on the same predicate.
+After count-points and time-points have been set,
+the program may be executed as many times as desired: the profiling system will
+accumulate call counts and execution times for the appropriate predicates.
+Execution profiles may be obtained using the
+predicates {\em prof\_stats}/0 or {\em prof\_stats}/1.
+Using {\em prof\_stats}/0 to display the execution profile will cause the call
+counts and execution times of predicates being profiled to be reset to~0
+(this may be avoided by using {\em prof\_stats}/1).
+
+It should be noted that in this context, the ``execution time'' for a predicate
+is an estimate of the total time spent in the subtrees below calls to that
+predicate (including failed subtrees): thus, the execution time figures may
+be dilated slightly if the subtree below a timed predicate contains
+predicates that are being profiled, because of the time taken for updating
+the call counts and execution times.
+For each predicate, the execution
+time is displayed as the fraction of time spent, in computation in subtrees
+under calls to that predicate, relative to the time elapsed from the last
+time profiling was timed on or the last time profiling statistics were
+taken, whichever was more recent.
+
+{\bf Bugs}: May behave bizarrely if a predicate being profiled contains cuts.
+
+The following summarizes the library predicates supporting profiling:
+
+\begin{description}
+\item[{\bf count}($L$)] \predindex{count/1~(L)}\index{count/1|bold}
+    Sets up a count-point on the predicates $L$, which causes calls to
+    these predicates to be counted, and turns profiling on.
+    $L$ is either
+    a term {\em Pred}/{\em Arity}, where {\em Pred} is a predicate
+    symbol and {\em Arity} its arity,
+    or a set of such terms represented as a list.
+    $L$ must be instantiated, and the predicates specified in it defined, at
+    the time of the call to {\em count}/1.
+
+\item[{\bf time}($L$)] \predindex{time/1~(L)}\index{time/1|bold}
+    Sets up a time-point on the predicates $L$, which causes execution times
+    for calls to these predicates to be accumulated, and turns profiling on.
+    $L$ is either a term {\em Pred}/{\em Arity}, where {\em Pred} is a predicate
+    symbol and {\em Arity} its arity,
+    or a set of such terms represented as a list.
+    $L$ must be instantiated, and the predicates specified in it defined, at
+    the time of the call to {\em time}/1.
+
+\item[{\bf nocount}($L$)] \predindex{nocount/1~(L)}\index{nocount/1|bold}
+    Deletes the count-point on the predicates $L$.
+    $L$ is either a term {\em Pred}/{\em Arity}, where {\em Pred} is a predicate
+    symbol and {\em Arity} its arity,
+    or a set of such terms represented as a list.
+    $L$ must be instantiated, and the predicates specified in it defined, at
+    the time of the call to {\em nocount}/1.
+
+\item[{\bf notime}($L$)] \predindex{notime/1~(L)}\index{notime/1|bold}
+    Deletes the time-point on the predicates $L$.
+    $L$ is either a term {\em Pred}/{\em Arity}, where {\em Pred} is a predicate
+    symbol and {\em Arity} its arity, or a set of such terms represented as a
+    list.
+    $L$ must be instantiated, and the predicates specified in it defined, at
+    the time of the call to {\em time}/1.
+
+\item[{\bf profiling}] \predindex{profiling/0~(L)}\index{profiling/0|bold}
+    Displays information about whether profile mode is on or not, and lists
+    predicates that have count- and time-points set on them.
+
+\item[{\bf prof\_reset}($L$)]
+\predindex{prof\_reset/1~(L)}\index{prof\_reset/1|bold}
+    Resets call counts and/or execution times for the predicates $L$.
+    $L$ is either a term {\em Pred}/{\em Arity}, where {\em Pred} is
+    a predicate symbol and {\em Arity} its arity, or a set of such terms
+    represented as a list.
+    $L$ must be instantiated, and the predicates specified in it defined,
+    at the time of the call to {\em prof\_reset}/1.
+
+\item[{\bf resetcount}($L$)]
+\predindex{resetcount/1~(L)}\index{resetcount/1|bold}
+    Resets call counts for the predicates $L$.
+    $L$ is either a term {\em Pred}/{\em Arity}, where {\em Pred} is
+    a predicate symbol and {\em Arity} its arity, or a set of such terms
+    represented as a list.
+    $L$ must be instantiated, and the predicates specified in it defined,
+    at the time of the call to {\em resetcount}/1.
+
+\item[{\bf resettime}($L$)] \predindex{resettime/1~(L)}\index{resettime/1|bold}
+    Resets execution times for the predicates $L$.
+    $L$ is either a term {\em Pred}/{\em Arity}, where {\em Pred} is
+    a predicate symbol and {\em Arity} its arity, or a set of such terms
+    represented as a list.
+    $L$ must be instantiated, and the predicates specified in it defined,
+    at the time of the call to {\bf resettime}/1.
+
+\item[{\bf profile}] \predindex{profile/0~(L)}\index{profile/0|bold}
+    Turns profiling on.
+    This causes subsequent execution of predicates with count- or time-points
+    to be profiled, and is a no-op if there are no such predicates.
+    The predicates {\em count}/1 and {\em time}/1 cause profiling
+    to be turned on automatically.
+
+\item[{\bf noprofile}] \predindex{noprofile/0~(L)}\index{noprofile/0|bold}
+    Turns profiling off.
+    This causes count- and time-points to be ignored.
+
+\item[{\bf timepreds}($L$)] \predindex{timepreds/1~(L)}\index{timepreds/1|bold}
+    Unifies $L$ to a list of terms $P/N$ where the predicate $P$ of arity $N$
+    has a time point set on it.
+
+\item[{\bf countpreds}($L$)] \predindex{countpreds/1~(L)}\index{countpreds/1|bold}
+    Unifies $L$ to a list of terms $P/N$ where the predicate $P$ of arity $N$
+    has a count point set on it.
+
+\item[{\bf prof\_stats}]
+\predindex{prof\_stats/0~(L)}\index{prof\_stats!/0|bold}
+    Causes the call counts and/or execution times accumulated
+    since the last call to {\em prof\_stats}/0 to be printed out for predicates
+    that are being profiled.
+    The execution times are given as fractions of the total
+    time elapsed since the last time profiling was turned on,
+    or the last time {\em prof\_stats} was called, whichever was most recent.
+    This also results in the call counts and relative execution times of these
+    predicates being reset to~0.
+    Equivalent to {\em prof\_stats}(1).
+
+\item[{\bf prof\_stats}($N$)]
+\predindex{prof\_stats/1~(L)}\index{prof\_stats!/1|bold}
+    Causes the call counts and/or execution times accumulated since
+    the last call to {\em prof\_stats}/0 to be printed out for predicates
+    that are being profiled.
+    The execution times are given as fractions of the total time elapsed since
+    the last time profiling was turned on, or the last time {\em prof\_stats}
+    was called, whichever was most recent.
+    If $N$ is~1, then this also results in the call counts and execution times
+    of these predicates being reset to 0;
+    otherwise, the call counts and execution times are not reset.
+\end{description}
+
+\section{Other Library Utilities}
+
+The SB-Prolog library contains various other utilities,
+some of which are listed below.
+
+\begin{description}
+\item[{\bf \$append}($X$, $Y$, $Z$)]
+\predindex{\$append/3~(L)}\index{\$append/3|bold}
+    Succeeds if list $Z$ is the concatenation of lists $X$ and $Y$.
+
+\item[{\bf \$member}($X$, $L$)]
+\predindex{\$member/2~(L)}\index{\$member/2|bold}
+    Checks whether $X$ unifies with any element of list $L$,
+    succeeding more than once if there are multiple such elements.
+
+\item[{\bf \$memberchk}($X$, $L$)]
+\predindex{\$memberchk/2~(L)}\index{\$memberchk/2|bold}
+    Similar to {\em \$member}/2, except that {\em \$memberchk}/2 is
+    deterministic, i.e.\ does not succeed more than once for any call.
+
+\item[{\bf \$reverse}($L$, $R$)]
+\predindex{\$reverse/2~(L)}\index{\$reverse/2|bold}
+    Succeeds if $R$ is the reverse of list $L$.
+    If $L$ is not a fully determined list,
+    i.e.\ if the tail of $L$ is a variable,
+    this predicate can succeed arbitrarily many times.
+
+\item[{\bf \$merge}($X$, $Y$, $Z$)]
+\predindex{\$merge/3~(L)}\index{\$merge/3|bold}
+    Succeeds if $Z$ is the list resulting from ``merging'' lists $X$ and $Y$,
+    i.e.\ the elements of $X$ together with any element of $Y$
+    not occurring in $X$.
+    If~$X$ or~$Y$ contain duplicates, $Z$ may also contain duplicates.
+
+\item[{\bf \$absmember}($X$, $L$)]
+\predindex{\$absmember/2~(L)}\index{\$absmember/2|bold}
+    Similar to {\em \$member}/2, except that it checks for identity
+    (through ==/2)
+    rather than unifiability (through =/2) of $X$ with elements of $L$.
+
+\item[{\bf \$nthmember}($X$, $L$, $N$)]
+\predindex{\$nthmember/3~(L)}\index{\$nthmember/3|bold}
+    Succeeds if the $N^{th}$ element of the list~$L$ unifies with $X$.
+    Fails if $N$ is greater than the length of $L$.
+    Either $X$ and $L$, or $L$ and $N$, should be instantiated at the
+    time of the call.
+
+\item[{\bf \$member2}($X$, $L$)]
+\predindex{\$member2/2~(L)}\index{\$member2/2|bold}
+    Checks whether $X$ unifies with any of the actual elements of $L$.
+    The only difference between this and {\em \$member}/2 is on lists with
+    a variable tail, e.g.\ \verb'[a, b, c | _ ]':
+    while {\em \$member}/2 would insert $X$ at the end of such a list
+    if it did not find it, {\em \$member2}/2 only checks for membership
+    but does not insert it into the list if it is not there.
+
+\item[{\bf length}($L$, $N$)] \predindex{length/2~(L)}\index{length/2|bold}
+    Succeeds if the length of the list $L$ is $N$.
+    This predicate is deterministic if $L$ is instantiated to a list
+    of definite length,
+    but is nondeterministic if $L$ is a variable or has a variable tail.
+
+\item[{\bf subsumes}($X$, $Y$)] \predindex{subsumes/2~(L)}\index{subsumes/2|bold}
+    Succeeds if the term $X$ subsumes the term $Y$
+    (i.e.\ if $Y$ is an instance of $X$).
+\end{description}
+
+\section{CREDITS}\index{Credits}
+
+The initial development of SB-Prolog, from~1984 to August~1986,
+was at SUNY at Stony Brook, where Versions~1.0 and~2.0 were developed.
+Since August~1986, its development has continued at the University of Arizona,
+Tucson.
+
+A large number of people were involved, at some time or another,
+with the Logic Programming group at SUNY, Stony Brook,
+and deserve credit for helping to bring SB-Prolog to its present form.
+David Scott Warren led the project at Stony Brook.
+Most of the simulator and builtins were written by Jiyang Xu and David S. Warren
+(I added the later stuff, Versions~2.1 onwards).
+Much of the library was also by David, with some contributions from me.
+Weidong Chen did the work on clause indexing.
+Suzanne Dietrich wrote the Extension Table package.
+I wrote most of the compiler.
+
+Several people helped debug previous versions, including Leslie Rohde;
+Bob Beck of Sequent Computers; and Mark Gooley of the University of
+Illinois at Urbana-Champaign.
+
+Special thanks are due to Richard O'Keefe, who contributed the Prolog code for
+the parser (in the form of the predicates {\bf read}/1 and {\bf read}/2),
+the C code for the tokenizer, and the code for {\bf setof}/3 and {\bf bagof}/3.
+
+I am grateful to Fernando Pereira for permission to use material from the
+C-Prolog manual for the descriptions of Prolog syntax and many of the
+builtins in this User Manual.  Steve Kelem produced the LateX version of
+this manual from an earlier troff version.
+\begin{quote}
+\raggedleft --- S.K.D.
+\end{quote}
+
+% The index
+\input{sbprolog_doc.ind}
+
+\appendix
+\begin{thepredindex}{
+\section{Evaluable Predicates of SB-Prolog}\label{builtins}
+\index{evaluable predicates}\index{predicates!evaluable}
+An entry of ``B'' indicates a builtin predicate, ``I''~an inline predicate,
+and~``L'' a library predicate.
+A~``P'' indicates that the predicate is
+handled by the preprocessor during compilation and/or consulting.
+A~``D'' denotes a compiler directive.}
+\vspace{2ex}
+\input{sbprolog_doc.pnd}
+\end{thepredindex}
+
+\section{A Note on Coding for Efficiency} \label{coding_for_efficiency}
+\index{efficiency, coding for}
+The SB-Prolog system tends to favour programs that are relatively pure.
+Thus, for example, {\em assert}s tend to be quite expensive,
+encouraging the user to avoid them if possible.
+This section points out some syntactic constructs that lead to the generation
+of efficient code.
+These involve ($i$) avoiding the creation of backtrack points;
+and ({\em ii}) minimizing data movement between registers.
+Optimization of logic programs is an area of ongoing research,
+and we expect to enhance the capabilities of the system further in future
+versions.
+
+\subsection{Avoiding Creation of Backtrack Points}
+\index{backtrack points}
+Since the creation of backtrack points is relatively expensive,
+program efficiency may be improved substantially by using constructs
+that avoid the creation of backtrack points where possible.
+The SB-Prolog compiler recognizes conditionals involving certain
+complementary inline tests, and generates code that does not create
+choice points for such cases.
+Two inline tests $p(t_1, \ldots, t_n)$ and
+$q(t_1, \ldots, t_n)$ are {\em complementary}
+if and only if $p(t_1, $\ldots$, t_n) \equiv {\em not}(q(t_1, \ldots, t_n))$.
+For example, the literals `$X$ $>$ $Y$' and `$X =< Y$' are complementary.
+At this point, complementary tests are recognized as such only
+if their argument tuples are identical.
+The inline predicates that are
+treated in this manner, with their corresponding complementary literals,
+are shown in Table~\ref{complementary_tests}.
+\begin{table}[htbp]{\centering
+\begin{tabular}{|c|c|}
+\hline
+{\em Inline Test}&{\em Complementary Test}\\ \hline\hline
+$>/2$	& $=</2$	\\ \hline
+$=</2$	& $>/2$		\\ \hline
+$>=/2$	& $</2$		\\ \hline
+$</2$	& $>=/2$	\\ \hline
+=:=/2	& $=\backslash\,=/2$	\\ \hline
+$=\backslash\,=/2$	& =:=/2	\\ \hline
+?=/2	& $\backslash\,=/2$	\\ \hline
+$\backslash\,=/2$	& ?=/2	\\ \hline
+var/1	& nonvar/1	\\ \hline
+nonvar/1	& var/1	\\ \hline
+\end{tabular}
+\caption{Complementary Tests Recognized by the Compiler}}
+\label{complementary_tests}
+\end{table}
+The syntactic constructs recognized are:\nopagebreak
+\begin{enumerate}
+\item[({\em i})] Disjuncts of the form
+    $${\em head}(\ldots) {\tt :-} ({\em test}(t_1,\ldots, t_n), \ldots);
+    ({\rm  not}({\em test}(t_1, \ldots, t_n), \ldots)).$$
+    or
+    $$ {\em head}(\ldots) {\tt :-} ({\em test}(t_1, \ldots, t_n), \ldots);
+    (( {\em comp\_test}(t_1,\ldots, t_n), \ldots)).$$
+    where {\em test} is one of the inline tests in the table above, and
+    {\em comp\_test} the corresponding complementary test
+    (note that the arguments to {\em test} and {\em comp\_test}
+    have to be identical).
+
+\item[({\em ii})]
+    Conditionals of the form
+    $$ {\em head} {\tt :-} ({\em test}_1, \ldots, {\em test}_n) ->
+    {\em True\_Case} ; {\em False\_Case}.$$
+    or
+    $$ {\em head} {\tt :-} ({\em test}_1; \ldots; {\em test}_n) ->
+    {\em True\_Case} ; {\em False\_Case}.$$
+    where each ${\em test}_i$ is an inline test,
+    as mentioned in the table above.
+\end{enumerate}
+
+The code generated for these cases involves a test and conditional branch,
+and no choice point is created.
+We expect future versions of the translator to
+recognize a wider class of complementary tests.
+
+Notice that this discourages the use of explicit cuts\index{cut}\index{"!/0}.
+For example, whereas a choice point will be created for\nopagebreak[3]
+{\tt
+\begin{tabbing}
+part(M,[E|L],U1,U2) :- \\
+   ((E =< M, !, U1 = [E|U1a], U2 = U2a) ; \\
+    (U1 = U1a, U2 = [E|U2a])), \\
+   part(M,L,U1a,U2a).
+\end{tabbing}
+}
+no choice point will be created for either\nopagebreak[3]
+{\tt
+\begin{tabbing}
+part(M,[E|L],U1,U2) :- \\
+   (E =< M --> \\
+      (U1 = [E|U1a], U2 = U2a) ; \\
+      (U1 = U1a, U2 = [E|U2a])), \\
+   part(M,L,U1a,U2a).
+\end{tabbing}
+}
+\pagebreak[2]
+or\nopagebreak[3]
+{\tt
+\begin{tabbing}
+part(M,[E|L],U1,U2) :- \\
+   ((E =< M, U1 = [E|U1a], U2 = U2a) ; \\
+    (E > M,  U1 = U1a, U2 = [E|U2a])), \\
+   part(M,L,U1a,U2a).
+\end{tabbing}
+}
+Thus, either of the two later versions will be more efficient than the version
+with the explicit cut (this is a design decision we have consciously made, in
+the hope of discouraging blatantly non-declarative code where efficient
+declarative code can be written).
+
+\subsection{Minimizing Data Movement Between Registers}
+\index{registers!minimizing data movement between}
+
+Data movement between registers for parameter passing may be minimized by
+leaving variables in the same argument position wherever possible.
+Thus, the clause
+\begin{center}
+{\tt p(X,Y) :- p1(X,Y,0).}
+\end{center}
+is preferable to
+\begin{center}
+{\tt p(X,Y) :- p1(0,X,Y).}
+\end{center}
+because the first definition leaves the variables $X$ and $Y$
+in the same argument positions (first and second, respectively),
+while the second definition does not.
+
+\subsection{Processing All Arguments of a Term}
+\index{term!processing all arguments of}
+\index{arguments!processing all from a term}
+
+It is often the case that we wish to process each of the arguments of a
+term in turn.
+For example, to decide whether a compound term is ground,
+we have to check that each of its arguments is ground.
+One possibility is to create a list of those arguments,
+and traverse the list processing each element.
+Using this approach, a predicate to check for groundness would be \\
+\begin{minipage}{\textwidth} \tt\centering
+\begin{tabbing}
+ground(T) :- atomic(T). \\
+ground(T) :- structure(T), T =.. [\_ | Args], groundargs(Args). \\
+groundargs([]). \\
+groundargs([A | ARest]) :-- ground(A), groundargs(ARest).
+\end{tabbing}
+\end{minipage} \\
+This is not the most efficient way to process all the arguments of a term,
+because it involves the creation of intermediate lists, which is expensive
+both in space and time.
+A much better alternative is to use {\em arg}/3\index{arg/3}
+to index into the term and retrieve arguments.
+Using this approach, the {\em ground}\//1 predicate above would be written as \\
+\begin{minipage}{\textwidth} \tt\centering
+\begin{tabbing}
+ground(T) :- atomic(T). \\
+ground(T) :- structure(T), functor(T, P, N), groundargs(1, N, T). \\
+groundargs(M, N, T) :- \\
+       M $=<$ N -$>$ \\
+            (arg(M, T, A), ground(A), M1 is M + 1, groundargs(M1, N, T)) ; \\
+            true.
+\end{tabbing}
+\end{minipage} \\
+The second approach is likely to be more efficient than the first in SB-Prolog.
+
+If the arguments of the term do not need to be processed in ascending
+order, then it is more efficient to process them in descending order using
+{\em arg}/3 to access them.
+For example, the predicate for groundness checking could be written as\\
+\begin{minipage}{\textwidth} \tt\centering
+\begin{tabbing}
+ground(T) :- atomic(T). \\
+ground(T) :- structure(T), functor(T, P, N), groundargs(N, T). \\
+groundargs(M, T) :- \\
+       M =:= 0 -$>$ \\
+            true ; \\
+            (arg(M, T, A), ground(A), M1 is M - 1, groundargs(M1, T)).
+\end{tabbing}
+\end{minipage} \\
+This is even more efficient than the earlier version, because ($i$)
+{\em groundargs} needs to have one fewer parameter to be passed to it at
+each iteration; and ({\em ii}) testing ``M =:= 0'' is simpler and more
+efficient than checking ``M $=<$ N'', and takes fewer machine instructions.
+
+\subsection{Testing Unifiability}
+\index{testing unifiability}\index{unifiability!testing}
+
+Often, it is necessary to check whether or not a term has a particular value.
+If we know that the term will be bound to a number, we can use the
+evaluable predicates =:=/2 or $=\backslash\,=/2$, as explained earlier.
+For other values, it may often be cheaper, in the appropriate circumstances,
+to use the predicates ?=/2 or $\backslash\,=/2$.
+For example, consider a predicate $p$/2 that calls $q$/1
+with its second argument if its first argument unifies with $a$,
+and $r$/1 otherwise.
+A na\"{\i}ve definition might be\\
+\begin{minipage}{\textwidth} \tt\centering
+\begin{tabbing}
+p(a, X) :- !, q(X). \\
+p(Y, X) :- r(X).
+\end{tabbing}
+\end{minipage} \\
+However, the call to $p$/2 results in the (temporary) creation of a
+backtrack point.
+A solution that avoids this backtrack point creation is
+\begin{center}
+{\tt p(Y, X) :- Y ?= a -> q(X) ; r(X).}
+\end{center}
+Of course, if the argument order in $p$/2 could be reversed in this case,
+then data movement would be reduced even further (see above), and
+the code would be even more efficient:
+\begin{center}
+{\tt p(X, Y) :- Y ?= a -$>$ q(X) ; r(X).}
+\end{center}
+
+\section{Adding Builtins to SB-Prolog} \label{adding_builtins}
+\index{builtins, adding}
+Adding a builtin involves writing the C code for the desired case and installing
+it into the simulator.
+The files in the directory {\tt sim/builtin}
+contain the C code for the builtin predicates supported by the system.
+The following procedure is to be followed when adding a builtin to the system:
+
+\begin{enumerate}
+\item {\em Installing C Code:}
+\begin{enumerate}
+\item Go to the directory {\tt sim/builtin}.
+\item Look at the {\bf \#define}s in the file {\tt builtin.h},
+    and choose a number {\em N1} (between 0 and 255)
+    which is not in use to be the builtin number for the new builtin.
+\item Add to the file {\tt builtin.h} the line
+\begin{tabbing}\tt
+	\#define NEWBUILTIN {\em N1}
+\end{tabbing}
+\item The convention is that the code for builtin will be in a parameterless
+    procedure named {\em b\_NEWBUILTIN}.
+    Modify the file {\tt init\_branch.c} in the directory {\tt sim/builtin}
+    by adding these lines:
+\begin{tabbing}\tt
+	extern int b\_NEWBUILTIN();
+\end{tabbing}
+and
+\begin{tabbing}\tt
+	set\_b\_inst ( NEWBUILTIN, b\_NEWBUILTIN );
+\end{tabbing}
+in the appropriate places.
+\item The builtins are compiled together into one object file, {\tt builtin}.
+    Update the file {\tt Makefile} by appending the name of your object code
+    file at the end of the line ``OBJS = $\ldots$''
+    and insert the appropriate commands to compile your C source file, e.g.:\\
+\begin{minipage}{\textwidth} \tt\centering
+\begin{tabbing}
+OBJS = [ $\ldots$ {\em other file names} $\ldots$ ] newbuiltin.o \\
+$\vdots$ \\
+newbuiltin.o: \$(HS) \\
+        cc \$(CFLAGS) newbuiltin.c
+\end{tabbing}
+\end{minipage}
+
+\item
+Execute the updated make file to create an updated object file {\em builtin}.
+
+\item Go to the directory {\tt sim} and execute {\em make} to install
+the new file {\tt builtin}.
+\end{enumerate}
+
+\item {\em Installing Prolog Code:}
+
+Assume that the builtin predicate to be added is {\em newbuiltin}/4.
+The procedure for installing the Prolog code for this is as follows:
+\begin{enumerate}
+\item
+Go to the SB-Prolog system directory {\tt lib/src},
+where the Prolog source for the library routines is kept.
+\item Each builtin definition is of the form
+\begin{center}
+{\tt pred( $\ldots$ ) :- '\_\$builtin'($N$).}
+\end{center}
+where $N$ is an integer, the builtin number of {\em pred}.
+\item
+Create a Prolog source file {\em newbuiltin.P} (notice correspondence with
+the name of the predicate being defined) containing the definition
+\begin{center}
+{\tt newbuiltin(A,B,C,D) :-- '\_\$builtin'({\em N1}).}
+\end{center}
+where {\em N1} is the builtin number of the predicate {\em newbuiltin},
+obtained when installing the C code for the builtin (see above).
+\item
+Compile this Prolog predicate, using the simulator and the {\em compile}
+predicate, into a file {\em newbuiltin}
+(notice correspondence with the name of the predicate being defined)
+in the SB-Prolog directory {\tt lib}.
+\end{enumerate}
+\end{enumerate}
+\end{document}

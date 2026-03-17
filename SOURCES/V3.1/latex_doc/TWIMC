@@ -1,0 +1,6 @@
+The sbprolog_doc.tex file should be printed by doing the following:
+
+1. latex sbprolog_doc		% format and create index entry list
+2. make				% creates the Indices
+3. latex sbprolog_doc		% include the indices
+4. latex sbprolog_doc		% resolve any changed page numbers

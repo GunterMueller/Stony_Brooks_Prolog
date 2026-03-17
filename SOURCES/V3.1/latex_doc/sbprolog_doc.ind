@@ -1,0 +1,425 @@
+\begin{theindex}
+
+  \item !/0, 18, \bold{26}, 29, 60, 62, 63, 78
+  \item $</2$, \bold{24}
+  \item $=</2$, \bold{24}
+  \item $=\backslash\,=/2$, 24
+  \item $>/2$, \bold{24}
+  \item $>=$/2, \bold{24}
+  \item $\backslash$=/2, \bold{26}
+  \item $\backslash\,==/2$, \bold{31}
+  \item $\wedge$, 29
+  \item $\wedge/2$, \bold{30}
+  \item ,/2, \bold{25}
+  \item -$>/2$, \bold{26}
+  \item :--/1, 11, 17, 58
+  \item ::--/2, \bold{57}
+  \item ;/2, \bold{25}
+  \item =../2, \bold{28}
+  \item =/2, \bold{25}
+  \item =:=/2, \bold{24}
+  \item ==/2, \bold{30}
+  \item ?=/2, \bold{26}
+  \item $</2$, \bold{31}
+  \item $=</2$, \bold{31}
+  \item $>/2$, \bold{31}
+  \item $>=/2$, \bold{31}
+  \item \$absmember/2, \bold{67}
+  \item \$alloc\_buff/5, \bold{43}
+  \item \$append/3, \bold{67}
+  \item \$asm/3, \bold{53}
+  \item \$assertf\_alloc\_t, \bold{44}
+  \item \$current\_atom/2, \bold{37}
+  \item \$current\_functor/3, \bold{37}
+  \item \$current\_predicate/3, \bold{37}
+  \item \$db\_add\_clref/7, \bold{44}
+  \item \$db\_assert\_fact/5, \bold{44}
+  \item \$db\_call\_prref/2, \bold{45}
+  \item \$db\_call\_prref\_s/2, \bold{45}
+  \item \$db\_get\_clauses/3, \bold{45}
+  \item \$db\_new\_prref/3, \bold{44}
+  \item \$exists/1, \bold{21}
+  \item \$getenv/2, \bold{39}
+  \item \$member/2, \bold{67}
+  \item \$member2/2, \bold{67}
+  \item \$memberchk/2, \bold{67}
+  \item \$merge/3, \bold{67}
+  \item \$nthmember/3, \bold{67}
+  \item \$reverse/2, \bold{67}
+  \item \$trace/0, 48
+  \item \$untrace/0, 48
+  \item \_\$interrupt/2, 50
+  \item `C'/3, \bold{64}
+
+  \indexspace
+
+  \item abolish
+    \subitem /1, \bold{35}
+    \subitem /2, \bold{36}
+  \item abort
+    \subitem trace facility, 46
+  \item abort/0, \bold{39}, 39
+  \item alloc\_heap/2, \bold{32}
+  \item alloc\_perm/2, \bold{32}
+  \item arg/3, \bold{27}, 80
+  \item arguments
+    \subitem processing all from a term, 79
+  \item arithmetic, 23
+  \item assembler
+    \subitem options, 53
+  \item assembly, 53
+  \item assert, 33
+    \subitem /1, \bold{33}
+    \subitem /2, \bold{33}
+    \subitem /4, \bold{35}
+  \item assert\_union/2, \bold{34}
+  \item asserta
+    \subitem /1, \bold{34}
+    \subitem /2, \bold{34}
+  \item asserti/2, \bold{33}
+  \item assertz
+    \subitem /1, \bold{34}
+    \subitem /2, \bold{34}
+  \item atom/1, \bold{27}
+  \item atomic/1, \bold{27}
+  \item atoms, 11
+
+  \indexspace
+
+  \item backtrack points, 77
+  \item bagof/3, \bold{30}
+  \item behaviour, standard execution, 18
+  \item break/0, \bold{38}
+  \item buffers, 32
+  \item builtins, adding, 81
+  \item byte code
+    \subitem files, 5--8, 11, 48, 53
+      \subsubitem compiler, 51
+      \subsubitem concatenating, 9, 51
+      \subsubitem loading, 9
+      \subsubitem overwriting trace points, 46
+    \subitem translator, 7
+
+  \indexspace
+
+  \item call/1, \bold{28}
+  \item call\_ref
+    \subitem /2, \bold{43}
+    \subitem /3, \bold{43}
+  \item character I/O, 22
+  \item clause, 17
+    \subitem /2, \bold{35}
+    \subitem /3, \bold{35}
+  \item {\tt cmplib}, 7, 51
+  \item compare/3, \bold{31}
+  \item comparison of terms, 30
+  \item compile
+    \subitem /1, \bold{8}
+    \subitem /2, \bold{8}
+    \subitem /3, \bold{8}
+    \subitem /4, \bold{8}
+  \item Compiler, 51
+    \subitem directives, 54
+    \subitem invoking, 51
+    \subitem options, 53
+  \item compiling programs, 8
+  \item conlength/2, \bold{29}, \bold{33}
+  \item constants, 11
+  \item consult, 8, 10--11
+    \subitem /1, \bold{10}
+    \subitem /2, \bold{10}
+    \subitem options, 10
+  \item consulting programs, 10
+  \item control, extra, 26
+  \item count/1, \bold{65}
+  \item countpreds/1, \bold{66}
+  \item cputime/1, \bold{39}
+  \item Credits, 68
+  \item current\_atom/1, \bold{37}
+  \item current\_functor/2, \bold{37}
+  \item current\_predicate/2, \bold{37}
+  \item cut, 18, \bold{26}, 29, 60, 62, 63, 78
+  \item cuts and If-Then-Else, 18
+
+  \indexspace
+
+  \item database, internal, 36
+  \item dcg/2, \bold{63}
+  \item debug/0, \bold{47}
+  \item debugging, 45
+    \subitem /0, \bold{47}
+  \item declarations
+    \subitem mode, 54
+  \item definite clause grammars, 62
+  \item definitions
+    \subitem macros, 57
+  \item directives
+    \subitem Compiler, 54
+    \subitem indexing, 55
+  \item directories, system, 7
+  \item display/1, \bold{21}
+  \item dynamic loader search path, 6
+
+  \indexspace
+
+  \item efficiency, coding for, 77
+  \item environmental predicates, 38
+  \item erase/1, \bold{36}
+  \item et/1, \bold{61}
+  \item et\_answers/2, \bold{62}
+  \item et\_calls/2, \bold{62}
+  \item et\_points/1, \bold{61}
+  \item et\_remove/1, \bold{61}
+  \item et\_star/1, \bold{61}
+  \item eval/2, \bold{24}
+  \item evaluable predicates, 19, 74
+  \item executing programs, 8
+  \item execution behaviour, standard, 18
+  \item execution directives, 11
+  \item exotica, 43
+  \item exp/2, \bold{25}
+  \item expand\_term/2, \bold{63}
+  \item extension tables
+    \subitem memo relations, 58
+
+  \indexspace
+
+  \item fail/0, \bold{26}
+  \item file handling, 21
+  \item findall/3, \bold{30}
+  \item float/1, \bold{27}
+  \item floatc/3, \bold{25}
+  \item floating point numbers, unification of, 19
+  \item floor/2, \bold{25}
+  \item functor/3, \bold{27}
+
+  \indexspace
+
+  \item gennum/1, \bold{42}
+  \item gensym/2, \bold{43}
+  \item get/1, \bold{22}
+  \item get0/1, \bold{22}
+  \item getting started, 6
+  \item global values, 42
+  \item globalset/1, \bold{42}
+  \item grammars
+    \subitem definite clause, 62
+
+  \indexspace
+
+  \item high-level tracing, 45
+
+  \indexspace
+
+  \item I/O
+    \subitem term, 21
+  \item If-Then-Else and cuts, 18
+  \item index/3, 33, \bold{55}
+  \item indexing, 35
+    \subitem directives, 55
+    \subitem on floating point, 19
+  \item input, 20
+  \item instance/2, \bold{36}
+  \item integer/1, \bold{27}
+  \item integers, 11
+  \item internal database, 36
+  \item interrupts, 50
+  \item invoking the Compiler, 51
+  \item invoking the simulator, 7, 48
+  \item is/2, \bold{24}
+  \item is\_buffer/1, \bold{27}
+
+  \indexspace
+
+  \item keysort/2, \bold{31}
+
+  \indexspace
+
+  \item length/2, \bold{67}
+  \item libraries, 56
+  \item linking, dynamic search path, 6
+  \item listing
+    \subitem /0, \bold{36}
+    \subitem /1, \bold{37}
+  \item load/1, \bold{9}
+  \item loader, dynamic search path, 6
+  \item loading byte code files, 9
+  \item low-level predicates, 43
+  \item low-level tracing, 48
+
+  \indexspace
+
+  \item Macro Expander options, 58
+  \item macros, 57
+    \subitem definition of, 57
+  \item memo relations
+    \subitem extension tables, 58
+  \item meta-logical predicates, 27
+  \item mode
+    \subitem declarations, 54
+    \subitem values, 54
+  \item mode/3, \bold{54}
+  \item modification of the program, 33
+
+  \indexspace
+
+  \item name/2, \bold{28}
+  \item nl/0, \bold{22}
+  \item nocount/1, \bold{65}
+  \item nodebug/0, \bold{47}
+  \item nodynload/2, \bold{39}
+  \item noet/1, \bold{61}
+  \item nonvar/1, \bold{27}
+  \item noprofile/0, \bold{66}
+  \item nospy/1, \bold{47}
+  \item not unifiable, \see{$\backslash$=/2}{26}
+  \item not/1, \bold{26}
+  \item notime/1, \bold{65}
+  \item number/1, \bold{27}
+
+  \indexspace
+
+  \item occurs check
+    \subitem unification without, 18
+  \item op/3, \bold{16}, \bold{38}
+  \item operational semantics, 18
+  \item operators, 14
+  \item options
+    \subitem Compiler, 53
+    \subitem Macro Expander, 58
+    \subitem Simulator, 49
+  \item output, 20
+
+  \indexspace
+
+  \item path, search, 6
+  \item phrase/2, \bold{63}
+  \item portray\_clause/2, \bold{22}
+  \item portray\_term/2, \bold{22}
+  \item predicate\_property/2, \bold{38}
+  \item predicates
+    \subitem evaluable, 74
+  \item predicates, environmental, 38
+  \item predicates, evaluable, 19
+  \item predicates, low-level, 43
+  \item predicates, meta-logical, 27
+  \item print/1, \bold{21}
+  \item print\_al/2, \bold{22}
+  \item print\_ar/2, \bold{22}
+  \item prof\_reset/1, \bold{65}
+  \item prof\_stats
+    \subitem /0, \bold{66}
+    \subitem /1, \bold{66}
+  \item profile/0, \bold{66}
+  \item profiling programs, 64
+  \item profiling/0, \bold{65}
+  \item program, state of, 36
+  \item put/1, \bold{22}
+
+  \indexspace
+
+  \item query, 18
+  \item query evaluator, 7, 48
+
+  \indexspace
+
+  \item read/1, \bold{21}
+  \item real/1, \bold{27}
+  \item reconsult, 11
+  \item recorda/3, \bold{36}
+  \item recorded/3, \bold{36}
+  \item recordz/3, \bold{36}
+  \item registers
+    \subitem minimizing data movement between, 79
+  \item repeat/0, \bold{26}
+  \item resetcount/1, \bold{65}
+  \item resettime/1, \bold{66}
+  \item restore/1, \bold{39}
+  \item retract/1, \bold{35}
+  \item rounding, 24
+  \item rule, 18
+
+  \indexspace
+
+  \item save/1, \bold{39}
+  \item search path, 6
+  \item see/1, \bold{21}
+  \item seeing/1, \bold{21}
+  \item seen/0, \bold{21}
+  \item semantics, operational, 18
+  \item setof/3, \bold{29}
+  \item sets, 29
+  \item SIMPATH, 6, 9
+  \item Simulator, 48
+    \subitem options, 49
+  \item simulator, invoking, 7, 48
+  \item sin/2, \bold{25}
+  \item sort/2, \bold{31}
+  \item spy/1, \bold{47}
+  \item spypreds/1, \bold{48}
+  \item square/2, \bold{25}
+  \item standard execution behaviour, 18
+  \item starting, 6
+  \item state of the program, 36
+  \item statistics
+    \subitem /0, \bold{39}
+    \subitem /2, \bold{39}
+  \item strings, 14
+  \item structure/1, \bold{27}
+  \item subsumes/2, \bold{67}
+  \item symtype/2, \bold{41}
+  \item syntax, 11
+  \item syscall/3, \bold{41}
+  \item system directories, 7
+  \item system/1, \bold{41}
+
+  \indexspace
+
+  \item tab/1, \bold{22}
+  \item tell/1, \bold{21}
+  \item telling/1, \bold{21}
+  \item term
+    \subitem processing all arguments of, 79
+  \item term I/O, 21
+  \item term\_expansion/2, 63
+  \item terms, 11
+    \subitem comparison of, 30
+  \item testing unifiability, 80
+  \item time/1, \bold{65}
+  \item timepreds/1, \bold{66}
+  \item told/0, \bold{21}
+  \item trace
+    \subitem options, 46
+  \item trace/1, \bold{45}
+  \item tracepreds/1, \bold{48}
+  \item tracing
+    \subitem high-level, 45
+    \subitem low-level, 48
+  \item trimbuff/3, \bold{32}
+  \item true/0, \bold{25}
+
+  \indexspace
+
+  \item undefined\_pred/1, \bold{8}
+  \item unifiability
+    \subitem testing, 80
+  \item unification
+    \subitem floating point numbers, 19
+    \subitem without occurs check, 18
+  \item Unix
+    \subitem system calls, \bold{41}
+  \item untrace/1, \bold{47}
+
+  \indexspace
+
+  \item var/1, \bold{27}
+
+  \indexspace
+
+  \item WAM, 5, 19, 51, 53
+  \item write/1, \bold{21}
+  \item writename/1, \bold{22}
+  \item writeq/1, \bold{21}
+  \item writeqname/1, \bold{22}
+
+\end{theindex}

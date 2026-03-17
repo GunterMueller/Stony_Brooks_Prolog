@@ -1,0 +1,9 @@
+This is makeindex, portable version 2.4 [20-Mar-88].
+Scanning input file sbprolog_doc.idx....done (364 entries accepted, 0 rejected).
+Sorting entries......done (3335 comparisons).
+Generating output file sbprolog_doc.ind....
+## Warning (input = sbprolog_doc.idx, line = 214; output = sbprolog_doc.ind, line = 61):
+   -- Conflicting entries: multiple encaps for the same page under same key.
+done (425 lines written, 1 warning).
+Output written in sbprolog_doc.ind.
+Transcript written in sbprolog_doc.ilg.

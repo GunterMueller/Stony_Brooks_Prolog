@@ -1,0 +1,364 @@
+\indexentry{WAM}{5}
+\indexentry{byte code!files}{5}
+\indexentry{getting started}{6}
+\indexentry{starting}{6}
+\indexentry{dynamic loader search path}{6}
+\indexentry{loader, dynamic search path}{6}
+\indexentry{linking, dynamic search path}{6}
+\indexentry{search path}{6}
+\indexentry{path, search}{6}
+\indexentry{SIMPATH}{6}
+\indexentry{byte code!files}{6}
+\indexentry{system directories}{7}
+\indexentry{directories, system}{7}
+\indexentry{byte code!translator}{7}
+\indexentry{cmplib@{\tt cmplib}}{7}
+\indexentry{invoking the simulator}{7}
+\indexentry{simulator, invoking}{7}
+\indexentry{byte code!files}{7}
+\indexentry{query evaluator}{7}
+\indexentry{undefined\_pred/1|bold}{8}
+\indexentry{executing programs}{8}
+\indexentry{consult}{8}
+\indexentry{compiling programs}{8}
+\indexentry{byte code!files}{8}
+\indexentry{compile!/1|bold}{8}
+\indexentry{compile!/2|bold}{8}
+\indexentry{compile!/3|bold}{8}
+\indexentry{compile!/4|bold}{8}
+\indexentry{loading byte code files}{9}
+\indexentry{byte code!files!loading}{9}
+\indexentry{load/1|bold}{9}
+\indexentry{SIMPATH}{9}
+\indexentry{byte code!files!concatenating}{9}
+\indexentry{consulting programs}{10}
+\indexentry{consult|(}{10}
+\indexentry{consult!/1|bold}{10}
+\indexentry{consult!/2|bold}{10}
+\indexentry{consult!options}{10}
+\indexentry{reconsult}{11}
+\indexentry{consult|)}{11}
+\indexentry{execution directives}{11}
+\indexentry{:--/1}{11}
+\indexentry{byte code!files}{11}
+\indexentry{syntax}{11}
+\indexentry{terms}{11}
+\indexentry{constants}{11}
+\indexentry{integers}{11}
+\indexentry{atoms}{11}
+\indexentry{strings}{14}
+\indexentry{operators}{14}
+\indexentry{op/3|bold}{16}
+\indexentry{:--/1}{17}
+\indexentry{clause}{17}
+\indexentry{rule}{18}
+\indexentry{query}{18}
+\indexentry{operational semantics}{18}
+\indexentry{semantics, operational}{18}
+\indexentry{standard execution behaviour}{18}
+\indexentry{execution behaviour, standard}{18}
+\indexentry{behaviour, standard execution}{18}
+\indexentry{occurs check!unification without}{18}
+\indexentry{unification!without occurs check}{18}
+\indexentry{cuts and If-Then-Else}{18}
+\indexentry{If-Then-Else and cuts}{18}
+\indexentry{"!/0}{18}
+\indexentry{cut}{18}
+\indexentry{unification!floating point numbers}{19}
+\indexentry{floating point numbers, unification of}{19}
+\indexentry{indexing!on floating point}{19}
+\indexentry{evaluable predicates}{19}
+\indexentry{predicates, evaluable}{19}
+\indexentry{WAM}{19}
+\indexentry{input}{20}
+\indexentry{output}{20}
+\indexentry{file handling}{21}
+\indexentry{see/1|bold}{21}
+\indexentry{seeing/1|bold}{21}
+\indexentry{seen/0|bold}{21}
+\indexentry{tell/1|bold}{21}
+\indexentry{telling/1|bold}{21}
+\indexentry{told/0|bold}{21}
+\indexentry{\$exists/1|bold}{21}
+\indexentry{term I/O}{21}
+\indexentry{I/O!term}{21}
+\indexentry{read/1|bold}{21}
+\indexentry{write/1|bold}{21}
+\indexentry{display/1|bold}{21}
+\indexentry{writeq/1|bold}{21}
+\indexentry{print/1|bold}{21}
+\indexentry{writename/1|bold}{22}
+\indexentry{writeqname/1|bold}{22}
+\indexentry{print\_al/2|bold}{22}
+\indexentry{print\_ar/2|bold}{22}
+\indexentry{portray\_term/2|bold}{22}
+\indexentry{portray\_clause/2|bold}{22}
+\indexentry{character I/O}{22}
+\indexentry{nl/0|bold}{22}
+\indexentry{get0/1|bold}{22}
+\indexentry{get/1|bold}{22}
+\indexentry{put/1|bold}{22}
+\indexentry{tab/1|bold}{22}
+\indexentry{arithmetic}{23}
+\indexentry{rounding}{24}
+\indexentry{is/2|bold}{24}
+\indexentry{eval/2|bold}{24}
+\indexentry{=:=/2|bold}{24}
+\indexentry{$=\backslash\,=/2$}{24}
+\indexentry{$</2$|bold}{24}
+\indexentry{$>/2$|bold}{24}
+\indexentry{$=</2$|bold}{24}
+\indexentry{$>=$/2|bold}{24}
+\indexentry{floor/2|bold}{25}
+\indexentry{floatc/3|bold}{25}
+\indexentry{exp/2|bold}{25}
+\indexentry{square/2|bold}{25}
+\indexentry{sin/2|bold}{25}
+\indexentry{,/2|bold}{25}
+\indexentry{;/2|bold}{25}
+\indexentry{true/0|bold}{25}
+\indexentry{=/2|bold}{25}
+\indexentry{$\backslash$=/2|bold}{26}
+\indexentry{not unifiable|see{$\backslash$=/2}}{26}
+\indexentry{?=/2|bold}{26}
+\indexentry{control, extra}{26}
+\indexentry{"!/0|bold}{26}
+\indexentry{cut|bold}{26}
+\indexentry{not/1|bold}{26}
+\indexentry{-$>/2$|bold}{26}
+\indexentry{-$>/2$|bold}{26}
+\indexentry{repeat/0|bold}{26}
+\indexentry{fail/0|bold}{26}
+\indexentry{meta-logical predicates}{27}
+\indexentry{predicates, meta-logical}{27}
+\indexentry{var/1|bold}{27}
+\indexentry{nonvar/1|bold}{27}
+\indexentry{atom/1|bold}{27}
+\indexentry{integer/1|bold}{27}
+\indexentry{real/1|bold}{27}
+\indexentry{float/1|bold}{27}
+\indexentry{number/1|bold}{27}
+\indexentry{atomic/1|bold}{27}
+\indexentry{structure/1|bold}{27}
+\indexentry{is\_buffer/1|bold}{27}
+\indexentry{functor/3|bold}{27}
+\indexentry{arg/3|bold}{27}
+\indexentry{=../2|bold}{28}
+\indexentry{name/2|bold}{28}
+\indexentry{call/1|bold}{28}
+\indexentry{"!/0}{29}
+\indexentry{cut}{29}
+\indexentry{conlength/2|bold}{29}
+\indexentry{sets}{29}
+\indexentry{setof/3|bold}{29}
+\indexentry{$\wedge$}{29}
+\indexentry{bagof/3|bold}{30}
+\indexentry{findall/3|bold}{30}
+\indexentry{$\wedge/2$|bold}{30}
+\indexentry{comparison of terms}{30}
+\indexentry{terms!comparison of}{30}
+\indexentry{==/2|bold}{30}
+\indexentry{$\backslash\,==/2$|bold}{31}
+\indexentry{\@$</2$|bold}{31}
+\indexentry{\@$>/2$|bold}{31}
+\indexentry{\@$=</2$|bold}{31}
+\indexentry{\@$>=/2$|bold}{31}
+\indexentry{compare/3|bold}{31}
+\indexentry{sort/2|bold}{31}
+\indexentry{keysort/2|bold}{31}
+\indexentry{buffers}{32}
+\indexentry{alloc\_perm/2|bold}{32}
+\indexentry{alloc\_heap/2|bold}{32}
+\indexentry{trimbuff/3|bold}{32}
+\indexentry{conlength/2|bold}{33}
+\indexentry{modification of the program}{33}
+\indexentry{assert}{33}
+\indexentry{index/3}{33}
+\indexentry{assert!/1|bold}{33}
+\indexentry{assert!/2|bold}{33}
+\indexentry{asserti/2|bold}{33}
+\indexentry{asserta!/1|bold}{34}
+\indexentry{asserta!/2|bold}{34}
+\indexentry{assertz!/1|bold}{34}
+\indexentry{assertz!/2|bold}{34}
+\indexentry{assert\_union/2|bold}{34}
+\indexentry{assert!/4|bold}{35}
+\indexentry{indexing}{35}
+\indexentry{clause!/2|bold}{35}
+\indexentry{clause!/3|bold}{35}
+\indexentry{retract/1|bold}{35}
+\indexentry{abolish!/1|bold}{35}
+\indexentry{abolish!/2|bold}{36}
+\indexentry{internal database}{36}
+\indexentry{database, internal}{36}
+\indexentry{recorded/3|bold}{36}
+\indexentry{recorda/3|bold}{36}
+\indexentry{recordz/3|bold}{36}
+\indexentry{erase/1|bold}{36}
+\indexentry{instance/2|bold}{36}
+\indexentry{state of the program}{36}
+\indexentry{program, state of}{36}
+\indexentry{listing!/0|bold}{36}
+\indexentry{listing!/1|bold}{37}
+\indexentry{current\_atom/1|bold}{37}
+\indexentry{\$current\_atom/2|bold}{37}
+\indexentry{current\_functor/2|bold}{37}
+\indexentry{\$current\_functor/3|bold}{37}
+\indexentry{current\_predicate/2|bold}{37}
+\indexentry{\$current\_predicate/3|bold}{37}
+\indexentry{predicate\_property/2|bold}{38}
+\indexentry{environmental predicates}{38}
+\indexentry{predicates, environmental}{38}
+\indexentry{op/3|bold}{38}
+\indexentry{break/0|bold}{38}
+\indexentry{abort/0}{39}
+\indexentry{abort/0|bold}{39}
+\indexentry{save/1|bold}{39}
+\indexentry{restore/1|bold}{39}
+\indexentry{cputime/1|bold}{39}
+\indexentry{\$getenv/2|bold}{39}
+\indexentry{statistics!/0|bold}{39}
+\indexentry{statistics!/2|bold}{39}
+\indexentry{nodynload/2|bold}{39}
+\indexentry{symtype/2|bold}{41}
+\indexentry{system/1|bold}{41}
+\indexentry{syscall/3|bold}{41}
+\indexentry{Unix!system calls|bold}{41}
+\indexentry{global values}{42}
+\indexentry{globalset/1|bold}{42}
+\indexentry{gennum/1|bold}{42}
+\indexentry{gensym/2|bold}{43}
+\indexentry{exotica}{43}
+\indexentry{low-level predicates}{43}
+\indexentry{predicates, low-level}{43}
+\indexentry{\$alloc\_buff/5|bold}{43}
+\indexentry{call\_ref!/2|bold}{43}
+\indexentry{call\_ref!/3|bold}{43}
+\indexentry{\$assertf\_alloc\_t|bold}{44}
+\indexentry{\$db\_new\_prref/3|bold}{44}
+\indexentry{\$db\_assert\_fact/5|bold}{44}
+\indexentry{\$db\_add\_clref/7|bold}{44}
+\indexentry{\$db\_call\_prref/2|bold}{45}
+\indexentry{\$db\_call\_prref\_s/2|bold}{45}
+\indexentry{\$db\_get\_clauses/3|bold}{45}
+\indexentry{debugging}{45}
+\indexentry{high-level tracing}{45}
+\indexentry{tracing!high-level}{45}
+\indexentry{trace/1|bold}{45}
+\indexentry{byte code!files!overwriting trace points}{46}
+\indexentry{trace!options}{46}
+\indexentry{abort!trace facility}{46}
+\indexentry{untrace/1|bold}{47}
+\indexentry{spy/1|bold}{47}
+\indexentry{nospy/1|bold}{47}
+\indexentry{debug/0|bold}{47}
+\indexentry{nodebug/0|bold}{47}
+\indexentry{debugging!/0|bold}{47}
+\indexentry{tracepreds/1|bold}{48}
+\indexentry{spypreds/1|bold}{48}
+\indexentry{low-level tracing}{48}
+\indexentry{tracing!low-level}{48}
+\indexentry{\$trace/0}{48}
+\indexentry{\$untrace/0}{48}
+\indexentry{Simulator}{48}
+\indexentry{invoking the simulator}{48}
+\indexentry{simulator, invoking}{48}
+\indexentry{byte code!files}{48}
+\indexentry{query evaluator}{48}
+\indexentry{Simulator!options}{49}
+\indexentry{options!Simulator}{49}
+\indexentry{interrupts}{50}
+\indexentry{\_\$interrupt/2}{50}
+\indexentry{WAM}{51}
+\indexentry{Compiler}{51}
+\indexentry{byte code!files!compiler}{51}
+\indexentry{cmplib@{\tt cmplib}}{51}
+\indexentry{byte code!files!concatenating}{51}
+\indexentry{invoking the Compiler}{51}
+\indexentry{Compiler!invoking}{51}
+\indexentry{Compiler!options}{53}
+\indexentry{options!Compiler}{53}
+\indexentry{assembly}{53}
+\indexentry{\$asm/3|bold}{53}
+\indexentry{WAM}{53}
+\indexentry{byte code!files}{53}
+\indexentry{assembler!options}{53}
+\indexentry{Compiler!directives}{54}
+\indexentry{directives!Compiler}{54}
+\indexentry{mode!declarations}{54}
+\indexentry{declarations!mode}{54}
+\indexentry{mode/3|bold}{54}
+\indexentry{mode!values}{54}
+\indexentry{indexing!directives}{55}
+\indexentry{directives!indexing}{55}
+\indexentry{index/3|bold}{55}
+\indexentry{libraries}{56}
+\indexentry{macros}{57}
+\indexentry{definitions!macros}{57}
+\indexentry{macros!definition of}{57}
+\indexentry{::--/2|bold}{57}
+\indexentry{Macro Expander options}{58}
+\indexentry{options!Macro Expander}{58}
+\indexentry{:--/1}{58}
+\indexentry{extension tables!memo relations}{58}
+\indexentry{memo relations!extension tables}{58}
+\indexentry{cut}{60}
+\indexentry{"!/0}{60}
+\indexentry{cut}{60}
+\indexentry{et/1|bold}{61}
+\indexentry{et\_star/1|bold}{61}
+\indexentry{et\_points/1|bold}{61}
+\indexentry{noet/1|bold}{61}
+\indexentry{et\_remove/1|bold}{61}
+\indexentry{et\_answers/2|bold}{62}
+\indexentry{et\_calls/2|bold}{62}
+\indexentry{definite clause grammars}{62}
+\indexentry{grammars!definite clause}{62}
+\indexentry{cut}{62}
+\indexentry{"!/0}{62}
+\indexentry{cut}{63}
+\indexentry{"!/0}{63}
+\indexentry{dcg/2|bold}{63}
+\indexentry{phrase/2|bold}{63}
+\indexentry{expand\_term/2|bold}{63}
+\indexentry{term\_expansion/2}{63}
+\indexentry{`C'/3|bold}{64}
+\indexentry{profiling programs}{64}
+\indexentry{count/1|bold}{65}
+\indexentry{time/1|bold}{65}
+\indexentry{nocount/1|bold}{65}
+\indexentry{notime/1|bold}{65}
+\indexentry{profiling/0|bold}{65}
+\indexentry{prof\_reset/1|bold}{65}
+\indexentry{resetcount/1|bold}{65}
+\indexentry{resettime/1|bold}{66}
+\indexentry{profile/0|bold}{66}
+\indexentry{noprofile/0|bold}{66}
+\indexentry{timepreds/1|bold}{66}
+\indexentry{countpreds/1|bold}{66}
+\indexentry{prof\_stats!/0|bold}{66}
+\indexentry{prof\_stats!/1|bold}{66}
+\indexentry{\$append/3|bold}{67}
+\indexentry{\$member/2|bold}{67}
+\indexentry{\$memberchk/2|bold}{67}
+\indexentry{\$reverse/2|bold}{67}
+\indexentry{\$merge/3|bold}{67}
+\indexentry{\$absmember/2|bold}{67}
+\indexentry{\$nthmember/3|bold}{67}
+\indexentry{\$member2/2|bold}{67}
+\indexentry{length/2|bold}{67}
+\indexentry{subsumes/2|bold}{67}
+\indexentry{Credits}{68}
+\indexentry{evaluable predicates}{74}
+\indexentry{predicates!evaluable}{74}
+\indexentry{efficiency, coding for}{77}
+\indexentry{backtrack points}{77}
+\indexentry{cut}{78}
+\indexentry{"!/0}{78}
+\indexentry{registers!minimizing data movement between}{79}
+\indexentry{term!processing all arguments of}{79}
+\indexentry{arguments!processing all from a term}{79}
+\indexentry{arg/3}{80}
+\indexentry{testing unifiability}{80}
+\indexentry{unifiability!testing}{80}
+\indexentry{builtins, adding}{81}
